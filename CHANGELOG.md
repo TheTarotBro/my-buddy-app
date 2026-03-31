@@ -1,5 +1,25 @@
 # My Buddy — Changelog
 
+## v8.0 — March 31, 2026
+### Warm Neutral Theme
+- Complete visual overhaul from dark theme to warm neutral palette
+- Cream backgrounds (#f5f0ea), warm brown text (#3a2e24), earthy borders
+- All UI elements updated: tabs, cards, modals, buttons, inputs, sliders
+- Environment scenes retain their own dark palettes for contrast
+- iPhone status bar switched to light mode
+
+### One-off Task Filtering
+- One-off tasks in the Tasks tab now have filter pills: Upcoming, Last 7 Days, Last 30 Days, All
+- Completed one-offs show their completion date and persist in history
+- Empty states show context-appropriate messages per filter
+
+### Color Fix Pass
+- Comprehensive audit of all 100+ color references ensuring readability on light backgrounds
+- Fixed transparent white backgrounds → warm brown tints
+- Fixed invisible text on tabs, cards, buttons, and filter pills
+
+---
+
 ## v7.0 — March 31, 2026
 ### Daily Session System Rework
 - **Breaking change:** XP from core trackers now uses a tier system (0/5/10 XP per tracker based on 0-49%/50-99%/100% thresholds). No more double-earning from sliding up and down.
