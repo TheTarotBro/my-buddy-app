@@ -93,7 +93,7 @@ function Modal({children,onClose}){return(<div style={{position:"fixed",inset:0,
 // ═══ LOGIN SCREEN ═══
 function LoginScreen({ onSignIn, loading }) {
   return (
-    <div style={{ minHeight: "100vh", background: "#12121e", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", fontFamily: "'Inter', -apple-system, sans-serif", padding: 32 }}>
+    <div style={{ minHeight: "100vh", background: "#12121e", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", fontFamily: "'Inter', -apple-system, sans-serif", padding: 32, paddingTop: "calc(env(safe-area-inset-top, 20px) + 32px)" }}>
       <div style={{ animation: "bfl 2.8s ease-in-out infinite", marginBottom: 24 }}>
         <BuddyFace mood="content" level={2} hat={false} buddyType="bird" size={120} />
       </div>
@@ -222,7 +222,7 @@ export default function App() {
   const sortedTodayBd = [...todayBd].sort((a, b) => (wishes[a.name] ? 1 : 0) - (wishes[b.name] ? 1 : 0));
   const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
   const sL = (t) => <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.2)", marginBottom: 8, letterSpacing: 1.5, textTransform: "uppercase" }}>{t}</div>;
-  const tBtn = (id, l, ico) => <button key={id} onClick={() => setTab(id)} style={{ flex: 1, padding: "9px 0", borderRadius: 8, border: "none", cursor: "pointer", fontWeight: 700, fontSize: 10.5, background: tab === id ? "rgba(255,255,255,0.08)" : "transparent", color: tab === id ? "#fff" : "rgba(255,255,255,0.3)", letterSpacing: 0.3 }}>{ico} {l}</button>;
+  const tBtn = (id, l, ico) => <button key={id} onClick={() => setTab(id)} style={{ flex: 1, padding: "10px 0", borderRadius: 10, border: tab === id ? `1px solid ${accent}44` : "1px solid rgba(255,255,255,0.08)", cursor: "pointer", fontWeight: 700, fontSize: 11, background: tab === id ? `${accent}18` : "rgba(255,255,255,0.05)", color: tab === id ? accent : "rgba(255,255,255,0.5)", letterSpacing: 0.3, transition: "all 0.2s" }}>{ico} {l}</button>;
 
   return (
     <div style={{ minHeight: "100vh", background: "#12121e", fontFamily: "'Inter', -apple-system, sans-serif", color: "#e0e0e0", maxWidth: 480, margin: "0 auto" }}>
@@ -242,24 +242,36 @@ export default function App() {
       `}</style>
 
       {/* Header */}
-      <div style={{ padding: "18px 20px 6px", display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-        <div>
-          <h1 style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 20, fontWeight: 700, color: "#fff", letterSpacing: -0.5 }}>MY BUDDY</h1>
-          <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 2 }}>
-            <span style={{ fontSize: 10, fontWeight: 600, color: "rgba(255,255,255,0.3)", letterSpacing: 1 }}>LV.{li.lv + 1} {li.name}</span>
-            <span style={{ fontSize: 9, color: "rgba(255,255,255,0.12)" }}>·</span>
-            <span style={{ fontSize: 10, color: "rgba(255,255,255,0.2)" }}>{BUDDY_TYPES.find(b => b.id === activeBuddy)?.name}</span>
+      <div style={{ paddingTop: "env(safe-area-inset-top, 20px)", background: "linear-gradient(180deg, rgba(255,255,255,0.04) 0%, transparent 100%)" }}>
+        <div style={{ padding: "16px 20px 10px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <div style={{ width: 36, height: 36, borderRadius: 10, background: `${accent}18`, border: `1px solid ${accent}33`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="8" fill={accent} opacity="0.6"/><circle cx="12" cy="12" r="4" fill={accent}/></svg>
+            </div>
+            <div>
+              <h1 style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 18, fontWeight: 700, color: "#fff", letterSpacing: -0.5 }}>MY BUDDY</h1>
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <span style={{ fontSize: 10, fontWeight: 600, color: "rgba(255,255,255,0.35)", letterSpacing: 0.8 }}>LV.{li.lv + 1} {li.name}</span>
+                <span style={{ fontSize: 9, color: "rgba(255,255,255,0.12)" }}>·</span>
+                <span style={{ fontSize: 10, color: "rgba(255,255,255,0.25)" }}>{BUDDY_TYPES.find(b => b.id === activeBuddy)?.name}</span>
+              </div>
+            </div>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <div style={{ background: `${accent}15`, borderRadius: 10, padding: "6px 14px", fontWeight: 700, fontSize: 12, color: accent, border: `1px solid ${accent}30` }}>{xp} XP</div>
+            <button onClick={() => setSettings(!settings)} style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, width: 36, height: 36, cursor: "pointer", fontSize: 15, color: "rgba(255,255,255,0.45)", display: "flex", alignItems: "center", justifyContent: "center" }}>⚙</button>
           </div>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <div style={{ background: "rgba(255,255,255,0.06)", borderRadius: 8, padding: "5px 12px", fontWeight: 700, fontSize: 12, color: accent, border: `1px solid ${accent}22` }}>{xp} XP</div>
-          <button onClick={() => setSettings(!settings)} style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 8, width: 32, height: 32, cursor: "pointer", fontSize: 14, color: "rgba(255,255,255,0.4)", display: "flex", alignItems: "center", justifyContent: "center" }}>⚙</button>
-        </div>
-      </div>
 
-      <div style={{ padding: "0 20px", marginBottom: 2 }}>
-        <div style={{ height: 3, background: "rgba(255,255,255,0.06)", borderRadius: 2, overflow: "hidden" }}><div style={{ height: "100%", width: `${li.prog * 100}%`, background: `linear-gradient(90deg, ${accent}88, ${accent})`, borderRadius: 2, transition: "width 0.5s cubic-bezier(.4,0,.2,1)" }} /></div>
-        <div style={{ fontSize: 9, color: "rgba(255,255,255,0.15)", fontWeight: 600, marginTop: 3, textAlign: "right" }}>{li.need > 0 ? `${li.need} XP to next level` : "Max level"}</div>
+        {/* XP progress bar */}
+        <div style={{ padding: "0 20px 4px" }}>
+          <div style={{ height: 4, background: "rgba(255,255,255,0.06)", borderRadius: 2, overflow: "hidden" }}><div style={{ height: "100%", width: `${li.prog * 100}%`, background: `linear-gradient(90deg, ${accent}88, ${accent})`, borderRadius: 2, transition: "width 0.5s cubic-bezier(.4,0,.2,1)" }} /></div>
+          <div style={{ fontSize: 9, color: "rgba(255,255,255,0.18)", fontWeight: 600, marginTop: 3, textAlign: "right" }}>{li.need > 0 ? `${li.need} XP to next level` : "Max level"}</div>
+        </div>
+
+        {/* Tabs — right below header */}
+        <div style={{ display: "flex", gap: 5, padding: "4px 20px 12px" }}>{tBtn("home", "Today", "◉")}{tBtn("tasks", "Tasks", "☰")}{tBtn("collection", "Buddies", "◈")}{tBtn("birthdays", "Birthdays", "♡")}</div>
+        <div style={{ height: 1, background: "rgba(255,255,255,0.04)", margin: "0 20px" }} />
       </div>
 
       {settings && (
@@ -294,8 +306,8 @@ export default function App() {
         <div style={{ position: "absolute", bottom: 2, fontSize: 10, fontWeight: 600, letterSpacing: 1.5, textTransform: "uppercase", color: mood === "happy" ? accent : mood === "content" ? "rgba(255,255,255,0.3)" : "rgba(232,106,106,0.6)" }}>{mood === "happy" ? "Happy" : mood === "content" ? "Content" : "Needs care"}</div>
       </div>
 
-      <div style={{ display: "flex", gap: 2, padding: "4px 20px", marginBottom: 10 }}>{tBtn("home", "Today", "◉")}{tBtn("tasks", "Tasks", "☰")}{tBtn("collection", "Buddies", "◈")}{tBtn("birthdays", "Birthdays", "♡")}</div>
-      <div style={{ height: 1, background: "rgba(255,255,255,0.04)", margin: "0 20px 12px" }} />
+
+
 
       {tab === "home" && (<div style={{ padding: "0 20px 80px", animation: "fi 0.25s ease" }}>{sL("Core Trackers")}<div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 20 }}><Tracker label="Hydration" value={log.water} max={goals.water} unit="oz" color="#5baed6" icon="💧" step={1} onChange={v => updateCore("water", v)} /><Tracker label="Sleep" value={log.sleep} max={goals.sleep} unit="hrs" color="#9c7cb8" icon="🌙" step={0.5} onChange={v => updateCore("sleep", v)} /><Tracker label="Healthy Meals" value={log.meals} max={goals.meals} unit="" color="#6ee7a0" icon="🥗" step={1} onChange={v => updateCore("meals", v)} /></div>{dueDailies.length>0&&<>{sL("Daily Tasks")}<div style={{display:"flex",flexDirection:"column",gap:5,marginBottom:16}}>{dueDailies.map(c=><TaskRow key={c.id} chore={c} done={!!choreLog[c.id]} onToggle={()=>toggleChore(c.id)} showInterval={false}/>)}</div></>}{dueRecurring.length>0&&<>{sL("Recurring — Due Today")}<div style={{display:"flex",flexDirection:"column",gap:5,marginBottom:16}}>{dueRecurring.map(c=><TaskRow key={c.id} chore={c} done={!!choreLog[c.id]} onToggle={()=>toggleChore(c.id)} showInterval/>)}</div></>}{dueOneOffs.length>0&&<>{sL("One-off Tasks")}<div style={{display:"flex",flexDirection:"column",gap:5}}>{dueOneOffs.map(c=><TaskRow key={c.id} chore={c} done={!!choreLog[c.id]} onToggle={()=>toggleChore(c.id)} showInterval={false}/>)}</div></>}{dueDailies.length===0&&dueRecurring.length===0&&dueOneOffs.length===0&&<div style={{textAlign:"center",padding:28,color:"rgba(255,255,255,0.12)",fontSize:12}}>No tasks due today</div>}</div>)}
 
