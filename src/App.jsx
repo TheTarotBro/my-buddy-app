@@ -270,11 +270,75 @@ function EnvironmentBg({ envId, width = 320, height = 180 }) {
 }
 
 // ═══ UI COMPONENTS ═══
-function Tracker({label,value,max,unit,color,onChange,step,icon}){const pct=max>0?Math.min(value/max,1):0;return(<div style={{background:"rgba(255,255,255,0.04)",borderRadius:12,padding:"14px 16px",border:"1px solid rgba(255,255,255,0.06)"}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}><div style={{display:"flex",alignItems:"center",gap:8}}><span style={{fontSize:15}}>{icon}</span><span style={{fontWeight:600,fontSize:13,color:"#e0e0e0"}}>{label}</span></div><div style={{display:"flex",alignItems:"center",gap:8}}><span style={{fontSize:13,color:pct>=1?color:"rgba(255,255,255,0.4)",fontWeight:700,fontVariantNumeric:"tabular-nums"}}>{value}{unit?` / ${max} ${unit}`:` / ${max}`}</span>{pct>=1&&<span style={{fontSize:10,fontWeight:700,color:"#12121e",background:color,padding:"2px 6px",borderRadius:4}}>✓</span>}</div></div><div style={{position:"relative",height:28,display:"flex",alignItems:"center"}}><div style={{position:"absolute",left:0,right:0,height:6,background:"rgba(255,255,255,0.08)",borderRadius:3}}><div style={{height:"100%",width:`${pct*100}%`,borderRadius:3,background:`linear-gradient(90deg, ${color}88, ${color})`,transition:"width 0.15s ease",boxShadow:pct>0?`0 0 12px ${color}33`:"none"}}/></div><input type="range" min="0" max={max} step={step} value={Math.min(value,max)} onChange={e=>onChange(Number(e.target.value))} style={{position:"absolute",left:0,right:0,width:"100%",height:28,opacity:0,cursor:"pointer",margin:0}}/><div style={{position:"absolute",left:`calc(${pct*100}% - 8px)`,width:16,height:16,borderRadius:"50%",background:color,boxShadow:`0 0 10px ${color}66, 0 2px 4px rgba(0,0,0,0.3)`,border:"2px solid rgba(255,255,255,0.2)",transition:"left 0.15s ease",pointerEvents:"none"}}/></div></div>);}
+function Tracker({label,value,max,unit,color,onChange,step,icon}){
+  const pct=max>0?Math.min(value/max,1):0;
+  const trackRef=useRef(null);
+  const calcValue=(e)=>{
+    const track=trackRef.current;if(!track)return;
+    const rect=track.getBoundingClientRect();
+    const touch=e.touches?e.touches[0]:e;
+    const x=Math.max(0,Math.min(touch.clientX-rect.left,rect.width));
+    const ratio=x/rect.width;
+    let raw=ratio*max;
+    raw=Math.round(raw/step)*step;
+    raw=Math.max(0,Math.min(raw,max));
+    onChange(raw);
+  };
+  const onStart=(e)=>{e.preventDefault();calcValue(e);
+    const onMove=(ev)=>{ev.preventDefault();calcValue(ev);};
+    const onEnd=()=>{document.removeEventListener("touchmove",onMove);document.removeEventListener("touchend",onEnd);document.removeEventListener("mousemove",onMove);document.removeEventListener("mouseup",onEnd);};
+    document.addEventListener("touchmove",onMove,{passive:false});document.addEventListener("touchend",onEnd);document.addEventListener("mousemove",onMove);document.addEventListener("mouseup",onEnd);
+  };
+  return(<div style={{background:"rgba(255,255,255,0.04)",borderRadius:12,padding:"14px 16px",border:"1px solid rgba(255,255,255,0.06)"}}>
+    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+      <div style={{display:"flex",alignItems:"center",gap:8}}><span style={{fontSize:15}}>{icon}</span><span style={{fontWeight:600,fontSize:13,color:"#e0e0e0"}}>{label}</span></div>
+      <div style={{display:"flex",alignItems:"center",gap:8}}>
+        <span style={{fontSize:13,color:pct>=1?color:"rgba(255,255,255,0.4)",fontWeight:700,fontVariantNumeric:"tabular-nums"}}>{value}{unit?` / ${max} ${unit}`:` / ${max}`}</span>
+        {pct>=1&&<span style={{fontSize:10,fontWeight:700,color:"#12121e",background:color,padding:"2px 6px",borderRadius:4}}>✓</span>}
+      </div>
+    </div>
+    <div ref={trackRef} onTouchStart={onStart} onMouseDown={onStart} style={{position:"relative",height:36,display:"flex",alignItems:"center",cursor:"pointer",touchAction:"none"}}>
+      <div style={{position:"absolute",left:0,right:0,height:6,background:"rgba(255,255,255,0.08)",borderRadius:3}}>
+        <div style={{height:"100%",width:`${pct*100}%`,borderRadius:3,background:`linear-gradient(90deg, ${color}88, ${color})`,boxShadow:pct>0?`0 0 12px ${color}33`:"none"}}/>
+      </div>
+      <div style={{position:"absolute",left:`calc(${pct*100}% - 10px)`,width:20,height:20,borderRadius:"50%",background:color,boxShadow:`0 0 10px ${color}66, 0 2px 4px rgba(0,0,0,0.3)`,border:"2px solid rgba(255,255,255,0.25)",pointerEvents:"none"}}/>
+    </div>
+  </div>);
+}
 
-function TaskRow({chore,done,onToggle,onDelete,showInterval}){const dc={Easy:"#6ee7a0",Medium:"#e8a84c",Hard:"#e86a6a"};return(<div style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",borderRadius:10,background:done?"rgba(255,255,255,0.03)":"rgba(255,255,255,0.04)",border:`1px solid ${done?"rgba(110,231,160,0.15)":"rgba(255,255,255,0.06)"}`}}><div onClick={onToggle} style={{width:20,height:20,borderRadius:5,flexShrink:0,border:done?`2px solid ${dc[chore.difficulty]}`:"2px solid rgba(255,255,255,0.15)",background:done?dc[chore.difficulty]:"transparent",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}>{done&&<span style={{fontSize:11,color:"#12121e",fontWeight:800}}>✓</span>}</div><div style={{flex:1,minWidth:0}} onClick={onToggle}><div style={{fontWeight:600,fontSize:13,color:done?"rgba(255,255,255,0.3)":"#e0e0e0",textDecoration:done?"line-through":"none",cursor:"pointer"}}>{chore.name}</div>{showInterval&&<div style={{fontSize:10.5,color:"rgba(255,255,255,0.2)",marginTop:1}}>{chore.type==="one-off"?"One-off":INTERVALS.find(i=>i.value===chore.interval)?.label}</div>}</div><span style={{fontSize:9.5,fontWeight:700,color:dc[chore.difficulty],background:`${dc[chore.difficulty]}12`,padding:"2px 7px",borderRadius:4}}>{chore.difficulty.toUpperCase()}</span><span style={{fontSize:11,fontWeight:700,color:"rgba(255,255,255,0.25)"}}>+{DIFF_PTS[chore.difficulty]}</span>{onDelete&&<button onClick={onDelete} style={{background:"none",border:"none",cursor:"pointer",fontSize:14,color:"rgba(255,255,255,0.15)",padding:"2px 4px"}}>×</button>}</div>);}
+function TaskRow({chore,done,onToggle,onDelete,showInterval,onView}){const dc={Easy:"#6ee7a0",Medium:"#e8a84c",Hard:"#e86a6a"};return(<div style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",borderRadius:10,background:done?"rgba(255,255,255,0.03)":"rgba(255,255,255,0.04)",border:`1px solid ${done?"rgba(110,231,160,0.15)":"rgba(255,255,255,0.06)"}`}}>
+    <div onClick={onToggle} style={{width:20,height:20,borderRadius:5,flexShrink:0,border:done?`2px solid ${dc[chore.difficulty]}`:"2px solid rgba(255,255,255,0.15)",background:done?dc[chore.difficulty]:"transparent",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}>{done&&<span style={{fontSize:11,color:"#12121e",fontWeight:800}}>✓</span>}</div>
+    <div style={{flex:1,minWidth:0,cursor:onView?"pointer":"default"}} onClick={onView||undefined}>
+      <div style={{fontWeight:600,fontSize:13,color:done?"rgba(255,255,255,0.3)":"#e0e0e0",textDecoration:done?"line-through":"none"}}>{chore.name}</div>
+      <div style={{fontSize:10.5,color:"rgba(255,255,255,0.2)",marginTop:1}}>
+        {showInterval&&(chore.type==="one-off"?"One-off":INTERVALS.find(i=>i.value===chore.interval)?.label)}
+        {chore.type==="one-off"&&chore.completedDate&&<span> · Done {chore.completedDate}</span>}
+      </div>
+    </div>
+    <span style={{fontSize:9.5,fontWeight:700,color:dc[chore.difficulty],background:`${dc[chore.difficulty]}12`,padding:"2px 7px",borderRadius:4}}>{chore.difficulty.toUpperCase()}</span>
+    <span style={{fontSize:11,fontWeight:700,color:"rgba(255,255,255,0.25)"}}>+{DIFF_PTS[chore.difficulty]}</span>
+    {onDelete&&<button onClick={onDelete} style={{background:"none",border:"none",cursor:"pointer",fontSize:14,color:"rgba(255,255,255,0.15)",padding:"2px 4px"}}>×</button>}
+  </div>);}
 
-function Modal({children,onClose}){return(<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.6)",backdropFilter:"blur(8px)",display:"flex",alignItems:"flex-end",justifyContent:"center",zIndex:200}} onClick={e=>{if(e.target===e.currentTarget)onClose()}}><div style={{width:"100%",maxWidth:440,background:"#1e1e30",borderRadius:"20px 20px 0 0",padding:"24px 20px 32px",animation:"su 0.3s cubic-bezier(.4,0,.2,1)",border:"1px solid rgba(255,255,255,0.08)",borderBottom:"none",maxHeight:"85vh",overflowY:"auto"}}>{children}</div></div>);}
+function Modal({children,onClose}){
+  const contentRef=useRef(null);
+  useEffect(()=>{
+    // On iOS, visualViewport resize tells us when keyboard appears
+    const vv=window.visualViewport;
+    if(!vv)return;
+    const onResize=()=>{
+      if(contentRef.current){
+        contentRef.current.style.maxHeight=`${vv.height*0.85}px`;
+      }
+    };
+    vv.addEventListener("resize",onResize);
+    onResize();
+    return ()=>vv.removeEventListener("resize",onResize);
+  },[]);
+  return(<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.6)",backdropFilter:"blur(8px)",display:"flex",alignItems:"flex-end",justifyContent:"center",zIndex:200}} onClick={e=>{if(e.target===e.currentTarget)onClose()}}>
+    <div ref={contentRef} style={{width:"100%",maxWidth:440,background:"#1e1e30",borderRadius:"20px 20px 0 0",padding:"24px 20px calc(env(safe-area-inset-bottom, 16px) + 16px)",animation:"su 0.3s cubic-bezier(.4,0,.2,1)",border:"1px solid rgba(255,255,255,0.08)",borderBottom:"none",maxHeight:"85vh",overflowY:"auto",WebkitOverflowScrolling:"touch"}}>{children}</div>
+  </div>);
+}
 
 // ═══ LOGIN SCREEN ═══
 function LoginScreen({ onSignIn, loading }) {
@@ -325,6 +389,8 @@ export default function App() {
   const [bdSearch, setBdSearch] = useState("");
   const [viewingBd, setViewingBd] = useState(null);
   const [editNotes, setEditNotes] = useState("");
+  const [viewingTask, setViewingTask] = useState(null);
+  const [editTask, setEditTask] = useState(null);
 
   // Debounced save to Firebase
   const saveTimer = useRef(null);
@@ -407,6 +473,7 @@ export default function App() {
   const updateCore = (key, nv) => { const ov = log[key], g = goals[key]; if (g > 0 && ov < g && nv >= g) { setXp(p => p + CORE_BONUS); flash(CORE_BONUS, false); } if (g > 0 && ov >= g && nv < g) { setXp(p => Math.max(0, p - CORE_BONUS)); flash(CORE_BONUS, true); } setLog(prev => ({ ...prev, [key]: nv })); };
   const toggleWish = (name) => { setWishes(p => { const n = { ...p }; if (n[name]) delete n[name]; else n[name] = true; return { ...n }; }); };
   const saveChore = () => { if (!nc.name.trim()) return; setChores(p => [...p, { ...nc, id: Date.now().toString(), createdDate: today }]); setNc({ name: "", difficulty: "Easy", interval: "daily", type: "recurring" }); setModal(null); };
+  const saveTaskEdit = () => { if (!editTask || !editTask.name.trim()) return; setChores(p => p.map(c => c.id === editTask.id ? { ...c, name: editTask.name, difficulty: editTask.difficulty, interval: editTask.interval, type: editTask.type } : c)); setModal(null); setViewingTask(null); setEditTask(null); };
   const saveBd = () => { if (!nb.name.trim() || !nb.date) return; setBdays(p => [...p, { ...nb, id: Date.now().toString() }]); setNb({ name: "", date: "", notes: "" }); setModal(null); };
   const filteredBdays = bdays.filter(b => { if (bdSearch && !b.name.toLowerCase().includes(bdSearch.toLowerCase())) return false; const d = daysUntil(b.date); if (bdFilter === "week") return d <= 7; if (bdFilter === "month") return d <= 30; return true; }).sort((a, b) => daysUntil(a.date) - daysUntil(b.date));
   const sortedTodayBd = [...todayBd].sort((a, b) => (wishes[a.name] ? 1 : 0) - (wishes[b.name] ? 1 : 0));
@@ -426,8 +493,6 @@ export default function App() {
         @keyframes su{from{opacity:0;transform:translateY(60px)}to{opacity:1;transform:translateY(0)}}
         *{box-sizing:border-box;margin:0}input,select,button,textarea{font-family:'Inter',-apple-system,sans-serif}
         button:active{transform:scale(0.97)!important}
-        input[type="range"]{-webkit-appearance:none;appearance:none;background:transparent}
-        input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none;width:1px;height:1px;opacity:0}
         ::-webkit-scrollbar{width:0}textarea{resize:vertical}
       `}</style>
 
@@ -504,7 +569,7 @@ export default function App() {
 
       {tab === "home" && (<div style={{ padding: "0 20px 80px", animation: "fi 0.25s ease" }}>{sL("Core Trackers")}<div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 20 }}><Tracker label="Hydration" value={log.water} max={goals.water} unit="oz" color="#5baed6" icon="💧" step={1} onChange={v => updateCore("water", v)} /><Tracker label="Sleep" value={log.sleep} max={goals.sleep} unit="hrs" color="#9c7cb8" icon="🌙" step={0.5} onChange={v => updateCore("sleep", v)} /><Tracker label="Healthy Meals" value={log.meals} max={goals.meals} unit="" color="#6ee7a0" icon="🥗" step={1} onChange={v => updateCore("meals", v)} /></div>{dueDailies.length>0&&<>{sL("Daily Tasks")}<div style={{display:"flex",flexDirection:"column",gap:5,marginBottom:16}}>{dueDailies.map(c=><TaskRow key={c.id} chore={c} done={!!choreLog[c.id]} onToggle={()=>toggleChore(c.id)} showInterval={false}/>)}</div></>}{dueRecurring.length>0&&<>{sL("Recurring — Due Today")}<div style={{display:"flex",flexDirection:"column",gap:5,marginBottom:16}}>{dueRecurring.map(c=><TaskRow key={c.id} chore={c} done={!!choreLog[c.id]} onToggle={()=>toggleChore(c.id)} showInterval/>)}</div></>}{dueOneOffs.length>0&&<>{sL("One-off Tasks")}<div style={{display:"flex",flexDirection:"column",gap:5}}>{dueOneOffs.map(c=><TaskRow key={c.id} chore={c} done={!!choreLog[c.id]} onToggle={()=>toggleChore(c.id)} showInterval={false}/>)}</div></>}{dueDailies.length===0&&dueRecurring.length===0&&dueOneOffs.length===0&&<div style={{textAlign:"center",padding:28,color:"rgba(255,255,255,0.12)",fontSize:12}}>No tasks due today</div>}</div>)}
 
-      {tab === "tasks" && (<div style={{ padding: "0 20px 80px", animation: "fi 0.25s ease" }}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}><span style={{fontWeight:700,fontSize:14,color:"#fff"}}>Task Manager</span><button onClick={()=>{setNc({name:"",difficulty:"Easy",interval:"daily",type:"recurring"});setModal("chore")}} style={{fontWeight:700,fontSize:11,border:"none",borderRadius:8,padding:"6px 14px",cursor:"pointer",background:accent,color:"#12121e"}}>+ New Task</button></div>{sL("Daily")}<div style={{display:"flex",flexDirection:"column",gap:5,marginBottom:16}}>{dailyChores.map(c=><TaskRow key={c.id} chore={c} done={!!choreLog[c.id]} onToggle={()=>toggleChore(c.id)} onDelete={()=>setChores(p=>p.filter(x=>x.id!==c.id))} showInterval={false}/>)}{dailyChores.length===0&&<div style={{fontSize:11,color:"rgba(255,255,255,0.1)",textAlign:"center",padding:12}}>No daily tasks</div>}</div>{sL("Recurring")}<div style={{display:"flex",flexDirection:"column",gap:5,marginBottom:16}}>{recurringChores.map(c=><TaskRow key={c.id} chore={c} done={!!choreLog[c.id]} onToggle={()=>toggleChore(c.id)} onDelete={()=>setChores(p=>p.filter(x=>x.id!==c.id))} showInterval/>)}{recurringChores.length===0&&<div style={{fontSize:11,color:"rgba(255,255,255,0.1)",textAlign:"center",padding:12}}>No recurring tasks</div>}</div>{sL("One-off")}<div style={{display:"flex",flexDirection:"column",gap:5}}>{oneOffChores.map(c=><TaskRow key={c.id} chore={c} done={!!choreLog[c.id]||!!c.completedDate} onToggle={()=>toggleChore(c.id)} onDelete={()=>setChores(p=>p.filter(x=>x.id!==c.id))} showInterval={false}/>)}{oneOffChores.length===0&&<div style={{fontSize:11,color:"rgba(255,255,255,0.1)",textAlign:"center",padding:12}}>No one-off tasks</div>}</div></div>)}
+      {tab === "tasks" && (<div style={{ padding: "0 20px 80px", animation: "fi 0.25s ease" }}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}><span style={{fontWeight:700,fontSize:14,color:"#fff"}}>Task Manager</span><button onClick={()=>{setNc({name:"",difficulty:"Easy",interval:"daily",type:"recurring"});setModal("chore")}} style={{fontWeight:700,fontSize:11,border:"none",borderRadius:8,padding:"6px 14px",cursor:"pointer",background:accent,color:"#12121e"}}>+ New Task</button></div>{sL("Daily")}<div style={{display:"flex",flexDirection:"column",gap:5,marginBottom:16}}>{dailyChores.map(c=><TaskRow key={c.id} chore={c} done={!!choreLog[c.id]} onToggle={()=>toggleChore(c.id)} onDelete={()=>setChores(p=>p.filter(x=>x.id!==c.id))} onView={()=>{setViewingTask(c);setEditTask({...c});setModal("editTask")}} showInterval={false}/>)}{dailyChores.length===0&&<div style={{fontSize:11,color:"rgba(255,255,255,0.1)",textAlign:"center",padding:12}}>No daily tasks</div>}</div>{sL("Recurring")}<div style={{display:"flex",flexDirection:"column",gap:5,marginBottom:16}}>{recurringChores.map(c=><TaskRow key={c.id} chore={c} done={!!choreLog[c.id]} onToggle={()=>toggleChore(c.id)} onDelete={()=>setChores(p=>p.filter(x=>x.id!==c.id))} onView={()=>{setViewingTask(c);setEditTask({...c});setModal("editTask")}} showInterval/>)}{recurringChores.length===0&&<div style={{fontSize:11,color:"rgba(255,255,255,0.1)",textAlign:"center",padding:12}}>No recurring tasks</div>}</div>{sL("One-off")}<div style={{display:"flex",flexDirection:"column",gap:5}}>{oneOffChores.map(c=><TaskRow key={c.id} chore={c} done={!!choreLog[c.id]||!!c.completedDate} onToggle={()=>toggleChore(c.id)} onDelete={()=>setChores(p=>p.filter(x=>x.id!==c.id))} onView={()=>{setViewingTask(c);setEditTask({...c});setModal("editTask")}} showInterval={false}/>)}{oneOffChores.length===0&&<div style={{fontSize:11,color:"rgba(255,255,255,0.1)",textAlign:"center",padding:12}}>No one-off tasks</div>}</div></div>)}
 
       {tab === "collection" && (<div style={{ padding: "0 20px 80px", animation: "fi 0.25s ease" }}>{sL("Choose Your Buddy")}<p style={{fontSize:11,color:"rgba(255,255,255,0.2)",marginBottom:14,lineHeight:1.5}}>Each buddy evolves through 5 stages as you level up.</p><div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:24}}>{BUDDY_TYPES.map(bt=>{const active=activeBuddy===bt.id;return(<div key={bt.id} onClick={()=>setActiveBuddy(bt.id)} style={{padding:"14px 10px 12px",borderRadius:12,cursor:"pointer",background:active?`${bt.accent}0c`:"rgba(255,255,255,0.02)",border:`1.5px solid ${active?bt.accent+"44":"rgba(255,255,255,0.05)"}`}}><div style={{display:"flex",justifyContent:"center",marginBottom:8}}><BuddyFace mood="happy" level={4} hat={false} buddyType={bt.id} size={80}/></div><div style={{textAlign:"center"}}><div style={{fontWeight:700,fontSize:13,color:active?bt.accent:"#e0e0e0"}}>{bt.name}</div><div style={{fontSize:10,color:"rgba(255,255,255,0.2)",marginTop:2}}>{bt.desc}</div>{active&&<div style={{fontSize:9,fontWeight:700,color:bt.accent,marginTop:4,letterSpacing:1}}>ACTIVE</div>}</div></div>)})}</div>
 
@@ -540,6 +605,39 @@ export default function App() {
       {modal === "birthday" && (<Modal onClose={() => setModal(null)}><div style={{fontFamily:"'Space Grotesk'",fontSize:16,fontWeight:700,color:"#fff",marginBottom:16}}>Add Birthday</div><input placeholder="Name..." value={nb.name} onChange={e=>setNb(p=>({...p,name:e.target.value}))} autoFocus style={{width:"100%",padding:"10px 14px",borderRadius:8,border:"1px solid rgba(255,255,255,0.1)",background:"rgba(255,255,255,0.04)",fontSize:13,fontWeight:600,color:"#fff",marginBottom:10,outline:"none"}}/><input type="date" value={nb.date} onChange={e=>setNb(p=>({...p,date:e.target.value}))} style={{width:"100%",padding:"10px 14px",borderRadius:8,border:"1px solid rgba(255,255,255,0.1)",background:"rgba(255,255,255,0.04)",fontSize:13,fontWeight:600,color:"#fff",marginBottom:10,outline:"none",colorScheme:"dark"}}/><textarea placeholder="Notes (gift ideas, interests...)..." value={nb.notes} onChange={e=>setNb(p=>({...p,notes:e.target.value}))} rows={3} style={{width:"100%",padding:"10px 14px",borderRadius:8,border:"1px solid rgba(255,255,255,0.1)",background:"rgba(255,255,255,0.04)",fontSize:12.5,color:"#fff",marginBottom:16,outline:"none",lineHeight:1.5}}/><div style={{display:"flex",gap:8}}><button onClick={()=>setModal(null)} style={{flex:1,padding:"11px 0",borderRadius:10,border:"1px solid rgba(255,255,255,0.08)",background:"transparent",cursor:"pointer",fontWeight:700,fontSize:12,color:"rgba(255,255,255,0.3)"}}>Cancel</button><button onClick={saveBd} style={{flex:2,padding:"11px 0",borderRadius:10,border:"none",background:"#e86a8a",cursor:"pointer",fontWeight:700,fontSize:12,color:"#fff"}}>Save</button></div></Modal>)}
 
       {modal === "viewBd" && viewingBd && (<Modal onClose={() => {setModal(null);setViewingBd(null)}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:16}}><div><div style={{fontFamily:"'Space Grotesk'",fontSize:18,fontWeight:700,color:"#fff"}}>{viewingBd.name}</div><div style={{fontSize:12,color:"rgba(255,255,255,0.3)",marginTop:2}}>{months[new Date(viewingBd.date+"T00:00:00").getMonth()]} {new Date(viewingBd.date+"T00:00:00").getDate()} · {daysUntil(viewingBd.date)===0?"Today!":`${daysUntil(viewingBd.date)}d away`}</div></div><button onClick={()=>{setBdays(p=>p.filter(x=>x.id!==viewingBd.id));setModal(null);setViewingBd(null)}} style={{fontSize:10,fontWeight:700,border:"1px solid rgba(232,106,106,0.3)",borderRadius:6,padding:"4px 10px",cursor:"pointer",background:"transparent",color:"#e86a6a"}}>Delete</button></div><div style={{fontSize:10,fontWeight:700,color:"rgba(255,255,255,0.2)",marginBottom:6,letterSpacing:1}}>NOTES</div><textarea value={editNotes} onChange={e=>setEditNotes(e.target.value)} rows={5} placeholder="Gift ideas, relationship notes..." style={{width:"100%",padding:"10px 14px",borderRadius:8,border:"1px solid rgba(255,255,255,0.1)",background:"rgba(255,255,255,0.04)",fontSize:12.5,color:"#fff",outline:"none",lineHeight:1.6,marginBottom:14}}/><div style={{display:"flex",gap:8}}><button onClick={()=>{setModal(null);setViewingBd(null)}} style={{flex:1,padding:"11px 0",borderRadius:10,border:"1px solid rgba(255,255,255,0.08)",background:"transparent",cursor:"pointer",fontWeight:700,fontSize:12,color:"rgba(255,255,255,0.3)"}}>Close</button><button onClick={()=>{setBdays(p=>p.map(b=>b.id===viewingBd.id?{...b,notes:editNotes}:b));setModal(null);setViewingBd(null)}} style={{flex:2,padding:"11px 0",borderRadius:10,border:"none",background:accent,cursor:"pointer",fontWeight:700,fontSize:12,color:"#12121e"}}>Save Notes</button></div></Modal>)}
+
+      {modal === "editTask" && editTask && (<Modal onClose={() => {setModal(null);setViewingTask(null);setEditTask(null)}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:16}}>
+          <div style={{fontFamily:"'Space Grotesk'",fontSize:16,fontWeight:700,color:"#fff"}}>Edit Task</div>
+          <button onClick={()=>{setChores(p=>p.filter(x=>x.id!==editTask.id));setModal(null);setViewingTask(null);setEditTask(null)}} style={{fontSize:10,fontWeight:700,border:"1px solid rgba(232,106,106,0.3)",borderRadius:6,padding:"4px 10px",cursor:"pointer",background:"transparent",color:"#e86a6a"}}>Delete</button>
+        </div>
+        <div style={{fontSize:10,fontWeight:700,color:"rgba(255,255,255,0.2)",marginBottom:6,letterSpacing:1}}>TASK NAME</div>
+        <input value={editTask.name} onChange={e=>setEditTask(p=>({...p,name:e.target.value}))} style={{width:"100%",padding:"10px 14px",borderRadius:8,border:"1px solid rgba(255,255,255,0.1)",background:"rgba(255,255,255,0.04)",fontSize:13,fontWeight:600,color:"#fff",marginBottom:12,outline:"none"}}/>
+        <div style={{fontSize:10,fontWeight:700,color:"rgba(255,255,255,0.2)",marginBottom:6,letterSpacing:1}}>TYPE</div>
+        <div style={{display:"flex",gap:4,marginBottom:12}}>
+          {[{t:"recurring",l:"♻ Recurring"},{t:"one-off",l:"◎ One-off"}].map(x=>(
+            <button key={x.t} onClick={()=>setEditTask(p=>({...p,type:x.t}))} style={{flex:1,padding:"8px 0",borderRadius:8,border:`1px solid ${editTask.type===x.t?"rgba(255,255,255,0.2)":"rgba(255,255,255,0.06)"}`,cursor:"pointer",fontWeight:700,fontSize:11.5,background:editTask.type===x.t?"rgba(255,255,255,0.08)":"transparent",color:editTask.type===x.t?"#fff":"rgba(255,255,255,0.3)"}}>{x.l}</button>
+          ))}
+        </div>
+        {editTask.type==="recurring"&&<div style={{marginBottom:12}}>
+          <div style={{fontSize:10,fontWeight:700,color:"rgba(255,255,255,0.2)",marginBottom:6,letterSpacing:1}}>FREQUENCY</div>
+          <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
+            {INTERVALS.map(i=><button key={i.value} onClick={()=>setEditTask(p=>({...p,interval:i.value}))} style={{padding:"5px 10px",borderRadius:6,border:`1px solid ${editTask.interval===i.value?accent+"44":"rgba(255,255,255,0.06)"}`,cursor:"pointer",fontWeight:600,fontSize:11,background:editTask.interval===i.value?`${accent}15`:"transparent",color:editTask.interval===i.value?accent:"rgba(255,255,255,0.3)"}}>{i.label}</button>)}
+          </div>
+        </div>}
+        <div style={{fontSize:10,fontWeight:700,color:"rgba(255,255,255,0.2)",marginBottom:6,letterSpacing:1}}>DIFFICULTY</div>
+        <div style={{display:"flex",gap:6,marginBottom:16}}>
+          {[{d:"Easy",c:"#6ee7a0"},{d:"Medium",c:"#e8a84c"},{d:"Hard",c:"#e86a6a"}].map(x=>(
+            <button key={x.d} onClick={()=>setEditTask(p=>({...p,difficulty:x.d}))} style={{flex:1,padding:"10px 0",borderRadius:8,border:`1.5px solid ${editTask.difficulty===x.d?x.c+"66":"rgba(255,255,255,0.06)"}`,cursor:"pointer",fontWeight:700,fontSize:12,background:editTask.difficulty===x.d?`${x.c}12`:"transparent",color:x.c}}>{x.d}<div style={{fontSize:9,fontWeight:600,marginTop:2,opacity:0.5}}>+{DIFF_PTS[x.d]} XP</div></button>
+          ))}
+        </div>
+        {editTask.type==="one-off"&&editTask.completedDate&&<div style={{fontSize:11,color:"rgba(255,255,255,0.25)",marginBottom:12}}>Completed: {editTask.completedDate}</div>}
+        <div style={{fontSize:10,color:"rgba(255,255,255,0.12)",marginBottom:14}}>Created: {editTask.createdDate}</div>
+        <div style={{display:"flex",gap:8}}>
+          <button onClick={()=>{setModal(null);setViewingTask(null);setEditTask(null)}} style={{flex:1,padding:"11px 0",borderRadius:10,border:"1px solid rgba(255,255,255,0.08)",background:"transparent",cursor:"pointer",fontWeight:700,fontSize:12,color:"rgba(255,255,255,0.3)"}}>Cancel</button>
+          <button onClick={saveTaskEdit} style={{flex:2,padding:"11px 0",borderRadius:10,border:"none",background:accent,cursor:"pointer",fontWeight:700,fontSize:12,color:"#12121e"}}>Save Changes</button>
+        </div>
+      </Modal>)}
     </div>
   );
 }
