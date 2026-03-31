@@ -321,22 +321,8 @@ function TaskRow({chore,done,onToggle,onDelete,showInterval,onView}){const dc={E
   </div>);}
 
 function Modal({children,onClose}){
-  const contentRef=useRef(null);
-  useEffect(()=>{
-    // On iOS, visualViewport resize tells us when keyboard appears
-    const vv=window.visualViewport;
-    if(!vv)return;
-    const onResize=()=>{
-      if(contentRef.current){
-        contentRef.current.style.maxHeight=`${vv.height*0.85}px`;
-      }
-    };
-    vv.addEventListener("resize",onResize);
-    onResize();
-    return ()=>vv.removeEventListener("resize",onResize);
-  },[]);
-  return(<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.6)",backdropFilter:"blur(8px)",display:"flex",alignItems:"flex-end",justifyContent:"center",zIndex:200}} onClick={e=>{if(e.target===e.currentTarget)onClose()}}>
-    <div ref={contentRef} style={{width:"100%",maxWidth:440,background:"#1e1e30",borderRadius:"20px 20px 0 0",padding:"24px 20px calc(env(safe-area-inset-bottom, 16px) + 16px)",animation:"su 0.3s cubic-bezier(.4,0,.2,1)",border:"1px solid rgba(255,255,255,0.08)",borderBottom:"none",maxHeight:"85vh",overflowY:"auto",WebkitOverflowScrolling:"touch"}}>{children}</div>
+  return(<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.6)",backdropFilter:"blur(8px)",display:"flex",alignItems:"flex-start",justifyContent:"center",zIndex:200,paddingTop:"env(safe-area-inset-top, 20px)"}} onClick={e=>{if(e.target===e.currentTarget)onClose()}}>
+    <div style={{width:"100%",maxWidth:440,background:"#1e1e30",borderRadius:"0 0 20px 20px",padding:"20px 20px 24px",animation:"sd 0.3s cubic-bezier(.4,0,.2,1)",border:"1px solid rgba(255,255,255,0.08)",borderTop:"none",maxHeight:"80vh",overflowY:"auto",WebkitOverflowScrolling:"touch"}}>{children}</div>
   </div>);
 }
 
@@ -491,6 +477,7 @@ export default function App() {
         @keyframes xpP{0%{opacity:1;transform:translateY(0) scale(1)}100%{opacity:0;transform:translateY(-35px) scale(1.2)}}
         @keyframes fi{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
         @keyframes su{from{opacity:0;transform:translateY(60px)}to{opacity:1;transform:translateY(0)}}
+        @keyframes sd{from{opacity:0;transform:translateY(-40px)}to{opacity:1;transform:translateY(0)}}
         *{box-sizing:border-box;margin:0}input,select,button,textarea{font-family:'Inter',-apple-system,sans-serif}
         button:active{transform:scale(0.97)!important}
         ::-webkit-scrollbar{width:0}textarea{resize:vertical}
