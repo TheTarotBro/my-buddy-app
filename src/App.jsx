@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { signInGoogle, signOutUser, onAuthChange, saveData, loadData } from "./firebase.js";
 
 const TODAY = () => new Date().toISOString().slice(0, 10);
 const DIFF_PTS = { Easy: 10, Medium: 25, Hard: 50 };
@@ -27,626 +28,44 @@ function isDaily(c) { return c.type === "recurring" && c.interval === "daily"; }
 function getLvl(xp) { let lv = 0; for (let i = LVL_XP.length - 1; i >= 0; i--) if (xp >= LVL_XP[i]) { lv = i; break; } const cur = LVL_XP[lv], nxt = LVL_XP[lv + 1] || cur + 1000; return { lv, name: LVL_NAMES[lv] || "Stellar", prog: Math.min((xp - cur) / (nxt - cur), 1), xp, need: LVL_XP[lv + 1] ? LVL_XP[lv + 1] - xp : 0 }; }
 function getBdToday(bds) { const t = new Date(), m = t.getMonth(), d = t.getDate(); return bds.filter(b => { const x = new Date(b.date + "T00:00:00"); return x.getMonth() === m && x.getDate() === d; }); }
 function daysUntil(ds) { const now = new Date(), bd = new Date(ds + "T00:00:00"); bd.setFullYear(now.getFullYear()); const td = new Date(now.getFullYear(), now.getMonth(), now.getDate()); if (bd < td) bd.setFullYear(now.getFullYear() + 1); return Math.round((bd - td) / 86400000); }
-const ld = (k, fb) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : fb; } catch { return fb; } };
-const sv = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} };
 
-// ═══════════════════════════════════════════
-// BUDDY AVATARS — 5 levels each
-// Level 0: Egg, 1: Baby, 2: Young, 3: Mature, 4: Fully evolved
-// ═══════════════════════════════════════════
-
+// ═══ BUDDY AVATARS ═══
 function EggStage({ size, accent }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 200 200">
-      <defs>
-        <radialGradient id="eggG" cx="45%" cy="38%"><stop offset="0%" stopColor="rgba(255,255,255,0.15)" /><stop offset="100%" stopColor="rgba(255,255,255,0.03)" /></radialGradient>
-        <filter id="eggSh"><feDropShadow dx="0" dy="3" stdDeviation="6" floodOpacity="0.25" /></filter>
-      </defs>
-      <ellipse cx="100" cy="184" rx="30" ry="5" fill="rgba(0,0,0,0.12)" />
-      <ellipse cx="100" cy="120" rx="40" ry="52" fill={accent} filter="url(#eggSh)" />
-      <ellipse cx="100" cy="120" rx="40" ry="52" fill="url(#eggG)" />
-      {/* Crack line */}
-      <path d="M 75 110 L 82 100 L 78 90 L 88 85" stroke="rgba(255,255,255,0.25)" strokeWidth="2" fill="none" strokeLinecap="round" />
-      {/* Subtle pulse */}
-      <ellipse cx="100" cy="120" rx="40" ry="52" fill="none" stroke={accent} strokeWidth="1.5" opacity="0.3">
-        <animate attributeName="rx" values="40;43;40" dur="2.5s" repeatCount="indefinite" />
-        <animate attributeName="ry" values="52;55;52" dur="2.5s" repeatCount="indefinite" />
-        <animate attributeName="opacity" values="0.3;0.1;0.3" dur="2.5s" repeatCount="indefinite" />
-      </ellipse>
-    </svg>
-  );
+  return (<svg width={size} height={size} viewBox="0 0 200 200"><defs><radialGradient id="eggG" cx="45%" cy="38%"><stop offset="0%" stopColor="rgba(255,255,255,0.15)" /><stop offset="100%" stopColor="rgba(255,255,255,0.03)" /></radialGradient><filter id="eggSh"><feDropShadow dx="0" dy="3" stdDeviation="6" floodOpacity="0.25" /></filter></defs><ellipse cx="100" cy="184" rx="30" ry="5" fill="rgba(0,0,0,0.12)" /><ellipse cx="100" cy="120" rx="40" ry="52" fill={accent} filter="url(#eggSh)" /><ellipse cx="100" cy="120" rx="40" ry="52" fill="url(#eggG)" /><path d="M 75 110 L 82 100 L 78 90 L 88 85" stroke="rgba(255,255,255,0.25)" strokeWidth="2" fill="none" strokeLinecap="round" /><ellipse cx="100" cy="120" rx="40" ry="52" fill="none" stroke={accent} strokeWidth="1.5" opacity="0.3"><animate attributeName="rx" values="40;43;40" dur="2.5s" repeatCount="indefinite" /><animate attributeName="ry" values="52;55;52" dur="2.5s" repeatCount="indefinite" /><animate attributeName="opacity" values="0.3;0.1;0.3" dur="2.5s" repeatCount="indefinite" /></ellipse></svg>);
 }
 
-// ─── BIRD (Pip) ───
 function BirdL1({ size, accent, mood }) {
-  // Baby chick - round, stubby, big eyes
-  return (
-    <svg width={size} height={size} viewBox="0 0 200 200">
-      <defs><filter id="bs1"><feDropShadow dx="0" dy="3" stdDeviation="5" floodOpacity="0.2" /></filter></defs>
-      <ellipse cx="100" cy="184" rx="28" ry="5" fill="rgba(0,0,0,0.1)" />
-      <ellipse cx="100" cy="125" rx="38" ry="40" fill={accent} filter="url(#bs1)" />
-      <ellipse cx="100" cy="135" rx="26" ry="24" fill="rgba(255,255,255,0.1)" />
-      {/* Tiny wings */}
-      <ellipse cx="66" cy="120" rx="8" ry="14" fill={accent} opacity="0.6" transform="rotate(12,66,120)" />
-      <ellipse cx="134" cy="120" rx="8" ry="14" fill={accent} opacity="0.6" transform="rotate(-12,134,120)" />
-      {/* Big baby eyes */}
-      {mood === "happy" ? <>
-        <path d="M 86 112 Q 90 104 94 112" stroke="white" strokeWidth="2.5" fill="none" strokeLinecap="round" />
-        <path d="M 106 112 Q 110 104 114 112" stroke="white" strokeWidth="2.5" fill="none" strokeLinecap="round" />
-      </> : <>
-        <ellipse cx="90" cy="110" rx="6" ry="7" fill="white" opacity="0.85" /><ellipse cx="110" cy="110" rx="6" ry="7" fill="white" opacity="0.85" />
-        <ellipse cx="91" cy="108" rx="2.5" ry="3" fill="#2d2d2d" opacity="0.7" /><ellipse cx="111" cy="108" rx="2.5" ry="3" fill="#2d2d2d" opacity="0.7" />
-      </>}
-      {/* Tiny beak */}
-      <polygon points="100,118 95,114 105,114" fill="#e8a84c" />
-      {mood === "happy" && <path d="M 94 124 Q 100 130 106 124" stroke="white" strokeWidth="1.5" fill="none" strokeLinecap="round" opacity="0.7" />}
-      {mood === "sad" && <path d="M 95 126 Q 100 122 105 126" stroke="white" strokeWidth="1.5" fill="none" strokeLinecap="round" opacity="0.5" />}
-      {/* Tiny feet */}
-      <line x1="90" y1="163" x2="88" y2="174" stroke="#e8a84c" strokeWidth="2.5" strokeLinecap="round" />
-      <line x1="110" y1="163" x2="112" y2="174" stroke="#e8a84c" strokeWidth="2.5" strokeLinecap="round" />
-    </svg>
-  );
+  return (<svg width={size} height={size} viewBox="0 0 200 200"><defs><filter id="bs1"><feDropShadow dx="0" dy="3" stdDeviation="5" floodOpacity="0.2" /></filter></defs><ellipse cx="100" cy="184" rx="28" ry="5" fill="rgba(0,0,0,0.1)" /><ellipse cx="100" cy="125" rx="38" ry="40" fill={accent} filter="url(#bs1)" /><ellipse cx="100" cy="135" rx="26" ry="24" fill="rgba(255,255,255,0.1)" /><ellipse cx="66" cy="120" rx="8" ry="14" fill={accent} opacity="0.6" transform="rotate(12,66,120)" /><ellipse cx="134" cy="120" rx="8" ry="14" fill={accent} opacity="0.6" transform="rotate(-12,134,120)" />{mood==="happy"?<><path d="M 86 112 Q 90 104 94 112" stroke="white" strokeWidth="2.5" fill="none" strokeLinecap="round"/><path d="M 106 112 Q 110 104 114 112" stroke="white" strokeWidth="2.5" fill="none" strokeLinecap="round"/></>:<><ellipse cx="90" cy="110" rx="6" ry="7" fill="white" opacity="0.85"/><ellipse cx="110" cy="110" rx="6" ry="7" fill="white" opacity="0.85"/><ellipse cx="91" cy="108" rx="2.5" ry="3" fill="#2d2d2d" opacity="0.7"/><ellipse cx="111" cy="108" rx="2.5" ry="3" fill="#2d2d2d" opacity="0.7"/></>}<polygon points="100,118 95,114 105,114" fill="#e8a84c" />{mood==="happy"&&<path d="M 94 124 Q 100 130 106 124" stroke="white" strokeWidth="1.5" fill="none" strokeLinecap="round" opacity="0.7"/>}{mood==="sad"&&<path d="M 95 126 Q 100 122 105 126" stroke="white" strokeWidth="1.5" fill="none" strokeLinecap="round" opacity="0.5"/>}<line x1="90" y1="163" x2="88" y2="174" stroke="#e8a84c" strokeWidth="2.5" strokeLinecap="round"/><line x1="110" y1="163" x2="112" y2="174" stroke="#e8a84c" strokeWidth="2.5" strokeLinecap="round"/></svg>);
 }
 
 function BirdL2({ size, accent, mood }) {
-  // Juvenile - crest starting, feather detail, bigger wings
-  return (
-    <svg width={size} height={size} viewBox="0 0 200 200">
-      <defs><filter id="bs2"><feDropShadow dx="0" dy="3" stdDeviation="5" floodOpacity="0.22" /></filter></defs>
-      <ellipse cx="100" cy="184" rx="32" ry="5" fill="rgba(0,0,0,0.12)" />
-      <ellipse cx="100" cy="118" rx="46" ry="50" fill={accent} filter="url(#bs2)" />
-      <ellipse cx="100" cy="132" rx="30" ry="30" fill="rgba(255,255,255,0.1)" />
-      {/* Wings - bigger */}
-      <ellipse cx="58" cy="112" rx="14" ry="24" fill={accent} opacity="0.7" transform="rotate(12,58,112)">
-        {mood === "happy" && <animateTransform attributeName="transform" type="rotate" values="12,58,112;-5,58,112;12,58,112" dur="0.7s" repeatCount="indefinite" />}
-      </ellipse>
-      <ellipse cx="142" cy="112" rx="14" ry="24" fill={accent} opacity="0.7" transform="rotate(-12,142,112)">
-        {mood === "happy" && <animateTransform attributeName="transform" type="rotate" values="-12,142,112;5,142,112;-12,142,112" dur="0.7s" repeatCount="indefinite" />}
-      </ellipse>
-      {/* Small crest */}
-      <path d="M 96 70 Q 94 56 100 60 Q 106 56 104 70" fill={accent} opacity="0.8" />
-      {/* Eyes */}
-      {mood === "happy" ? <>
-        <path d="M 82 98 Q 87 90 92 98" stroke="white" strokeWidth="2.5" fill="none" strokeLinecap="round" />
-        <path d="M 108 98 Q 113 90 118 98" stroke="white" strokeWidth="2.5" fill="none" strokeLinecap="round" />
-      </> : <>
-        <ellipse cx="87" cy="96" rx="5.5" ry="6.5" fill="white" opacity="0.85" /><ellipse cx="113" cy="96" rx="5.5" ry="6.5" fill="white" opacity="0.85" />
-        <ellipse cx="88" cy="94" rx="2" ry="2.5" fill="#2d2d2d" opacity="0.7" /><ellipse cx="114" cy="94" rx="2" ry="2.5" fill="#2d2d2d" opacity="0.7" />
-      </>}
-      <polygon points="100,106 93,100 107,100" fill="#e8a84c" />
-      {mood === "happy" && <path d="M 92 112 Q 100 120 108 112" stroke="white" strokeWidth="2" fill="none" strokeLinecap="round" opacity="0.8" />}
-      {mood === "sad" && <path d="M 94 116 Q 100 110 106 116" stroke="white" strokeWidth="1.8" fill="none" strokeLinecap="round" opacity="0.5" />}
-      {mood === "content" && <path d="M 94 112 Q 100 116 106 112" stroke="white" strokeWidth="1.8" fill="none" strokeLinecap="round" opacity="0.6" />}
-      <line x1="85" y1="166" x2="80" y2="178" stroke="#e8a84c" strokeWidth="3" strokeLinecap="round" />
-      <line x1="90" y1="166" x2="90" y2="180" stroke="#e8a84c" strokeWidth="3" strokeLinecap="round" />
-      <line x1="110" y1="166" x2="110" y2="180" stroke="#e8a84c" strokeWidth="3" strokeLinecap="round" />
-      <line x1="115" y1="166" x2="120" y2="178" stroke="#e8a84c" strokeWidth="3" strokeLinecap="round" />
-    </svg>
-  );
+  return (<svg width={size} height={size} viewBox="0 0 200 200"><defs><filter id="bs2"><feDropShadow dx="0" dy="3" stdDeviation="5" floodOpacity="0.22"/></filter></defs><ellipse cx="100" cy="184" rx="32" ry="5" fill="rgba(0,0,0,0.12)"/><ellipse cx="100" cy="118" rx="46" ry="50" fill={accent} filter="url(#bs2)"/><ellipse cx="100" cy="132" rx="30" ry="30" fill="rgba(255,255,255,0.1)"/><ellipse cx="58" cy="112" rx="14" ry="24" fill={accent} opacity="0.7" transform="rotate(12,58,112)">{mood==="happy"&&<animateTransform attributeName="transform" type="rotate" values="12,58,112;-5,58,112;12,58,112" dur="0.7s" repeatCount="indefinite"/>}</ellipse><ellipse cx="142" cy="112" rx="14" ry="24" fill={accent} opacity="0.7" transform="rotate(-12,142,112)">{mood==="happy"&&<animateTransform attributeName="transform" type="rotate" values="-12,142,112;5,142,112;-12,142,112" dur="0.7s" repeatCount="indefinite"/>}</ellipse><path d="M 96 70 Q 94 56 100 60 Q 106 56 104 70" fill={accent} opacity="0.8"/>{mood==="happy"?<><path d="M 82 98 Q 87 90 92 98" stroke="white" strokeWidth="2.5" fill="none" strokeLinecap="round"/><path d="M 108 98 Q 113 90 118 98" stroke="white" strokeWidth="2.5" fill="none" strokeLinecap="round"/></>:<><ellipse cx="87" cy="96" rx="5.5" ry="6.5" fill="white" opacity="0.85"/><ellipse cx="113" cy="96" rx="5.5" ry="6.5" fill="white" opacity="0.85"/><ellipse cx="88" cy="94" rx="2" ry="2.5" fill="#2d2d2d" opacity="0.7"/><ellipse cx="114" cy="94" rx="2" ry="2.5" fill="#2d2d2d" opacity="0.7"/></>}<polygon points="100,106 93,100 107,100" fill="#e8a84c"/>{mood==="happy"&&<path d="M 92 112 Q 100 120 108 112" stroke="white" strokeWidth="2" fill="none" strokeLinecap="round" opacity="0.8"/>}{mood==="sad"&&<path d="M 94 116 Q 100 110 106 116" stroke="white" strokeWidth="1.8" fill="none" strokeLinecap="round" opacity="0.5"/>}{mood==="content"&&<path d="M 94 112 Q 100 116 106 112" stroke="white" strokeWidth="1.8" fill="none" strokeLinecap="round" opacity="0.6"/>}<line x1="85" y1="166" x2="80" y2="178" stroke="#e8a84c" strokeWidth="3" strokeLinecap="round"/><line x1="90" y1="166" x2="90" y2="180" stroke="#e8a84c" strokeWidth="3" strokeLinecap="round"/><line x1="110" y1="166" x2="110" y2="180" stroke="#e8a84c" strokeWidth="3" strokeLinecap="round"/><line x1="115" y1="166" x2="120" y2="178" stroke="#e8a84c" strokeWidth="3" strokeLinecap="round"/></svg>);
 }
 
 function BirdL3({ size, accent, mood }) {
-  // Mature - full crest, tail feathers, detailed wings
-  return (
-    <svg width={size} height={size} viewBox="0 0 200 200">
-      <defs><filter id="bs3"><feDropShadow dx="0" dy="3" stdDeviation="6" floodOpacity="0.22" /></filter></defs>
-      <ellipse cx="100" cy="184" rx="35" ry="5" fill="rgba(0,0,0,0.12)" />
-      {/* Tail feathers */}
-      <path d="M 100 165 Q 80 180 65 175" stroke={accent} strokeWidth="5" fill="none" strokeLinecap="round" opacity="0.5" />
-      <path d="M 100 165 Q 120 180 135 175" stroke={accent} strokeWidth="5" fill="none" strokeLinecap="round" opacity="0.5" />
-      <ellipse cx="100" cy="115" rx="52" ry="55" fill={accent} filter="url(#bs3)" />
-      <ellipse cx="100" cy="130" rx="34" ry="35" fill="rgba(255,255,255,0.12)" />
-      {/* Full wings */}
-      <ellipse cx="52" cy="110" rx="18" ry="30" fill={accent} opacity="0.7" transform="rotate(15,52,110)">
-        {mood === "happy" && <animateTransform attributeName="transform" type="rotate" values="15,52,110;-8,52,110;15,52,110" dur="0.6s" repeatCount="indefinite" />}
-      </ellipse>
-      <ellipse cx="148" cy="110" rx="18" ry="30" fill={accent} opacity="0.7" transform="rotate(-15,148,110)">
-        {mood === "happy" && <animateTransform attributeName="transform" type="rotate" values="-15,148,110;8,148,110;-15,148,110" dur="0.6s" repeatCount="indefinite" />}
-      </ellipse>
-      {/* Wing detail lines */}
-      <path d="M 42 105 Q 50 118 58 108" stroke="rgba(255,255,255,0.15)" strokeWidth="1.5" fill="none" />
-      <path d="M 142 105 Q 150 118 158 108" stroke="rgba(255,255,255,0.15)" strokeWidth="1.5" fill="none" />
-      {/* Full crest */}
-      <path d="M 93 62 Q 88 40 97 48 Q 100 38 103 48 Q 112 40 107 62" fill={accent} opacity="0.85" />
-      {mood === "happy" ? <>
-        <path d="M 80 94 Q 86 84 92 94" stroke="white" strokeWidth="2.8" fill="none" strokeLinecap="round" />
-        <path d="M 108 94 Q 114 84 120 94" stroke="white" strokeWidth="2.8" fill="none" strokeLinecap="round" />
-      </> : <>
-        <ellipse cx="86" cy="92" rx="6" ry="7" fill="white" opacity="0.85" /><ellipse cx="114" cy="92" rx="6" ry="7" fill="white" opacity="0.85" />
-        <ellipse cx="87" cy="90" rx="2.5" ry="3" fill="#2d2d2d" opacity="0.7" /><ellipse cx="115" cy="90" rx="2.5" ry="3" fill="#2d2d2d" opacity="0.7" />
-      </>}
-      <polygon points="100,102 92,96 108,96" fill="#e8a84c" />
-      {mood === "happy" && <path d="M 90 110 Q 100 122 110 110" stroke="white" strokeWidth="2.2" fill="none" strokeLinecap="round" opacity="0.8" />}
-      {mood === "sad" && <path d="M 93 116 Q 100 110 107 116" stroke="white" strokeWidth="2" fill="none" strokeLinecap="round" opacity="0.5" />}
-      {mood === "content" && <path d="M 93 112 Q 100 116 107 112" stroke="white" strokeWidth="2" fill="none" strokeLinecap="round" opacity="0.6" />}
-      <line x1="82" y1="168" x2="76" y2="180" stroke="#e8a84c" strokeWidth="3" strokeLinecap="round" />
-      <line x1="88" y1="168" x2="88" y2="182" stroke="#e8a84c" strokeWidth="3" strokeLinecap="round" />
-      <line x1="112" y1="168" x2="112" y2="182" stroke="#e8a84c" strokeWidth="3" strokeLinecap="round" />
-      <line x1="118" y1="168" x2="124" y2="180" stroke="#e8a84c" strokeWidth="3" strokeLinecap="round" />
-      <circle cx="42" cy="68" r="2.5" fill={accent} opacity="0.5"><animate attributeName="opacity" values="0.5;0.1;0.5" dur="2s" repeatCount="indefinite" /></circle>
-    </svg>
-  );
+  return (<svg width={size} height={size} viewBox="0 0 200 200"><defs><filter id="bs3"><feDropShadow dx="0" dy="3" stdDeviation="6" floodOpacity="0.22"/></filter></defs><ellipse cx="100" cy="184" rx="35" ry="5" fill="rgba(0,0,0,0.12)"/><path d="M 100 165 Q 80 180 65 175" stroke={accent} strokeWidth="5" fill="none" strokeLinecap="round" opacity="0.5"/><path d="M 100 165 Q 120 180 135 175" stroke={accent} strokeWidth="5" fill="none" strokeLinecap="round" opacity="0.5"/><ellipse cx="100" cy="115" rx="52" ry="55" fill={accent} filter="url(#bs3)"/><ellipse cx="100" cy="130" rx="34" ry="35" fill="rgba(255,255,255,0.12)"/><ellipse cx="52" cy="110" rx="18" ry="30" fill={accent} opacity="0.7" transform="rotate(15,52,110)">{mood==="happy"&&<animateTransform attributeName="transform" type="rotate" values="15,52,110;-8,52,110;15,52,110" dur="0.6s" repeatCount="indefinite"/>}</ellipse><ellipse cx="148" cy="110" rx="18" ry="30" fill={accent} opacity="0.7" transform="rotate(-15,148,110)">{mood==="happy"&&<animateTransform attributeName="transform" type="rotate" values="-15,148,110;8,148,110;-15,148,110" dur="0.6s" repeatCount="indefinite"/>}</ellipse><path d="M 93 62 Q 88 40 97 48 Q 100 38 103 48 Q 112 40 107 62" fill={accent} opacity="0.85"/>{mood==="happy"?<><path d="M 80 94 Q 86 84 92 94" stroke="white" strokeWidth="2.8" fill="none" strokeLinecap="round"/><path d="M 108 94 Q 114 84 120 94" stroke="white" strokeWidth="2.8" fill="none" strokeLinecap="round"/></>:<><ellipse cx="86" cy="92" rx="6" ry="7" fill="white" opacity="0.85"/><ellipse cx="114" cy="92" rx="6" ry="7" fill="white" opacity="0.85"/><ellipse cx="87" cy="90" rx="2.5" ry="3" fill="#2d2d2d" opacity="0.7"/><ellipse cx="115" cy="90" rx="2.5" ry="3" fill="#2d2d2d" opacity="0.7"/></>}<polygon points="100,102 92,96 108,96" fill="#e8a84c"/>{mood==="happy"&&<path d="M 90 110 Q 100 122 110 110" stroke="white" strokeWidth="2.2" fill="none" strokeLinecap="round" opacity="0.8"/>}{mood==="sad"&&<path d="M 93 116 Q 100 110 107 116" stroke="white" strokeWidth="2" fill="none" strokeLinecap="round" opacity="0.5"/>}<line x1="82" y1="168" x2="76" y2="180" stroke="#e8a84c" strokeWidth="3" strokeLinecap="round"/><line x1="88" y1="168" x2="88" y2="182" stroke="#e8a84c" strokeWidth="3" strokeLinecap="round"/><line x1="112" y1="168" x2="112" y2="182" stroke="#e8a84c" strokeWidth="3" strokeLinecap="round"/><line x1="118" y1="168" x2="124" y2="180" stroke="#e8a84c" strokeWidth="3" strokeLinecap="round"/><circle cx="42" cy="68" r="2.5" fill={accent} opacity="0.5"><animate attributeName="opacity" values="0.5;0.1;0.5" dur="2s" repeatCount="indefinite"/></circle></svg>);
 }
 
 function BirdL4({ size, accent, mood }) {
-  // Stellar - full plumage, glowing aura, majestic
-  return (
-    <svg width={size} height={size} viewBox="0 0 200 200">
-      <defs>
-        <filter id="bs4"><feDropShadow dx="0" dy="3" stdDeviation="6" floodOpacity="0.25" /></filter>
-        <filter id="bGlow"><feDropShadow dx="0" dy="0" stdDeviation="10" floodColor={accent} floodOpacity="0.2" /></filter>
-      </defs>
-      <ellipse cx="100" cy="184" rx="38" ry="5" fill="rgba(0,0,0,0.15)" />
-      {/* Glow aura */}
-      <ellipse cx="100" cy="112" rx="70" ry="72" fill="none" stroke={accent} strokeWidth="1" opacity="0.15" filter="url(#bGlow)">
-        <animate attributeName="opacity" values="0.15;0.05;0.15" dur="3s" repeatCount="indefinite" />
-      </ellipse>
-      {/* Long tail feathers */}
-      <path d="M 100 168 Q 70 185 50 178" stroke={accent} strokeWidth="6" fill="none" strokeLinecap="round" opacity="0.6" />
-      <path d="M 100 168 Q 130 185 150 178" stroke={accent} strokeWidth="6" fill="none" strokeLinecap="round" opacity="0.6" />
-      <path d="M 100 168 Q 60 195 45 185" stroke={accent} strokeWidth="4" fill="none" strokeLinecap="round" opacity="0.35" />
-      <path d="M 100 168 Q 140 195 155 185" stroke={accent} strokeWidth="4" fill="none" strokeLinecap="round" opacity="0.35" />
-      <ellipse cx="100" cy="115" rx="52" ry="55" fill={accent} filter="url(#bs4)" />
-      <ellipse cx="100" cy="130" rx="34" ry="35" fill="rgba(255,255,255,0.12)" />
-      {/* Chest marking */}
-      <path d="M 86 120 Q 100 145 114 120" fill="rgba(255,255,255,0.08)" />
-      {/* Majestic wings */}
-      <path d="M 50 110 Q 30 90 25 105 Q 20 120 48 130" fill={accent} opacity="0.7">
-        {mood === "happy" && <animate attributeName="d" values="M 50 110 Q 30 90 25 105 Q 20 120 48 130;M 50 110 Q 22 82 18 100 Q 14 118 48 130;M 50 110 Q 30 90 25 105 Q 20 120 48 130" dur="0.7s" repeatCount="indefinite" />}
-      </path>
-      <path d="M 150 110 Q 170 90 175 105 Q 180 120 152 130" fill={accent} opacity="0.7">
-        {mood === "happy" && <animate attributeName="d" values="M 150 110 Q 170 90 175 105 Q 180 120 152 130;M 150 110 Q 178 82 182 100 Q 186 118 152 130;M 150 110 Q 170 90 175 105 Q 180 120 152 130" dur="0.7s" repeatCount="indefinite" />}
-      </path>
-      {/* Wing detail */}
-      <path d="M 35 100 Q 42 112 50 106" stroke="rgba(255,255,255,0.2)" strokeWidth="1.5" fill="none" />
-      <path d="M 165 100 Q 158 112 150 106" stroke="rgba(255,255,255,0.2)" strokeWidth="1.5" fill="none" />
-      {/* Crown crest */}
-      <path d="M 88 60 Q 82 32 92 42 Q 96 28 100 38 Q 104 28 108 42 Q 118 32 112 60" fill={accent} opacity="0.9" />
-      <path d="M 92 60 Q 90 45 98 50 Q 100 42 102 50 Q 110 45 108 60" fill="rgba(255,255,255,0.1)" />
-      {mood === "happy" ? <>
-        <path d="M 80 94 Q 86 82 92 94" stroke="white" strokeWidth="3" fill="none" strokeLinecap="round" />
-        <path d="M 108 94 Q 114 82 120 94" stroke="white" strokeWidth="3" fill="none" strokeLinecap="round" />
-      </> : <>
-        <ellipse cx="86" cy="92" rx="6" ry="7" fill="white" opacity="0.9" /><ellipse cx="114" cy="92" rx="6" ry="7" fill="white" opacity="0.9" />
-        <ellipse cx="87" cy="90" rx="2.5" ry="3" fill={accent} opacity="0.5" /><ellipse cx="115" cy="90" rx="2.5" ry="3" fill={accent} opacity="0.5" />
-      </>}
-      <polygon points="100,102 91,95 109,95" fill="#e8a84c" />
-      {mood === "happy" && <path d="M 88 110 Q 100 124 112 110" stroke="white" strokeWidth="2.5" fill="none" strokeLinecap="round" opacity="0.85" />}
-      {mood === "sad" && <path d="M 92 118 Q 100 110 108 118" stroke="white" strokeWidth="2" fill="none" strokeLinecap="round" opacity="0.5" />}
-      {mood === "content" && <path d="M 92 112 Q 100 116 108 112" stroke="white" strokeWidth="2" fill="none" strokeLinecap="round" opacity="0.6" />}
-      <line x1="82" y1="168" x2="76" y2="180" stroke="#e8a84c" strokeWidth="3" strokeLinecap="round" />
-      <line x1="88" y1="168" x2="88" y2="182" stroke="#e8a84c" strokeWidth="3" strokeLinecap="round" />
-      <line x1="112" y1="168" x2="112" y2="182" stroke="#e8a84c" strokeWidth="3" strokeLinecap="round" />
-      <line x1="118" y1="168" x2="124" y2="180" stroke="#e8a84c" strokeWidth="3" strokeLinecap="round" />
-      {/* Sparkles */}
-      <circle cx="36" cy="62" r="3" fill={accent} opacity="0.6"><animate attributeName="opacity" values="0.6;0.1;0.6" dur="1.8s" repeatCount="indefinite" /></circle>
-      <circle cx="164" cy="58" r="2.5" fill={accent} opacity="0.4"><animate attributeName="opacity" values="0.4;0.1;0.4" dur="2.2s" repeatCount="indefinite" /></circle>
-      <circle cx="155" cy="78" r="2" fill={accent} opacity="0.5"><animate attributeName="opacity" values="0.5;0.1;0.5" dur="2.6s" repeatCount="indefinite" /></circle>
-    </svg>
-  );
+  return (<svg width={size} height={size} viewBox="0 0 200 200"><defs><filter id="bs4"><feDropShadow dx="0" dy="3" stdDeviation="6" floodOpacity="0.25"/></filter><filter id="bGlow"><feDropShadow dx="0" dy="0" stdDeviation="10" floodColor={accent} floodOpacity="0.2"/></filter></defs><ellipse cx="100" cy="184" rx="38" ry="5" fill="rgba(0,0,0,0.15)"/><ellipse cx="100" cy="112" rx="70" ry="72" fill="none" stroke={accent} strokeWidth="1" opacity="0.15" filter="url(#bGlow)"><animate attributeName="opacity" values="0.15;0.05;0.15" dur="3s" repeatCount="indefinite"/></ellipse><path d="M 100 168 Q 70 185 50 178" stroke={accent} strokeWidth="6" fill="none" strokeLinecap="round" opacity="0.6"/><path d="M 100 168 Q 130 185 150 178" stroke={accent} strokeWidth="6" fill="none" strokeLinecap="round" opacity="0.6"/><path d="M 100 168 Q 60 195 45 185" stroke={accent} strokeWidth="4" fill="none" strokeLinecap="round" opacity="0.35"/><path d="M 100 168 Q 140 195 155 185" stroke={accent} strokeWidth="4" fill="none" strokeLinecap="round" opacity="0.35"/><ellipse cx="100" cy="115" rx="52" ry="55" fill={accent} filter="url(#bs4)"/><ellipse cx="100" cy="130" rx="34" ry="35" fill="rgba(255,255,255,0.12)"/><path d="M 86 120 Q 100 145 114 120" fill="rgba(255,255,255,0.08)"/><path d="M 50 110 Q 30 90 25 105 Q 20 120 48 130" fill={accent} opacity="0.7">{mood==="happy"&&<animate attributeName="d" values="M 50 110 Q 30 90 25 105 Q 20 120 48 130;M 50 110 Q 22 82 18 100 Q 14 118 48 130;M 50 110 Q 30 90 25 105 Q 20 120 48 130" dur="0.7s" repeatCount="indefinite"/>}</path><path d="M 150 110 Q 170 90 175 105 Q 180 120 152 130" fill={accent} opacity="0.7">{mood==="happy"&&<animate attributeName="d" values="M 150 110 Q 170 90 175 105 Q 180 120 152 130;M 150 110 Q 178 82 182 100 Q 186 118 152 130;M 150 110 Q 170 90 175 105 Q 180 120 152 130" dur="0.7s" repeatCount="indefinite"/>}</path><path d="M 88 60 Q 82 32 92 42 Q 96 28 100 38 Q 104 28 108 42 Q 118 32 112 60" fill={accent} opacity="0.9"/>{mood==="happy"?<><path d="M 80 94 Q 86 82 92 94" stroke="white" strokeWidth="3" fill="none" strokeLinecap="round"/><path d="M 108 94 Q 114 82 120 94" stroke="white" strokeWidth="3" fill="none" strokeLinecap="round"/></>:<><ellipse cx="86" cy="92" rx="6" ry="7" fill="white" opacity="0.9"/><ellipse cx="114" cy="92" rx="6" ry="7" fill="white" opacity="0.9"/><ellipse cx="87" cy="90" rx="2.5" ry="3" fill={accent} opacity="0.5"/><ellipse cx="115" cy="90" rx="2.5" ry="3" fill={accent} opacity="0.5"/></>}<polygon points="100,102 91,95 109,95" fill="#e8a84c"/>{mood==="happy"&&<path d="M 88 110 Q 100 124 112 110" stroke="white" strokeWidth="2.5" fill="none" strokeLinecap="round" opacity="0.85"/>}{mood==="sad"&&<path d="M 92 118 Q 100 110 108 118" stroke="white" strokeWidth="2" fill="none" strokeLinecap="round" opacity="0.5"/>}<line x1="82" y1="168" x2="76" y2="180" stroke="#e8a84c" strokeWidth="3" strokeLinecap="round"/><line x1="88" y1="168" x2="88" y2="182" stroke="#e8a84c" strokeWidth="3" strokeLinecap="round"/><line x1="112" y1="168" x2="112" y2="182" stroke="#e8a84c" strokeWidth="3" strokeLinecap="round"/><line x1="118" y1="168" x2="124" y2="180" stroke="#e8a84c" strokeWidth="3" strokeLinecap="round"/><circle cx="36" cy="62" r="3" fill={accent} opacity="0.6"><animate attributeName="opacity" values="0.6;0.1;0.6" dur="1.8s" repeatCount="indefinite"/></circle><circle cx="164" cy="58" r="2.5" fill={accent} opacity="0.4"><animate attributeName="opacity" values="0.4;0.1;0.4" dur="2.2s" repeatCount="indefinite"/></circle></svg>);
 }
 
-// ─── SNAKE (Slynk) ───
-function SnakeL1({ size, accent, mood }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 200 200">
-      <defs><filter id="ss1"><feDropShadow dx="0" dy="3" stdDeviation="4" floodOpacity="0.2" /></filter></defs>
-      <ellipse cx="100" cy="182" rx="25" ry="4" fill="rgba(0,0,0,0.1)" />
-      {/* Tiny worm body */}
-      <path d="M 100 170 Q 85 155 90 140 Q 95 125 100 120" stroke={accent} strokeWidth="18" fill="none" strokeLinecap="round" filter="url(#ss1)" />
-      <path d="M 100 170 Q 85 155 90 140 Q 95 125 100 120" stroke="rgba(255,255,255,0.08)" strokeWidth="12" fill="none" strokeLinecap="round" />
-      {/* Head */}
-      <circle cx="100" cy="112" r="18" fill={accent} filter="url(#ss1)" />
-      {mood === "happy" ? <>
-        <path d="M 92 108 Q 95 102 98 108" stroke="white" strokeWidth="2" fill="none" strokeLinecap="round" />
-        <path d="M 102 108 Q 105 102 108 108" stroke="white" strokeWidth="2" fill="none" strokeLinecap="round" />
-      </> : <>
-        <ellipse cx="95" cy="106" rx="3.5" ry="4.5" fill="white" opacity="0.85" /><ellipse cx="105" cy="106" rx="3.5" ry="4.5" fill="white" opacity="0.85" />
-        <ellipse cx="95" cy="105" rx="1.5" ry="2.5" fill="#2d2d2d" opacity="0.6" /><ellipse cx="105" cy="105" rx="1.5" ry="2.5" fill="#2d2d2d" opacity="0.6" />
-      </>}
-      {mood !== "sad" && <line x1="100" y1="120" x2="100" y2="126" stroke="#e86a6a" strokeWidth="1.5" strokeLinecap="round" />}
-    </svg>
-  );
-}
+// Simplified snake/monkey/robot L1-L4 (same as before, kept compact)
+function SnakeL1({size,accent,mood}){return(<svg width={size} height={size} viewBox="0 0 200 200"><defs><filter id="ss1"><feDropShadow dx="0" dy="3" stdDeviation="4" floodOpacity="0.2"/></filter></defs><ellipse cx="100" cy="182" rx="25" ry="4" fill="rgba(0,0,0,0.1)"/><path d="M 100 170 Q 85 155 90 140 Q 95 125 100 120" stroke={accent} strokeWidth="18" fill="none" strokeLinecap="round" filter="url(#ss1)"/><circle cx="100" cy="112" r="18" fill={accent} filter="url(#ss1)"/>{mood==="happy"?<><path d="M 92 108 Q 95 102 98 108" stroke="white" strokeWidth="2" fill="none" strokeLinecap="round"/><path d="M 102 108 Q 105 102 108 108" stroke="white" strokeWidth="2" fill="none" strokeLinecap="round"/></>:<><ellipse cx="95" cy="106" rx="3.5" ry="4.5" fill="white" opacity="0.85"/><ellipse cx="105" cy="106" rx="3.5" ry="4.5" fill="white" opacity="0.85"/></>}{mood!=="sad"&&<line x1="100" y1="120" x2="100" y2="126" stroke="#e86a6a" strokeWidth="1.5" strokeLinecap="round"/>}</svg>);}
+function SnakeL2({size,accent,mood}){return(<svg width={size} height={size} viewBox="0 0 200 200"><defs><filter id="ss2"><feDropShadow dx="0" dy="3" stdDeviation="5" floodOpacity="0.22"/></filter></defs><ellipse cx="100" cy="186" rx="35" ry="5" fill="rgba(0,0,0,0.12)"/><path d="M 80 172 Q 55 155 60 130 Q 65 105 100 95" stroke={accent} strokeWidth="20" fill="none" strokeLinecap="round" filter="url(#ss2)"/><path d="M 80 172 Q 55 155 60 130 Q 65 105 100 95" stroke="rgba(255,255,255,0.08)" strokeWidth="13" fill="none" strokeLinecap="round"/><ellipse cx="100" cy="85" rx="24" ry="22" fill={accent} filter="url(#ss2)"/>{mood==="happy"?<><path d="M 90 80 Q 94 72 98 80" stroke="white" strokeWidth="2.5" fill="none" strokeLinecap="round"/><path d="M 102 80 Q 106 72 110 80" stroke="white" strokeWidth="2.5" fill="none" strokeLinecap="round"/></>:<><ellipse cx="94" cy="78" rx="4" ry="5" fill="white" opacity="0.85"/><ellipse cx="106" cy="78" rx="4" ry="5" fill="white" opacity="0.85"/></>}{mood==="happy"&&<path d="M 93 90 Q 100 98 107 90" stroke="white" strokeWidth="1.8" fill="none" strokeLinecap="round" opacity="0.7"/>}</svg>);}
+function SnakeL3({size,accent,mood}){return(<svg width={size} height={size} viewBox="0 0 200 200"><defs><filter id="ss3"><feDropShadow dx="0" dy="3" stdDeviation="5" floodOpacity="0.22"/></filter></defs><ellipse cx="100" cy="186" rx="40" ry="5" fill="rgba(0,0,0,0.12)"/><path d="M 70 175 Q 40 155 48 125 Q 56 95 95 88 Q 135 82 142 110 Q 148 135 120 150 Q 100 160 92 148" stroke={accent} strokeWidth="22" fill="none" strokeLinecap="round" filter="url(#ss3)"/><path d="M 70 175 Q 40 155 48 125 Q 56 95 95 88 Q 135 82 142 110 Q 148 135 120 150 Q 100 160 92 148" stroke="rgba(255,255,255,0.08)" strokeWidth="14" fill="none" strokeLinecap="round"/><ellipse cx="95" cy="78" rx="28" ry="24" fill={accent} filter="url(#ss3)"/><ellipse cx="70" cy="80" rx="8" ry="12" fill={accent} opacity="0.5"/><ellipse cx="120" cy="80" rx="8" ry="12" fill={accent} opacity="0.5"/>{mood==="happy"?<><path d="M 85 74 Q 89 66 93 74" stroke="white" strokeWidth="2.5" fill="none" strokeLinecap="round"/><path d="M 99 74 Q 103 66 107 74" stroke="white" strokeWidth="2.5" fill="none" strokeLinecap="round"/></>:<><ellipse cx="89" cy="72" rx="4.5" ry="5.5" fill="white" opacity="0.85"/><ellipse cx="103" cy="72" rx="4.5" ry="5.5" fill="white" opacity="0.85"/></>}{mood==="happy"&&<path d="M 88 84 Q 96 92 104 84" stroke="white" strokeWidth="2" fill="none" strokeLinecap="round" opacity="0.8"/>}<circle cx="50" cy="70" r="2.5" fill={accent} opacity="0.5"><animate attributeName="opacity" values="0.5;0.1;0.5" dur="2s" repeatCount="indefinite"/></circle></svg>);}
+function SnakeL4({size,accent,mood}){return(<svg width={size} height={size} viewBox="0 0 200 200"><defs><filter id="ss4"><feDropShadow dx="0" dy="3" stdDeviation="6" floodOpacity="0.25"/></filter><filter id="sGlow"><feDropShadow dx="0" dy="0" stdDeviation="8" floodColor={accent} floodOpacity="0.2"/></filter></defs><ellipse cx="100" cy="186" rx="42" ry="5" fill="rgba(0,0,0,0.15)"/><ellipse cx="100" cy="115" rx="68" ry="70" fill="none" stroke={accent} strokeWidth="1" opacity="0.12" filter="url(#sGlow)"><animate attributeName="opacity" values="0.12;0.04;0.12" dur="3s" repeatCount="indefinite"/></ellipse><path d="M 68 178 Q 35 158 42 120 Q 50 82 95 75 Q 140 68 150 100 Q 158 130 128 152 Q 105 166 90 150 Q 78 138 95 126 Q 110 116 112 130" stroke={accent} strokeWidth="24" fill="none" strokeLinecap="round" filter="url(#ss4)"/><path d="M 68 178 Q 35 158 42 120 Q 50 82 95 75 Q 140 68 150 100 Q 158 130 128 152 Q 105 166 90 150 Q 78 138 95 126 Q 110 116 112 130" stroke="rgba(255,255,255,0.08)" strokeWidth="16" fill="none" strokeLinecap="round"/><ellipse cx="95" cy="65" rx="32" ry="28" fill={accent} filter="url(#ss4)"/><ellipse cx="64" cy="68" rx="14" ry="20" fill={accent} opacity="0.6"/><ellipse cx="126" cy="68" rx="14" ry="20" fill={accent} opacity="0.6"/>{mood==="happy"?<><path d="M 84 60 Q 88 52 92 60" stroke="white" strokeWidth="2.8" fill="none" strokeLinecap="round"/><path d="M 100 60 Q 104 52 108 60" stroke="white" strokeWidth="2.8" fill="none" strokeLinecap="round"/></>:<><ellipse cx="88" cy="58" rx="5" ry="6" fill="white" opacity="0.9"/><ellipse cx="104" cy="58" rx="5" ry="6" fill="white" opacity="0.9"/></>}{mood==="happy"&&<path d="M 86 74 Q 96 84 106 74" stroke="white" strokeWidth="2.2" fill="none" strokeLinecap="round" opacity="0.85"/>}<circle cx="42" cy="50" r="3" fill={accent} opacity="0.6"><animate attributeName="opacity" values="0.6;0.1;0.6" dur="1.8s" repeatCount="indefinite"/></circle><circle cx="152" cy="48" r="2.5" fill={accent} opacity="0.4"><animate attributeName="opacity" values="0.4;0.1;0.4" dur="2.2s" repeatCount="indefinite"/></circle></svg>);}
 
-function SnakeL2({ size, accent, mood }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 200 200">
-      <defs><filter id="ss2"><feDropShadow dx="0" dy="3" stdDeviation="5" floodOpacity="0.22" /></filter></defs>
-      <ellipse cx="100" cy="186" rx="35" ry="5" fill="rgba(0,0,0,0.12)" />
-      {/* Coiled body */}
-      <path d="M 80 172 Q 55 155 60 130 Q 65 105 100 95" stroke={accent} strokeWidth="20" fill="none" strokeLinecap="round" filter="url(#ss2)" />
-      <path d="M 80 172 Q 55 155 60 130 Q 65 105 100 95" stroke="rgba(255,255,255,0.08)" strokeWidth="13" fill="none" strokeLinecap="round" />
-      {/* Pattern dots */}
-      <circle cx="65" cy="140" r="3" fill="rgba(255,255,255,0.1)" /><circle cx="72" cy="120" r="2.5" fill="rgba(255,255,255,0.08)" />
-      <ellipse cx="100" cy="85" rx="24" ry="22" fill={accent} filter="url(#ss2)" />
-      <ellipse cx="100" cy="88" rx="17" ry="14" fill="rgba(255,255,255,0.08)" />
-      {mood === "happy" ? <>
-        <path d="M 90 80 Q 94 72 98 80" stroke="white" strokeWidth="2.5" fill="none" strokeLinecap="round" />
-        <path d="M 102 80 Q 106 72 110 80" stroke="white" strokeWidth="2.5" fill="none" strokeLinecap="round" />
-      </> : <>
-        <ellipse cx="94" cy="78" rx="4" ry="5" fill="white" opacity="0.85" /><ellipse cx="106" cy="78" rx="4" ry="5" fill="white" opacity="0.85" />
-        <ellipse cx="94" cy="77" rx="1.8" ry="3" fill="#2d2d2d" opacity="0.7" /><ellipse cx="106" cy="77" rx="1.8" ry="3" fill="#2d2d2d" opacity="0.7" />
-      </>}
-      {mood !== "sad" && <path d="M 100 96 L 100 104 L 96 108 M 100 104 L 104 108" stroke="#e86a6a" strokeWidth="1.8" fill="none" strokeLinecap="round">
-        <animate attributeName="d" values="M 100 96 L 100 104 L 96 108 M 100 104 L 104 108;M 100 96 L 100 102 L 97 105 M 100 102 L 103 105;M 100 96 L 100 104 L 96 108 M 100 104 L 104 108" dur="1.5s" repeatCount="indefinite" />
-      </path>}
-      {mood === "happy" && <path d="M 93 90 Q 100 98 107 90" stroke="white" strokeWidth="1.8" fill="none" strokeLinecap="round" opacity="0.7" />}
-      {mood === "sad" && <path d="M 95 92 Q 100 88 105 92" stroke="white" strokeWidth="1.5" fill="none" strokeLinecap="round" opacity="0.5" />}
-    </svg>
-  );
-}
+function MonkeyL1({size,accent,mood}){return(<svg width={size} height={size} viewBox="0 0 200 200"><defs><filter id="ms1"><feDropShadow dx="0" dy="3" stdDeviation="5" floodOpacity="0.2"/></filter></defs><ellipse cx="100" cy="182" rx="25" ry="4" fill="rgba(0,0,0,0.1)"/><ellipse cx="100" cy="125" rx="35" ry="38" fill={accent} filter="url(#ms1)"/><circle cx="65" cy="108" r="14" fill={accent}/><circle cx="65" cy="108" r="9" fill="rgba(255,255,255,0.12)"/><circle cx="135" cy="108" r="14" fill={accent}/><circle cx="135" cy="108" r="9" fill="rgba(255,255,255,0.12)"/>{mood==="happy"?<><path d="M 89 112 Q 93 104 97 112" stroke="white" strokeWidth="2.5" fill="none" strokeLinecap="round"/><path d="M 103 112 Q 107 104 111 112" stroke="white" strokeWidth="2.5" fill="none" strokeLinecap="round"/></>:<><ellipse cx="93" cy="110" rx="5" ry="6" fill="white" opacity="0.85"/><ellipse cx="107" cy="110" rx="5" ry="6" fill="white" opacity="0.85"/></>}<ellipse cx="100" cy="120" rx="3" ry="2" fill="rgba(255,255,255,0.25)"/>{mood==="happy"&&<path d="M 95 126 Q 100 132 105 126" stroke="white" strokeWidth="1.5" fill="none" strokeLinecap="round" opacity="0.7"/>}</svg>);}
+function MonkeyL2({size,accent,mood}){return(<svg width={size} height={size} viewBox="0 0 200 200"><defs><filter id="ms2"><feDropShadow dx="0" dy="3" stdDeviation="5" floodOpacity="0.22"/></filter></defs><ellipse cx="100" cy="184" rx="30" ry="5" fill="rgba(0,0,0,0.12)"/><path d="M 60 148 Q 40 138 42 120" stroke={accent} strokeWidth="7" fill="none" strokeLinecap="round" opacity="0.6"/><ellipse cx="100" cy="120" rx="42" ry="46" fill={accent} filter="url(#ms2)"/><circle cx="58" cy="96" r="15" fill={accent}/><circle cx="58" cy="96" r="10" fill="rgba(255,255,255,0.12)"/><circle cx="142" cy="96" r="15" fill={accent}/><circle cx="142" cy="96" r="10" fill="rgba(255,255,255,0.12)"/>{mood==="happy"?<><path d="M 88 96 Q 92 88 96 96" stroke="white" strokeWidth="2.5" fill="none" strokeLinecap="round"/><path d="M 104 96 Q 108 88 112 96" stroke="white" strokeWidth="2.5" fill="none" strokeLinecap="round"/></>:<><ellipse cx="92" cy="94" rx="5" ry="6" fill="white" opacity="0.85"/><ellipse cx="108" cy="94" rx="5" ry="6" fill="white" opacity="0.85"/></>}<ellipse cx="100" cy="104" rx="3.5" ry="2" fill="rgba(255,255,255,0.25)"/>{mood==="happy"&&<path d="M 93 110 Q 100 118 107 110" stroke="white" strokeWidth="1.8" fill="none" strokeLinecap="round" opacity="0.7"/>}<ellipse cx="62" cy="130" rx="8" ry="12" fill={accent} opacity="0.65" transform="rotate(12,62,130)"/><ellipse cx="138" cy="130" rx="8" ry="12" fill={accent} opacity="0.65" transform="rotate(-12,138,130)"/><ellipse cx="82" cy="166" rx="10" ry="7" fill={accent} opacity="0.6"/><ellipse cx="118" cy="166" rx="10" ry="7" fill={accent} opacity="0.6"/></svg>);}
+function MonkeyL3({size,accent,mood}){return(<svg width={size} height={size} viewBox="0 0 200 200"><defs><filter id="ms3"><feDropShadow dx="0" dy="3" stdDeviation="6" floodOpacity="0.22"/></filter></defs><ellipse cx="100" cy="185" rx="35" ry="5" fill="rgba(0,0,0,0.12)"/><path d="M 58 148 Q 30 135 32 108 Q 34 85 48 78" stroke={accent} strokeWidth="8" fill="none" strokeLinecap="round" opacity="0.65"/><ellipse cx="100" cy="120" rx="48" ry="52" fill={accent} filter="url(#ms3)"/><path d="M 88 118 Q 100 140 112 118" fill="rgba(255,255,255,0.06)"/><circle cx="54" cy="88" r="16" fill={accent}/><circle cx="54" cy="88" r="10" fill="rgba(255,255,255,0.12)"/><circle cx="146" cy="88" r="16" fill={accent}/><circle cx="146" cy="88" r="10" fill="rgba(255,255,255,0.12)"/>{mood==="happy"?<><path d="M 86 94 Q 91 84 96 94" stroke="white" strokeWidth="2.5" fill="none" strokeLinecap="round"/><path d="M 104 94 Q 109 84 114 94" stroke="white" strokeWidth="2.5" fill="none" strokeLinecap="round"/></>:<><ellipse cx="91" cy="92" rx="5.5" ry="6.5" fill="white" opacity="0.85"/><ellipse cx="109" cy="92" rx="5.5" ry="6.5" fill="white" opacity="0.85"/></>}<ellipse cx="100" cy="102" rx="4" ry="2.5" fill="rgba(255,255,255,0.25)"/>{mood==="happy"&&<path d="M 92 108 Q 100 118 108 108" stroke="white" strokeWidth="2" fill="none" strokeLinecap="round" opacity="0.8"/>}<ellipse cx="56" cy="132" rx="10" ry="14" fill={accent} opacity="0.7" transform="rotate(12,56,132)"/><ellipse cx="144" cy="132" rx="10" ry="14" fill={accent} opacity="0.7" transform="rotate(-12,144,132)"/><ellipse cx="80" cy="170" rx="13" ry="8" fill={accent} opacity="0.65"/><ellipse cx="120" cy="170" rx="13" ry="8" fill={accent} opacity="0.65"/><circle cx="40" cy="68" r="2.5" fill={accent} opacity="0.5"><animate attributeName="opacity" values="0.5;0.1;0.5" dur="2s" repeatCount="indefinite"/></circle></svg>);}
+function MonkeyL4({size,accent,mood}){return(<svg width={size} height={size} viewBox="0 0 200 200"><defs><filter id="ms4"><feDropShadow dx="0" dy="3" stdDeviation="6" floodOpacity="0.25"/></filter><filter id="mGlow"><feDropShadow dx="0" dy="0" stdDeviation="8" floodColor={accent} floodOpacity="0.18"/></filter></defs><ellipse cx="100" cy="185" rx="38" ry="5" fill="rgba(0,0,0,0.15)"/><ellipse cx="100" cy="118" rx="65" ry="68" fill="none" stroke={accent} strokeWidth="1" opacity="0.12" filter="url(#mGlow)"><animate attributeName="opacity" values="0.12;0.04;0.12" dur="3s" repeatCount="indefinite"/></ellipse><path d="M 55 148 Q 22 132 26 100 Q 30 72 50 62 Q 55 58 52 52" stroke={accent} strokeWidth="9" fill="none" strokeLinecap="round" opacity="0.7"/><circle cx="52" cy="50" r="4" fill={accent} opacity="0.5"/><ellipse cx="100" cy="118" rx="50" ry="54" fill={accent} filter="url(#ms4)"/><path d="M 92 66 Q 88 54 96 58 Q 100 50 104 58 Q 112 54 108 66" fill={accent} opacity="0.8"/><circle cx="52" cy="84" r="18" fill={accent}/><circle cx="52" cy="84" r="12" fill="rgba(255,255,255,0.12)"/><circle cx="148" cy="84" r="18" fill={accent}/><circle cx="148" cy="84" r="12" fill="rgba(255,255,255,0.12)"/>{mood==="happy"?<><path d="M 85 90 Q 90 80 95 90" stroke="white" strokeWidth="2.8" fill="none" strokeLinecap="round"/><path d="M 105 90 Q 110 80 115 90" stroke="white" strokeWidth="2.8" fill="none" strokeLinecap="round"/></>:<><ellipse cx="90" cy="88" rx="6" ry="7" fill="white" opacity="0.9"/><ellipse cx="110" cy="88" rx="6" ry="7" fill="white" opacity="0.9"/></>}<ellipse cx="100" cy="100" rx="4.5" ry="2.5" fill="rgba(255,255,255,0.3)"/>{mood==="happy"&&<path d="M 90 106 Q 100 118 110 106" stroke="white" strokeWidth="2.2" fill="none" strokeLinecap="round" opacity="0.85"/>}<ellipse cx="54" cy="130" rx="12" ry="16" fill={accent} opacity="0.7" transform="rotate(10,54,130)"/><ellipse cx="146" cy="130" rx="12" ry="16" fill={accent} opacity="0.7" transform="rotate(-10,146,130)"/><ellipse cx="78" cy="170" rx="14" ry="9" fill={accent} opacity="0.65"/><ellipse cx="122" cy="170" rx="14" ry="9" fill={accent} opacity="0.65"/><circle cx="36" cy="60" r="3" fill={accent} opacity="0.6"><animate attributeName="opacity" values="0.6;0.1;0.6" dur="1.8s" repeatCount="indefinite"/></circle><circle cx="164" cy="56" r="2.5" fill={accent} opacity="0.4"><animate attributeName="opacity" values="0.4;0.1;0.4" dur="2.2s" repeatCount="indefinite"/></circle></svg>);}
 
-function SnakeL3({ size, accent, mood }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 200 200">
-      <defs><filter id="ss3"><feDropShadow dx="0" dy="3" stdDeviation="5" floodOpacity="0.22" /></filter></defs>
-      <ellipse cx="100" cy="186" rx="40" ry="5" fill="rgba(0,0,0,0.12)" />
-      <path d="M 70 175 Q 40 155 48 125 Q 56 95 95 88 Q 135 82 142 110 Q 148 135 120 150 Q 100 160 92 148" stroke={accent} strokeWidth="22" fill="none" strokeLinecap="round" filter="url(#ss3)" />
-      <path d="M 70 175 Q 40 155 48 125 Q 56 95 95 88 Q 135 82 142 110 Q 148 135 120 150 Q 100 160 92 148" stroke="rgba(255,255,255,0.08)" strokeWidth="14" fill="none" strokeLinecap="round" />
-      {/* Diamond pattern */}
-      <circle cx="52" cy="132" r="3" fill="rgba(255,255,255,0.12)" /><circle cx="80" cy="100" r="3.5" fill="rgba(255,255,255,0.1)" />
-      <circle cx="130" cy="105" r="3" fill="rgba(255,255,255,0.1)" /><circle cx="135" cy="130" r="2.5" fill="rgba(255,255,255,0.08)" />
-      {/* Head with hood starting */}
-      <ellipse cx="95" cy="78" rx="28" ry="24" fill={accent} filter="url(#ss3)" />
-      <ellipse cx="95" cy="82" rx="20" ry="16" fill="rgba(255,255,255,0.1)" />
-      {/* Small hood flares */}
-      <ellipse cx="70" cy="80" rx="8" ry="12" fill={accent} opacity="0.5" /><ellipse cx="120" cy="80" rx="8" ry="12" fill={accent} opacity="0.5" />
-      {mood === "happy" ? <>
-        <path d="M 85 74 Q 89 66 93 74" stroke="white" strokeWidth="2.5" fill="none" strokeLinecap="round" />
-        <path d="M 99 74 Q 103 66 107 74" stroke="white" strokeWidth="2.5" fill="none" strokeLinecap="round" />
-      </> : <>
-        <ellipse cx="89" cy="72" rx="4.5" ry="5.5" fill="white" opacity="0.85" /><ellipse cx="103" cy="72" rx="4.5" ry="5.5" fill="white" opacity="0.85" />
-        <ellipse cx="89" cy="71" rx="2" ry="3" fill="#2d2d2d" opacity="0.7" /><ellipse cx="103" cy="71" rx="2" ry="3" fill="#2d2d2d" opacity="0.7" />
-      </>}
-      {mood !== "sad" && <path d="M 96 90 L 96 98 L 92 102 M 96 98 L 100 102" stroke="#e86a6a" strokeWidth="1.8" fill="none" strokeLinecap="round">
-        <animate attributeName="d" values="M 96 90 L 96 98 L 92 102 M 96 98 L 100 102;M 96 90 L 96 96 L 93 99 M 96 96 L 99 99;M 96 90 L 96 98 L 92 102 M 96 98 L 100 102" dur="1.5s" repeatCount="indefinite" />
-      </path>}
-      {mood === "happy" && <path d="M 88 84 Q 96 92 104 84" stroke="white" strokeWidth="2" fill="none" strokeLinecap="round" opacity="0.8" />}
-      <circle cx="50" cy="70" r="2.5" fill={accent} opacity="0.5"><animate attributeName="opacity" values="0.5;0.1;0.5" dur="2s" repeatCount="indefinite" /></circle>
-    </svg>
-  );
-}
+function RobotL1({size,accent,mood}){return(<svg width={size} height={size} viewBox="0 0 200 200"><defs><filter id="rs1"><feDropShadow dx="0" dy="3" stdDeviation="4" floodOpacity="0.2"/></filter></defs><ellipse cx="100" cy="180" rx="25" ry="4" fill="rgba(0,0,0,0.15)"/><rect x="72" y="90" width="56" height="56" rx="10" fill={accent} filter="url(#rs1)"/><rect x="80" y="100" width="40" height="24" rx="6" fill="rgba(0,0,0,0.25)"/>{mood==="happy"?<><path d="M 90 112 Q 93 106 96 112" stroke={accent} strokeWidth="2.5" fill="none" strokeLinecap="round"/><path d="M 104 112 Q 107 106 110 112" stroke={accent} strokeWidth="2.5" fill="none" strokeLinecap="round"/></>:<><rect x="88" y="108" width="6" height="6" rx="1.5" fill={accent} opacity={mood==="sad"?"0.5":"0.8"}/><rect x="106" y="108" width="6" height="6" rx="1.5" fill={accent} opacity={mood==="sad"?"0.5":"0.8"}/></>}<rect x="80" y="146" width="14" height="10" rx="4" fill={accent} opacity="0.5"/><rect x="106" y="146" width="14" height="10" rx="4" fill={accent} opacity="0.5"/></svg>);}
+function RobotL2({size,accent,mood}){return(<svg width={size} height={size} viewBox="0 0 200 200"><defs><filter id="rs2"><feDropShadow dx="0" dy="3" stdDeviation="5" floodOpacity="0.22"/></filter></defs><ellipse cx="100" cy="184" rx="30" ry="5" fill="rgba(0,0,0,0.15)"/><line x1="100" y1="68" x2="100" y2="56" stroke="rgba(255,255,255,0.25)" strokeWidth="2.5" strokeLinecap="round"/><circle cx="100" cy="52" r="4" fill={accent} opacity="0.7"/><rect x="68" y="68" width="64" height="52" rx="12" fill={accent} filter="url(#rs2)"/><rect x="76" y="78" width="48" height="24" rx="7" fill="rgba(0,0,0,0.28)"/>{mood==="happy"?<><path d="M 88 90 Q 91 84 94 90" stroke={accent} strokeWidth="2.5" fill="none" strokeLinecap="round"/><path d="M 106 90 Q 109 84 112 90" stroke={accent} strokeWidth="2.5" fill="none" strokeLinecap="round"/></>:<><rect x="86" y="86" width="7" height="7" rx="2" fill={accent} opacity={mood==="sad"?"0.5":"0.8"}/><rect x="107" y="86" width="7" height="7" rx="2" fill={accent} opacity={mood==="sad"?"0.5":"0.8"}/></>}<rect x="76" y="122" width="48" height="38" rx="8" fill={accent} filter="url(#rs2)"/><rect x="56" y="126" width="16" height="8" rx="4" fill={accent} opacity="0.55"/><rect x="128" y="126" width="16" height="8" rx="4" fill={accent} opacity="0.55"/><rect x="80" y="160" width="14" height="14" rx="4" fill={accent} opacity="0.55"/><rect x="106" y="160" width="14" height="14" rx="4" fill={accent} opacity="0.55"/></svg>);}
+function RobotL3({size,accent,mood}){return(<svg width={size} height={size} viewBox="0 0 200 200"><defs><filter id="rs3"><feDropShadow dx="0" dy="3" stdDeviation="5" floodOpacity="0.25"/></filter><filter id="rG3"><feDropShadow dx="0" dy="0" stdDeviation="4" floodColor={accent} floodOpacity="0.35"/></filter></defs><ellipse cx="100" cy="185" rx="35" ry="5" fill="rgba(0,0,0,0.18)"/><line x1="100" y1="58" x2="100" y2="42" stroke="rgba(255,255,255,0.3)" strokeWidth="3" strokeLinecap="round"/><circle cx="100" cy="38" r="5" fill={accent} filter="url(#rG3)"><animate attributeName="opacity" values="1;0.4;1" dur="1.8s" repeatCount="indefinite"/></circle><rect x="64" y="58" width="72" height="58" rx="14" fill={accent} filter="url(#rs3)"/><rect x="74" y="70" width="52" height="26" rx="8" fill="rgba(0,0,0,0.3)"/>{mood==="happy"?<><path d="M 86 82 Q 89 74 92 82" stroke={accent} strokeWidth="2.8" fill="none" strokeLinecap="round" filter="url(#rG3)"/><path d="M 108 82 Q 111 74 114 82" stroke={accent} strokeWidth="2.8" fill="none" strokeLinecap="round" filter="url(#rG3)"/></>:<><rect x="84" y="78" width="8" height="8" rx="2" fill={accent} opacity={mood==="sad"?"0.5":"1"} filter="url(#rG3)"/><rect x="108" y="78" width="8" height="8" rx="2" fill={accent} opacity={mood==="sad"?"0.5":"1"} filter="url(#rG3)"/></>}<rect x="72" y="120" width="56" height="44" rx="10" fill={accent} filter="url(#rs3)"/><rect x="86" y="128" width="28" height="16" rx="4" fill="rgba(0,0,0,0.22)"/><circle cx="95" cy="136" r="3" fill={mood==="happy"?"#6ee7a0":mood==="sad"?"#e86a6a":accent} opacity="0.8"><animate attributeName="opacity" values="0.8;0.3;0.8" dur="2s" repeatCount="indefinite"/></circle><rect x="50" y="124" width="18" height="10" rx="5" fill={accent} opacity="0.6"/><rect x="44" y="136" width="10" height="16" rx="4" fill={accent} opacity="0.45"/><rect x="132" y="124" width="18" height="10" rx="5" fill={accent} opacity="0.6"/><rect x="146" y="136" width="10" height="16" rx="4" fill={accent} opacity="0.45"/><rect x="78" y="164" width="14" height="16" rx="4" fill={accent} opacity="0.55"/><rect x="108" y="164" width="14" height="16" rx="4" fill={accent} opacity="0.55"/><circle cx="44" cy="54" r="2.5" fill={accent} opacity="0.5"><animate attributeName="opacity" values="0.5;0.1;0.5" dur="2s" repeatCount="indefinite"/></circle></svg>);}
+function RobotL4({size,accent,mood}){return(<svg width={size} height={size} viewBox="0 0 200 200"><defs><filter id="rs4"><feDropShadow dx="0" dy="3" stdDeviation="6" floodOpacity="0.3"/></filter><filter id="rG4"><feDropShadow dx="0" dy="0" stdDeviation="5" floodColor={accent} floodOpacity="0.4"/></filter><filter id="rAura"><feDropShadow dx="0" dy="0" stdDeviation="12" floodColor={accent} floodOpacity="0.15"/></filter></defs><ellipse cx="100" cy="186" rx="38" ry="5" fill="rgba(0,0,0,0.2)"/><ellipse cx="100" cy="112" rx="68" ry="70" fill="none" stroke={accent} strokeWidth="1" opacity="0.1" filter="url(#rAura)"><animate attributeName="opacity" values="0.1;0.03;0.1" dur="3s" repeatCount="indefinite"/></ellipse><line x1="88" y1="52" x2="85" y2="36" stroke="rgba(255,255,255,0.2)" strokeWidth="2" strokeLinecap="round"/><line x1="100" y1="52" x2="100" y2="32" stroke="rgba(255,255,255,0.3)" strokeWidth="3" strokeLinecap="round"/><line x1="112" y1="52" x2="115" y2="36" stroke="rgba(255,255,255,0.2)" strokeWidth="2" strokeLinecap="round"/><circle cx="85" cy="33" r="3.5" fill={accent} opacity="0.6" filter="url(#rG4)"/><circle cx="100" cy="28" r="5" fill={accent} filter="url(#rG4)"><animate attributeName="opacity" values="1;0.4;1" dur="1.8s" repeatCount="indefinite"/></circle><circle cx="115" cy="33" r="3.5" fill={accent} opacity="0.6" filter="url(#rG4)"/><rect x="62" y="52" width="76" height="62" rx="14" fill={accent} filter="url(#rs4)"/><rect x="52" y="62" width="10" height="20" rx="4" fill={accent} opacity="0.5"/><rect x="138" y="62" width="10" height="20" rx="4" fill={accent} opacity="0.5"/><rect x="72" y="64" width="56" height="28" rx="8" fill="rgba(0,0,0,0.32)"/>{mood==="happy"?<><path d="M 86 78 Q 89 70 92 78" stroke={accent} strokeWidth="3" fill="none" strokeLinecap="round" filter="url(#rG4)"/><path d="M 108 78 Q 111 70 114 78" stroke={accent} strokeWidth="3" fill="none" strokeLinecap="round" filter="url(#rG4)"/></>:<><rect x="84" y="74" width="9" height="9" rx="2" fill={accent} opacity={mood==="sad"?"0.5":"1"} filter="url(#rG4)"/><rect x="107" y="74" width="9" height="9" rx="2" fill={accent} opacity={mood==="sad"?"0.5":"1"} filter="url(#rG4)"/></>}<rect x="68" y="118" width="64" height="48" rx="10" fill={accent} filter="url(#rs4)"/><rect x="82" y="124" width="36" height="22" rx="5" fill="rgba(0,0,0,0.25)"/><circle cx="95" cy="135" r="4" fill={mood==="happy"?"#6ee7a0":mood==="sad"?"#e86a6a":accent} filter="url(#rG4)"><animate attributeName="opacity" values="1;0.3;1" dur="1.5s" repeatCount="indefinite"/></circle><rect x="46" y="118" width="20" height="14" rx="6" fill={accent} opacity="0.65"/><rect x="134" y="118" width="20" height="14" rx="6" fill={accent} opacity="0.65"/><rect x="42" y="134" width="14" height="22" rx="5" fill={accent} opacity="0.5"/><rect x="144" y="134" width="14" height="22" rx="5" fill={accent} opacity="0.5"/><circle cx="49" cy="160" r="5" fill={accent} opacity="0.4"/><circle cx="151" cy="160" r="5" fill={accent} opacity="0.4"/><rect x="76" y="166" width="16" height="16" rx="5" fill={accent} opacity="0.6"/><rect x="108" y="166" width="16" height="16" rx="5" fill={accent} opacity="0.6"/><circle cx="40" cy="48" r="3" fill={accent} opacity="0.5"><animate attributeName="opacity" values="0.5;0.1;0.5" dur="2s" repeatCount="indefinite"/></circle><circle cx="160" cy="44" r="2.5" fill={accent} opacity="0.4"><animate attributeName="opacity" values="0.4;0.1;0.4" dur="2.4s" repeatCount="indefinite"/></circle></svg>);}
 
-function SnakeL4({ size, accent, mood }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 200 200">
-      <defs>
-        <filter id="ss4"><feDropShadow dx="0" dy="3" stdDeviation="6" floodOpacity="0.25" /></filter>
-        <filter id="sGlow"><feDropShadow dx="0" dy="0" stdDeviation="8" floodColor={accent} floodOpacity="0.2" /></filter>
-      </defs>
-      <ellipse cx="100" cy="186" rx="42" ry="5" fill="rgba(0,0,0,0.15)" />
-      <ellipse cx="100" cy="115" rx="68" ry="70" fill="none" stroke={accent} strokeWidth="1" opacity="0.12" filter="url(#sGlow)">
-        <animate attributeName="opacity" values="0.12;0.04;0.12" dur="3s" repeatCount="indefinite" />
-      </ellipse>
-      <path d="M 68 178 Q 35 158 42 120 Q 50 82 95 75 Q 140 68 150 100 Q 158 130 128 152 Q 105 166 90 150 Q 78 138 95 126 Q 110 116 112 130" stroke={accent} strokeWidth="24" fill="none" strokeLinecap="round" filter="url(#ss4)" />
-      <path d="M 68 178 Q 35 158 42 120 Q 50 82 95 75 Q 140 68 150 100 Q 158 130 128 152 Q 105 166 90 150 Q 78 138 95 126 Q 110 116 112 130" stroke="rgba(255,255,255,0.08)" strokeWidth="16" fill="none" strokeLinecap="round" />
-      {/* Rich pattern */}
-      <circle cx="48" cy="130" r="4" fill="rgba(255,255,255,0.12)" /><circle cx="70" cy="95" r="3.5" fill="rgba(255,255,255,0.1)" />
-      <circle cx="125" cy="90" r="3.5" fill="rgba(255,255,255,0.1)" /><circle cx="145" cy="115" r="3" fill="rgba(255,255,255,0.08)" />
-      <circle cx="118" cy="145" r="3" fill="rgba(255,255,255,0.08)" />
-      {/* Majestic head with full hood */}
-      <ellipse cx="95" cy="65" rx="32" ry="28" fill={accent} filter="url(#ss4)" />
-      <ellipse cx="95" cy="70" rx="22" ry="18" fill="rgba(255,255,255,0.1)" />
-      {/* Full hood */}
-      <ellipse cx="64" cy="68" rx="14" ry="20" fill={accent} opacity="0.6" /><ellipse cx="126" cy="68" rx="14" ry="20" fill={accent} opacity="0.6" />
-      <ellipse cx="64" cy="68" rx="8" ry="14" fill="rgba(255,255,255,0.06)" /><ellipse cx="126" cy="68" rx="8" ry="14" fill="rgba(255,255,255,0.06)" />
-      {mood === "happy" ? <>
-        <path d="M 84 60 Q 88 52 92 60" stroke="white" strokeWidth="2.8" fill="none" strokeLinecap="round" />
-        <path d="M 100 60 Q 104 52 108 60" stroke="white" strokeWidth="2.8" fill="none" strokeLinecap="round" />
-      </> : <>
-        <ellipse cx="88" cy="58" rx="5" ry="6" fill="white" opacity="0.9" /><ellipse cx="104" cy="58" rx="5" ry="6" fill="white" opacity="0.9" />
-        <ellipse cx="88" cy="57" rx="2" ry="3.5" fill="#2d2d2d" opacity="0.7" /><ellipse cx="104" cy="57" rx="2" ry="3.5" fill="#2d2d2d" opacity="0.7" />
-      </>}
-      {mood !== "sad" && <path d="M 96 80 L 96 90 L 91 95 M 96 90 L 101 95" stroke="#e86a6a" strokeWidth="2" fill="none" strokeLinecap="round">
-        <animate attributeName="d" values="M 96 80 L 96 90 L 91 95 M 96 90 L 101 95;M 96 80 L 96 87 L 92 91 M 96 87 L 100 91;M 96 80 L 96 90 L 91 95 M 96 90 L 101 95" dur="1.3s" repeatCount="indefinite" />
-      </path>}
-      {mood === "happy" && <path d="M 86 74 Q 96 84 106 74" stroke="white" strokeWidth="2.2" fill="none" strokeLinecap="round" opacity="0.85" />}
-      <circle cx="42" cy="50" r="3" fill={accent} opacity="0.6"><animate attributeName="opacity" values="0.6;0.1;0.6" dur="1.8s" repeatCount="indefinite" /></circle>
-      <circle cx="152" cy="48" r="2.5" fill={accent} opacity="0.4"><animate attributeName="opacity" values="0.4;0.1;0.4" dur="2.2s" repeatCount="indefinite" /></circle>
-    </svg>
-  );
-}
-
-// ─── MONKEY (Mochi) ───
-function MonkeyL1({ size, accent, mood }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 200 200">
-      <defs><filter id="ms1"><feDropShadow dx="0" dy="3" stdDeviation="5" floodOpacity="0.2" /></filter></defs>
-      <ellipse cx="100" cy="182" rx="25" ry="4" fill="rgba(0,0,0,0.1)" />
-      <ellipse cx="100" cy="125" rx="35" ry="38" fill={accent} filter="url(#ms1)" />
-      <ellipse cx="100" cy="135" rx="22" ry="20" fill="rgba(255,255,255,0.1)" />
-      {/* Big baby ears */}
-      <circle cx="65" cy="108" r="14" fill={accent} /><circle cx="65" cy="108" r="9" fill="rgba(255,255,255,0.12)" />
-      <circle cx="135" cy="108" r="14" fill={accent} /><circle cx="135" cy="108" r="9" fill="rgba(255,255,255,0.12)" />
-      {/* Oversized baby eyes */}
-      <ellipse cx="100" cy="115" rx="20" ry="16" fill="rgba(255,255,255,0.1)" />
-      {mood === "happy" ? <>
-        <path d="M 89 112 Q 93 104 97 112" stroke="white" strokeWidth="2.5" fill="none" strokeLinecap="round" />
-        <path d="M 103 112 Q 107 104 111 112" stroke="white" strokeWidth="2.5" fill="none" strokeLinecap="round" />
-      </> : <>
-        <ellipse cx="93" cy="110" rx="5" ry="6" fill="white" opacity="0.85" /><ellipse cx="107" cy="110" rx="5" ry="6" fill="white" opacity="0.85" />
-        <ellipse cx="94" cy="108" rx="2" ry="2.5" fill="#2d2d2d" opacity="0.7" /><ellipse cx="108" cy="108" rx="2" ry="2.5" fill="#2d2d2d" opacity="0.7" />
-      </>}
-      <ellipse cx="100" cy="120" rx="3" ry="2" fill="rgba(255,255,255,0.25)" />
-      {mood === "happy" && <path d="M 95 126 Q 100 132 105 126" stroke="white" strokeWidth="1.5" fill="none" strokeLinecap="round" opacity="0.7" />}
-      {mood === "sad" && <path d="M 96 128 Q 100 124 104 128" stroke="white" strokeWidth="1.5" fill="none" strokeLinecap="round" opacity="0.5" />}
-    </svg>
-  );
-}
-
-function MonkeyL2({ size, accent, mood }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 200 200">
-      <defs><filter id="ms2"><feDropShadow dx="0" dy="3" stdDeviation="5" floodOpacity="0.22" /></filter></defs>
-      <ellipse cx="100" cy="184" rx="30" ry="5" fill="rgba(0,0,0,0.12)" />
-      {/* Short tail */}
-      <path d="M 60 148 Q 40 138 42 120" stroke={accent} strokeWidth="7" fill="none" strokeLinecap="round" opacity="0.6" />
-      <ellipse cx="100" cy="120" rx="42" ry="46" fill={accent} filter="url(#ms2)" />
-      <ellipse cx="100" cy="132" rx="28" ry="26" fill="rgba(255,255,255,0.1)" />
-      <circle cx="58" cy="96" r="15" fill={accent} /><circle cx="58" cy="96" r="10" fill="rgba(255,255,255,0.12)" />
-      <circle cx="142" cy="96" r="15" fill={accent} /><circle cx="142" cy="96" r="10" fill="rgba(255,255,255,0.12)" />
-      <ellipse cx="100" cy="100" rx="22" ry="18" fill="rgba(255,255,255,0.1)" />
-      {mood === "happy" ? <>
-        <path d="M 88 96 Q 92 88 96 96" stroke="white" strokeWidth="2.5" fill="none" strokeLinecap="round" />
-        <path d="M 104 96 Q 108 88 112 96" stroke="white" strokeWidth="2.5" fill="none" strokeLinecap="round" />
-      </> : <>
-        <ellipse cx="92" cy="94" rx="5" ry="6" fill="white" opacity="0.85" /><ellipse cx="108" cy="94" rx="5" ry="6" fill="white" opacity="0.85" />
-        <ellipse cx="93" cy="92" rx="2" ry="2.5" fill="#2d2d2d" opacity="0.7" /><ellipse cx="109" cy="92" rx="2" ry="2.5" fill="#2d2d2d" opacity="0.7" />
-      </>}
-      <ellipse cx="100" cy="104" rx="3.5" ry="2" fill="rgba(255,255,255,0.25)" />
-      {mood === "happy" && <path d="M 93 110 Q 100 118 107 110" stroke="white" strokeWidth="1.8" fill="none" strokeLinecap="round" opacity="0.7" />}
-      {mood === "sad" && <path d="M 95 114 Q 100 108 105 114" stroke="white" strokeWidth="1.5" fill="none" strokeLinecap="round" opacity="0.5" />}
-      {mood === "content" && <path d="M 95 110 Q 100 114 105 110" stroke="white" strokeWidth="1.5" fill="none" strokeLinecap="round" opacity="0.6" />}
-      {/* Small arms */}
-      <ellipse cx="62" cy="130" rx="8" ry="12" fill={accent} opacity="0.65" transform="rotate(12,62,130)" />
-      <ellipse cx="138" cy="130" rx="8" ry="12" fill={accent} opacity="0.65" transform="rotate(-12,138,130)" />
-      <ellipse cx="82" cy="166" rx="10" ry="7" fill={accent} opacity="0.6" /><ellipse cx="118" cy="166" rx="10" ry="7" fill={accent} opacity="0.6" />
-    </svg>
-  );
-}
-
-function MonkeyL3({ size, accent, mood }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 200 200">
-      <defs><filter id="ms3"><feDropShadow dx="0" dy="3" stdDeviation="6" floodOpacity="0.22" /></filter></defs>
-      <ellipse cx="100" cy="185" rx="35" ry="5" fill="rgba(0,0,0,0.12)" />
-      <path d="M 58 148 Q 30 135 32 108 Q 34 85 48 78" stroke={accent} strokeWidth="8" fill="none" strokeLinecap="round" opacity="0.65">
-        {mood === "happy" && <animate attributeName="d" values="M 58 148 Q 30 135 32 108 Q 34 85 48 78;M 58 148 Q 25 130 30 104 Q 36 82 52 76;M 58 148 Q 30 135 32 108 Q 34 85 48 78" dur="2s" repeatCount="indefinite" />}
-      </path>
-      <ellipse cx="100" cy="120" rx="48" ry="52" fill={accent} filter="url(#ms3)" />
-      <ellipse cx="100" cy="132" rx="30" ry="30" fill="rgba(255,255,255,0.12)" />
-      {/* Chest marking */}
-      <path d="M 88 118 Q 100 140 112 118" fill="rgba(255,255,255,0.06)" />
-      <circle cx="54" cy="88" r="16" fill={accent} /><circle cx="54" cy="88" r="10" fill="rgba(255,255,255,0.12)" />
-      <circle cx="146" cy="88" r="16" fill={accent} /><circle cx="146" cy="88" r="10" fill="rgba(255,255,255,0.12)" />
-      <ellipse cx="100" cy="98" rx="24" ry="20" fill="rgba(255,255,255,0.1)" />
-      {mood === "happy" ? <>
-        <path d="M 86 94 Q 91 84 96 94" stroke="white" strokeWidth="2.5" fill="none" strokeLinecap="round" />
-        <path d="M 104 94 Q 109 84 114 94" stroke="white" strokeWidth="2.5" fill="none" strokeLinecap="round" />
-      </> : <>
-        <ellipse cx="91" cy="92" rx="5.5" ry="6.5" fill="white" opacity="0.85" /><ellipse cx="109" cy="92" rx="5.5" ry="6.5" fill="white" opacity="0.85" />
-        <ellipse cx="92" cy="90" rx="2" ry="2.5" fill="#2d2d2d" opacity="0.7" /><ellipse cx="110" cy="90" rx="2" ry="2.5" fill="#2d2d2d" opacity="0.7" />
-      </>}
-      <ellipse cx="100" cy="102" rx="4" ry="2.5" fill="rgba(255,255,255,0.25)" />
-      {mood === "happy" && <path d="M 92 108 Q 100 118 108 108" stroke="white" strokeWidth="2" fill="none" strokeLinecap="round" opacity="0.8" />}
-      {mood === "sad" && <path d="M 94 114 Q 100 108 106 114" stroke="white" strokeWidth="1.8" fill="none" strokeLinecap="round" opacity="0.5" />}
-      {mood === "content" && <path d="M 94 110 Q 100 114 106 110" stroke="white" strokeWidth="1.8" fill="none" strokeLinecap="round" opacity="0.6" />}
-      <ellipse cx="56" cy="132" rx="10" ry="14" fill={accent} opacity="0.7" transform="rotate(12,56,132)" />
-      <ellipse cx="144" cy="132" rx="10" ry="14" fill={accent} opacity="0.7" transform="rotate(-12,144,132)" />
-      <ellipse cx="80" cy="170" rx="13" ry="8" fill={accent} opacity="0.65" /><ellipse cx="120" cy="170" rx="13" ry="8" fill={accent} opacity="0.65" />
-      <circle cx="40" cy="68" r="2.5" fill={accent} opacity="0.5"><animate attributeName="opacity" values="0.5;0.1;0.5" dur="2s" repeatCount="indefinite" /></circle>
-    </svg>
-  );
-}
-
-function MonkeyL4({ size, accent, mood }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 200 200">
-      <defs>
-        <filter id="ms4"><feDropShadow dx="0" dy="3" stdDeviation="6" floodOpacity="0.25" /></filter>
-        <filter id="mGlow"><feDropShadow dx="0" dy="0" stdDeviation="8" floodColor={accent} floodOpacity="0.18" /></filter>
-      </defs>
-      <ellipse cx="100" cy="185" rx="38" ry="5" fill="rgba(0,0,0,0.15)" />
-      <ellipse cx="100" cy="118" rx="65" ry="68" fill="none" stroke={accent} strokeWidth="1" opacity="0.12" filter="url(#mGlow)">
-        <animate attributeName="opacity" values="0.12;0.04;0.12" dur="3s" repeatCount="indefinite" />
-      </ellipse>
-      <path d="M 55 148 Q 22 132 26 100 Q 30 72 50 62 Q 55 58 52 52" stroke={accent} strokeWidth="9" fill="none" strokeLinecap="round" opacity="0.7">
-        {mood === "happy" && <animate attributeName="d" values="M 55 148 Q 22 132 26 100 Q 30 72 50 62 Q 55 58 52 52;M 55 148 Q 18 128 24 96 Q 32 68 54 60 Q 58 55 55 48;M 55 148 Q 22 132 26 100 Q 30 72 50 62 Q 55 58 52 52" dur="2s" repeatCount="indefinite" />}
-      </path>
-      {/* Tail curl */}
-      <circle cx="52" cy="50" r="4" fill={accent} opacity="0.5" />
-      <ellipse cx="100" cy="118" rx="50" ry="54" fill={accent} filter="url(#ms4)" />
-      <ellipse cx="100" cy="130" rx="32" ry="32" fill="rgba(255,255,255,0.12)" />
-      <path d="M 85 116 Q 100 142 115 116" fill="rgba(255,255,255,0.06)" />
-      {/* Crown tuft */}
-      <path d="M 92 66 Q 88 54 96 58 Q 100 50 104 58 Q 112 54 108 66" fill={accent} opacity="0.8" />
-      <circle cx="52" cy="84" r="18" fill={accent} /><circle cx="52" cy="84" r="12" fill="rgba(255,255,255,0.12)" />
-      <circle cx="148" cy="84" r="18" fill={accent} /><circle cx="148" cy="84" r="12" fill="rgba(255,255,255,0.12)" />
-      <ellipse cx="100" cy="94" rx="26" ry="22" fill="rgba(255,255,255,0.12)" />
-      {mood === "happy" ? <>
-        <path d="M 85 90 Q 90 80 95 90" stroke="white" strokeWidth="2.8" fill="none" strokeLinecap="round" />
-        <path d="M 105 90 Q 110 80 115 90" stroke="white" strokeWidth="2.8" fill="none" strokeLinecap="round" />
-      </> : <>
-        <ellipse cx="90" cy="88" rx="6" ry="7" fill="white" opacity="0.9" /><ellipse cx="110" cy="88" rx="6" ry="7" fill="white" opacity="0.9" />
-        <ellipse cx="91" cy="86" rx="2.5" ry="3" fill={accent} opacity="0.4" /><ellipse cx="111" cy="86" rx="2.5" ry="3" fill={accent} opacity="0.4" />
-      </>}
-      <ellipse cx="100" cy="100" rx="4.5" ry="2.5" fill="rgba(255,255,255,0.3)" />
-      {mood === "happy" && <path d="M 90 106 Q 100 118 110 106" stroke="white" strokeWidth="2.2" fill="none" strokeLinecap="round" opacity="0.85" />}
-      {mood === "sad" && <path d="M 93 114 Q 100 106 107 114" stroke="white" strokeWidth="2" fill="none" strokeLinecap="round" opacity="0.5" />}
-      {mood === "content" && <path d="M 93 108 Q 100 112 107 108" stroke="white" strokeWidth="2" fill="none" strokeLinecap="round" opacity="0.6" />}
-      <ellipse cx="54" cy="130" rx="12" ry="16" fill={accent} opacity="0.7" transform="rotate(10,54,130)" />
-      <ellipse cx="146" cy="130" rx="12" ry="16" fill={accent} opacity="0.7" transform="rotate(-10,146,130)" />
-      <ellipse cx="78" cy="170" rx="14" ry="9" fill={accent} opacity="0.65" /><ellipse cx="122" cy="170" rx="14" ry="9" fill={accent} opacity="0.65" />
-      <circle cx="36" cy="60" r="3" fill={accent} opacity="0.6"><animate attributeName="opacity" values="0.6;0.1;0.6" dur="1.8s" repeatCount="indefinite" /></circle>
-      <circle cx="164" cy="56" r="2.5" fill={accent} opacity="0.4"><animate attributeName="opacity" values="0.4;0.1;0.4" dur="2.2s" repeatCount="indefinite" /></circle>
-    </svg>
-  );
-}
-
-// ─── ROBOT (Bolt) ───
-function RobotL1({ size, accent, mood }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 200 200">
-      <defs><filter id="rs1"><feDropShadow dx="0" dy="3" stdDeviation="4" floodOpacity="0.2" /></filter></defs>
-      <ellipse cx="100" cy="180" rx="25" ry="4" fill="rgba(0,0,0,0.15)" />
-      {/* Simple cube */}
-      <rect x="72" y="90" width="56" height="56" rx="10" fill={accent} filter="url(#rs1)" />
-      <rect x="80" y="100" width="40" height="24" rx="6" fill="rgba(0,0,0,0.25)" />
-      {/* Simple dot eyes */}
-      {mood === "happy" ? <>
-        <path d="M 90 112 Q 93 106 96 112" stroke={accent} strokeWidth="2.5" fill="none" strokeLinecap="round" />
-        <path d="M 104 112 Q 107 106 110 112" stroke={accent} strokeWidth="2.5" fill="none" strokeLinecap="round" />
-      </> : <>
-        <rect x="88" y="108" width="6" height="6" rx="1.5" fill={accent} opacity={mood === "sad" ? "0.5" : "0.8"} />
-        <rect x="106" y="108" width="6" height="6" rx="1.5" fill={accent} opacity={mood === "sad" ? "0.5" : "0.8"} />
-      </>}
-      {/* Simple nub feet */}
-      <rect x="80" y="146" width="14" height="10" rx="4" fill={accent} opacity="0.5" />
-      <rect x="106" y="146" width="14" height="10" rx="4" fill={accent} opacity="0.5" />
-    </svg>
-  );
-}
-
-function RobotL2({ size, accent, mood }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 200 200">
-      <defs><filter id="rs2"><feDropShadow dx="0" dy="3" stdDeviation="5" floodOpacity="0.22" /></filter></defs>
-      <ellipse cx="100" cy="184" rx="30" ry="5" fill="rgba(0,0,0,0.15)" />
-      {/* Short antenna */}
-      <line x1="100" y1="68" x2="100" y2="56" stroke="rgba(255,255,255,0.25)" strokeWidth="2.5" strokeLinecap="round" />
-      <circle cx="100" cy="52" r="4" fill={accent} opacity="0.7" />
-      {/* Head */}
-      <rect x="68" y="68" width="64" height="52" rx="12" fill={accent} filter="url(#rs2)" />
-      <rect x="76" y="78" width="48" height="24" rx="7" fill="rgba(0,0,0,0.28)" />
-      {mood === "happy" ? <>
-        <path d="M 88 90 Q 91 84 94 90" stroke={accent} strokeWidth="2.5" fill="none" strokeLinecap="round" />
-        <path d="M 106 90 Q 109 84 112 90" stroke={accent} strokeWidth="2.5" fill="none" strokeLinecap="round" />
-      </> : <>
-        <rect x="86" y="86" width="7" height="7" rx="2" fill={accent} opacity={mood === "sad" ? "0.5" : "0.8"} />
-        <rect x="107" y="86" width="7" height="7" rx="2" fill={accent} opacity={mood === "sad" ? "0.5" : "0.8"} />
-      </>}
-      {mood === "happy" && <path d="M 92 106 L 96 110 L 104 110 L 108 106" stroke={accent} strokeWidth="1.8" fill="none" strokeLinecap="round" opacity="0.6" />}
-      {/* Body */}
-      <rect x="76" y="122" width="48" height="38" rx="8" fill={accent} filter="url(#rs2)" />
-      <rect x="88" y="128" width="24" height="14" rx="3" fill="rgba(0,0,0,0.18)" />
-      {/* Stub arms */}
-      <rect x="56" y="126" width="16" height="8" rx="4" fill={accent} opacity="0.55" />
-      <rect x="128" y="126" width="16" height="8" rx="4" fill={accent} opacity="0.55" />
-      {/* Feet */}
-      <rect x="80" y="160" width="14" height="14" rx="4" fill={accent} opacity="0.55" />
-      <rect x="106" y="160" width="14" height="14" rx="4" fill={accent} opacity="0.55" />
-    </svg>
-  );
-}
-
-function RobotL3({ size, accent, mood }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 200 200">
-      <defs>
-        <filter id="rs3"><feDropShadow dx="0" dy="3" stdDeviation="5" floodOpacity="0.25" /></filter>
-        <filter id="rG3"><feDropShadow dx="0" dy="0" stdDeviation="4" floodColor={accent} floodOpacity="0.35" /></filter>
-      </defs>
-      <ellipse cx="100" cy="185" rx="35" ry="5" fill="rgba(0,0,0,0.18)" />
-      <line x1="100" y1="58" x2="100" y2="42" stroke="rgba(255,255,255,0.3)" strokeWidth="3" strokeLinecap="round" />
-      <circle cx="100" cy="38" r="5" fill={accent} filter="url(#rG3)"><animate attributeName="opacity" values="1;0.4;1" dur="1.8s" repeatCount="indefinite" /></circle>
-      <rect x="64" y="58" width="72" height="58" rx="14" fill={accent} filter="url(#rs3)" />
-      <rect x="74" y="70" width="52" height="26" rx="8" fill="rgba(0,0,0,0.3)" />
-      {mood === "happy" ? <>
-        <path d="M 86 82 Q 89 74 92 82" stroke={accent} strokeWidth="2.8" fill="none" strokeLinecap="round" filter="url(#rG3)" />
-        <path d="M 108 82 Q 111 74 114 82" stroke={accent} strokeWidth="2.8" fill="none" strokeLinecap="round" filter="url(#rG3)" />
-      </> : <>
-        <rect x="84" y="78" width="8" height="8" rx="2" fill={accent} opacity={mood === "sad" ? "0.5" : "1"} filter="url(#rG3)" />
-        <rect x="108" y="78" width="8" height="8" rx="2" fill={accent} opacity={mood === "sad" ? "0.5" : "1"} filter="url(#rG3)" />
-      </>}
-      {mood === "happy" && <path d="M 90 102 L 95 106 L 105 106 L 110 102" stroke={accent} strokeWidth="2" fill="none" strokeLinecap="round" opacity="0.7" />}
-      {mood === "sad" && <path d="M 92 106 Q 100 100 108 106" stroke={accent} strokeWidth="1.8" fill="none" strokeLinecap="round" opacity="0.4" />}
-      <rect x="72" y="120" width="56" height="44" rx="10" fill={accent} filter="url(#rs3)" />
-      <rect x="86" y="128" width="28" height="16" rx="4" fill="rgba(0,0,0,0.22)" />
-      <circle cx="95" cy="136" r="3" fill={mood === "happy" ? "#6ee7a0" : mood === "sad" ? "#e86a6a" : accent} opacity="0.8">
-        <animate attributeName="opacity" values="0.8;0.3;0.8" dur="2s" repeatCount="indefinite" />
-      </circle>
-      <rect x="102" y="133" width="8" height="2" rx="1" fill={accent} opacity="0.4" />
-      <rect x="102" y="138" width="6" height="2" rx="1" fill={accent} opacity="0.3" />
-      {/* Jointed arms */}
-      <rect x="50" y="124" width="18" height="10" rx="5" fill={accent} opacity="0.6" />
-      <rect x="44" y="136" width="10" height="16" rx="4" fill={accent} opacity="0.45" />
-      <rect x="132" y="124" width="18" height="10" rx="5" fill={accent} opacity="0.6" />
-      <rect x="146" y="136" width="10" height="16" rx="4" fill={accent} opacity="0.45" />
-      <rect x="78" y="164" width="14" height="16" rx="4" fill={accent} opacity="0.55" />
-      <rect x="108" y="164" width="14" height="16" rx="4" fill={accent} opacity="0.55" />
-      <circle cx="44" cy="54" r="2.5" fill={accent} opacity="0.5"><animate attributeName="opacity" values="0.5;0.1;0.5" dur="2s" repeatCount="indefinite" /></circle>
-    </svg>
-  );
-}
-
-function RobotL4({ size, accent, mood }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 200 200">
-      <defs>
-        <filter id="rs4"><feDropShadow dx="0" dy="3" stdDeviation="6" floodOpacity="0.3" /></filter>
-        <filter id="rG4"><feDropShadow dx="0" dy="0" stdDeviation="5" floodColor={accent} floodOpacity="0.4" /></filter>
-        <filter id="rAura"><feDropShadow dx="0" dy="0" stdDeviation="12" floodColor={accent} floodOpacity="0.15" /></filter>
-      </defs>
-      <ellipse cx="100" cy="186" rx="38" ry="5" fill="rgba(0,0,0,0.2)" />
-      <ellipse cx="100" cy="112" rx="68" ry="70" fill="none" stroke={accent} strokeWidth="1" opacity="0.1" filter="url(#rAura)">
-        <animate attributeName="opacity" values="0.1;0.03;0.1" dur="3s" repeatCount="indefinite" />
-      </ellipse>
-      {/* Antenna array */}
-      <line x1="88" y1="52" x2="85" y2="36" stroke="rgba(255,255,255,0.2)" strokeWidth="2" strokeLinecap="round" />
-      <line x1="100" y1="52" x2="100" y2="32" stroke="rgba(255,255,255,0.3)" strokeWidth="3" strokeLinecap="round" />
-      <line x1="112" y1="52" x2="115" y2="36" stroke="rgba(255,255,255,0.2)" strokeWidth="2" strokeLinecap="round" />
-      <circle cx="85" cy="33" r="3.5" fill={accent} opacity="0.6" filter="url(#rG4)"><animate attributeName="opacity" values="0.6;0.2;0.6" dur="2.2s" repeatCount="indefinite" /></circle>
-      <circle cx="100" cy="28" r="5" fill={accent} filter="url(#rG4)"><animate attributeName="opacity" values="1;0.4;1" dur="1.8s" repeatCount="indefinite" /></circle>
-      <circle cx="115" cy="33" r="3.5" fill={accent} opacity="0.6" filter="url(#rG4)"><animate attributeName="opacity" values="0.6;0.2;0.6" dur="2s" repeatCount="indefinite" /></circle>
-      {/* Head */}
-      <rect x="62" y="52" width="76" height="62" rx="14" fill={accent} filter="url(#rs4)" />
-      {/* Side panels */}
-      <rect x="52" y="62" width="10" height="20" rx="4" fill={accent} opacity="0.5" />
-      <rect x="138" y="62" width="10" height="20" rx="4" fill={accent} opacity="0.5" />
-      <rect x="72" y="64" width="56" height="28" rx="8" fill="rgba(0,0,0,0.32)" />
-      {mood === "happy" ? <>
-        <path d="M 86 78 Q 89 70 92 78" stroke={accent} strokeWidth="3" fill="none" strokeLinecap="round" filter="url(#rG4)" />
-        <path d="M 108 78 Q 111 70 114 78" stroke={accent} strokeWidth="3" fill="none" strokeLinecap="round" filter="url(#rG4)" />
-      </> : <>
-        <rect x="84" y="74" width="9" height="9" rx="2" fill={accent} opacity={mood === "sad" ? "0.5" : "1"} filter="url(#rG4)" />
-        <rect x="107" y="74" width="9" height="9" rx="2" fill={accent} opacity={mood === "sad" ? "0.5" : "1"} filter="url(#rG4)" />
-      </>}
-      {mood === "happy" && <path d="M 88 100 L 94 105 L 106 105 L 112 100" stroke={accent} strokeWidth="2.2" fill="none" strokeLinecap="round" opacity="0.7" />}
-      {mood === "sad" && <path d="M 92 104 Q 100 98 108 104" stroke={accent} strokeWidth="2" fill="none" strokeLinecap="round" opacity="0.4" />}
-      {mood === "content" && <line x1="92" y1="102" x2="108" y2="102" stroke={accent} strokeWidth="2" strokeLinecap="round" opacity="0.5" />}
-      {/* Body */}
-      <rect x="68" y="118" width="64" height="48" rx="10" fill={accent} filter="url(#rs4)" />
-      {/* Chest core */}
-      <rect x="82" y="124" width="36" height="22" rx="5" fill="rgba(0,0,0,0.25)" />
-      <circle cx="95" cy="135" r="4" fill={mood === "happy" ? "#6ee7a0" : mood === "sad" ? "#e86a6a" : accent} filter="url(#rG4)">
-        <animate attributeName="opacity" values="1;0.3;1" dur="1.5s" repeatCount="indefinite" />
-      </circle>
-      <rect x="103" y="130" width="10" height="2.5" rx="1" fill={accent} opacity="0.5" />
-      <rect x="103" y="136" width="8" height="2.5" rx="1" fill={accent} opacity="0.35" />
-      <rect x="103" y="142" width="6" height="2" rx="1" fill={accent} opacity="0.2" />
-      {/* Shoulder plates */}
-      <rect x="46" y="118" width="20" height="14" rx="6" fill={accent} opacity="0.65" />
-      <rect x="134" y="118" width="20" height="14" rx="6" fill={accent} opacity="0.65" />
-      {/* Forearms */}
-      <rect x="42" y="134" width="14" height="22" rx="5" fill={accent} opacity="0.5" />
-      <rect x="144" y="134" width="14" height="22" rx="5" fill={accent} opacity="0.5" />
-      {/* Hands */}
-      <circle cx="49" cy="160" r="5" fill={accent} opacity="0.4" /><circle cx="151" cy="160" r="5" fill={accent} opacity="0.4" />
-      {/* Legs */}
-      <rect x="76" y="166" width="16" height="16" rx="5" fill={accent} opacity="0.6" />
-      <rect x="108" y="166" width="16" height="16" rx="5" fill={accent} opacity="0.6" />
-      {/* Foot detail */}
-      <rect x="74" y="180" width="20" height="4" rx="2" fill={accent} opacity="0.35" />
-      <rect x="106" y="180" width="20" height="4" rx="2" fill={accent} opacity="0.35" />
-      <circle cx="40" cy="48" r="3" fill={accent} opacity="0.5"><animate attributeName="opacity" values="0.5;0.1;0.5" dur="2s" repeatCount="indefinite" /></circle>
-      <circle cx="160" cy="44" r="2.5" fill={accent} opacity="0.4"><animate attributeName="opacity" values="0.4;0.1;0.4" dur="2.4s" repeatCount="indefinite" /></circle>
-      <circle cx="158" cy="68" r="2" fill={accent} opacity="0.35"><animate attributeName="opacity" values="0.35;0.1;0.35" dur="1.8s" repeatCount="indefinite" /></circle>
-    </svg>
-  );
-}
-
-// ─── Buddy renderer dispatch ───
 const BUDDY_STAGES = {
   bird: [null, BirdL1, BirdL2, BirdL3, BirdL4],
   snake: [null, SnakeL1, SnakeL2, SnakeL3, SnakeL4],
@@ -658,88 +77,57 @@ function BuddyFace({ mood, level, hat, buddyType, size = 140 }) {
   const bt = BUDDY_TYPES.find(b => b.id === buddyType) || BUDDY_TYPES[0];
   const stages = BUDDY_STAGES[bt.id] || BUDDY_STAGES.bird;
   const ani = mood === "happy" ? "bb 1.4s ease-in-out infinite" : mood === "sad" ? "bwob 3s ease-in-out infinite" : "bfl 2.8s ease-in-out infinite";
-
   let content;
-  if (level === 0) {
-    content = <EggStage size={size} accent={bt.accent} />;
-  } else {
-    const Stage = stages[Math.min(level, stages.length - 1)];
-    content = <Stage size={size} accent={bt.accent} mood={mood} />;
-  }
-
-  return (
-    <div style={{ position: "relative", display: "inline-block", animation: ani }}>
-      {hat && (
-        <svg width={size * 0.35} height={size * 0.3} viewBox="0 0 70 50" style={{ position: "absolute", top: level === 0 ? -size * 0.05 : -size * 0.1, left: size * 0.33, zIndex: 2, filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.3))" }}>
-          <polygon points="35,3 52,36 18,36" fill={bt.accent} stroke="rgba(255,255,255,0.2)" strokeWidth="1" />
-          <circle cx="35" cy="3" r="3.5" fill="#ffe066" /><rect x="18" y="35" width="34" height="4" rx="2" fill="rgba(255,255,255,0.2)" />
-        </svg>
-      )}
-      {content}
-    </div>
-  );
+  if (level === 0) content = <EggStage size={size} accent={bt.accent} />;
+  else { const Stage = stages[Math.min(level, stages.length - 1)]; content = <Stage size={size} accent={bt.accent} mood={mood} />; }
+  return (<div style={{ position:"relative", display:"inline-block", animation:ani }}>{hat&&(<svg width={size*0.35} height={size*0.3} viewBox="0 0 70 50" style={{position:"absolute",top:level===0?-size*0.05:-size*0.1,left:size*0.33,zIndex:2,filter:"drop-shadow(0 2px 4px rgba(0,0,0,0.3))"}}><polygon points="35,3 52,36 18,36" fill={bt.accent} stroke="rgba(255,255,255,0.2)" strokeWidth="1"/><circle cx="35" cy="3" r="3.5" fill="#ffe066"/><rect x="18" y="35" width="34" height="4" rx="2" fill="rgba(255,255,255,0.2)"/></svg>)}{content}</div>);
 }
 
-// ═══ UI COMPONENTS (unchanged logic) ═══
-function Tracker({ label, value, max, unit, color, onChange, step, icon }) {
-  const pct = max > 0 ? Math.min(value / max, 1) : 0;
-  return (
-    <div style={{ background: "rgba(255,255,255,0.04)", borderRadius: 12, padding: "14px 16px", border: "1px solid rgba(255,255,255,0.06)" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}><span style={{ fontSize: 15 }}>{icon}</span><span style={{ fontWeight: 600, fontSize: 13, color: "#e0e0e0" }}>{label}</span></div>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <span style={{ fontSize: 13, color: pct >= 1 ? color : "rgba(255,255,255,0.4)", fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>{value}{unit ? ` / ${max} ${unit}` : ` / ${max}`}</span>
-          {pct >= 1 && <span style={{ fontSize: 10, fontWeight: 700, color: "#12121e", background: color, padding: "2px 6px", borderRadius: 4 }}>✓</span>}
-        </div>
-      </div>
-      <div style={{ position: "relative", height: 28, display: "flex", alignItems: "center" }}>
-        <div style={{ position: "absolute", left: 0, right: 0, height: 6, background: "rgba(255,255,255,0.08)", borderRadius: 3 }}>
-          <div style={{ height: "100%", width: `${pct * 100}%`, borderRadius: 3, background: `linear-gradient(90deg, ${color}88, ${color})`, transition: "width 0.15s ease", boxShadow: pct > 0 ? `0 0 12px ${color}33` : "none" }} />
-        </div>
-        <input type="range" min="0" max={max} step={step} value={Math.min(value, max)} onChange={e => onChange(Number(e.target.value))} style={{ position: "absolute", left: 0, right: 0, width: "100%", height: 28, opacity: 0, cursor: "pointer", margin: 0 }} />
-        <div style={{ position: "absolute", left: `calc(${pct * 100}% - 8px)`, width: 16, height: 16, borderRadius: "50%", background: color, boxShadow: `0 0 10px ${color}66, 0 2px 4px rgba(0,0,0,0.3)`, border: "2px solid rgba(255,255,255,0.2)", transition: "left 0.15s ease", pointerEvents: "none" }} />
-      </div>
-    </div>
-  );
-}
+// ═══ UI COMPONENTS ═══
+function Tracker({label,value,max,unit,color,onChange,step,icon}){const pct=max>0?Math.min(value/max,1):0;return(<div style={{background:"rgba(255,255,255,0.04)",borderRadius:12,padding:"14px 16px",border:"1px solid rgba(255,255,255,0.06)"}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}><div style={{display:"flex",alignItems:"center",gap:8}}><span style={{fontSize:15}}>{icon}</span><span style={{fontWeight:600,fontSize:13,color:"#e0e0e0"}}>{label}</span></div><div style={{display:"flex",alignItems:"center",gap:8}}><span style={{fontSize:13,color:pct>=1?color:"rgba(255,255,255,0.4)",fontWeight:700,fontVariantNumeric:"tabular-nums"}}>{value}{unit?` / ${max} ${unit}`:` / ${max}`}</span>{pct>=1&&<span style={{fontSize:10,fontWeight:700,color:"#12121e",background:color,padding:"2px 6px",borderRadius:4}}>✓</span>}</div></div><div style={{position:"relative",height:28,display:"flex",alignItems:"center"}}><div style={{position:"absolute",left:0,right:0,height:6,background:"rgba(255,255,255,0.08)",borderRadius:3}}><div style={{height:"100%",width:`${pct*100}%`,borderRadius:3,background:`linear-gradient(90deg, ${color}88, ${color})`,transition:"width 0.15s ease",boxShadow:pct>0?`0 0 12px ${color}33`:"none"}}/></div><input type="range" min="0" max={max} step={step} value={Math.min(value,max)} onChange={e=>onChange(Number(e.target.value))} style={{position:"absolute",left:0,right:0,width:"100%",height:28,opacity:0,cursor:"pointer",margin:0}}/><div style={{position:"absolute",left:`calc(${pct*100}% - 8px)`,width:16,height:16,borderRadius:"50%",background:color,boxShadow:`0 0 10px ${color}66, 0 2px 4px rgba(0,0,0,0.3)`,border:"2px solid rgba(255,255,255,0.2)",transition:"left 0.15s ease",pointerEvents:"none"}}/></div></div>);}
 
-function TaskRow({ chore, done, onToggle, onDelete, showInterval }) {
-  const dc = { Easy: "#6ee7a0", Medium: "#e8a84c", Hard: "#e86a6a" };
-  return (
-    <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", borderRadius: 10, background: done ? "rgba(255,255,255,0.03)" : "rgba(255,255,255,0.04)", border: `1px solid ${done ? "rgba(110,231,160,0.15)" : "rgba(255,255,255,0.06)"}` }}>
-      <div onClick={onToggle} style={{ width: 20, height: 20, borderRadius: 5, flexShrink: 0, border: done ? `2px solid ${dc[chore.difficulty]}` : "2px solid rgba(255,255,255,0.15)", background: done ? dc[chore.difficulty] : "transparent", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
-        {done && <span style={{ fontSize: 11, color: "#12121e", fontWeight: 800 }}>✓</span>}
-      </div>
-      <div style={{ flex: 1, minWidth: 0 }} onClick={onToggle}>
-        <div style={{ fontWeight: 600, fontSize: 13, color: done ? "rgba(255,255,255,0.3)" : "#e0e0e0", textDecoration: done ? "line-through" : "none", cursor: "pointer" }}>{chore.name}</div>
-        {showInterval && <div style={{ fontSize: 10.5, color: "rgba(255,255,255,0.2)", marginTop: 1 }}>{chore.type === "one-off" ? "One-off" : INTERVALS.find(i => i.value === chore.interval)?.label}</div>}
-      </div>
-      <span style={{ fontSize: 9.5, fontWeight: 700, color: dc[chore.difficulty], background: `${dc[chore.difficulty]}12`, padding: "2px 7px", borderRadius: 4 }}>{chore.difficulty.toUpperCase()}</span>
-      <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.25)" }}>+{DIFF_PTS[chore.difficulty]}</span>
-      {onDelete && <button onClick={onDelete} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 14, color: "rgba(255,255,255,0.15)", padding: "2px 4px" }}>×</button>}
-    </div>
-  );
-}
+function TaskRow({chore,done,onToggle,onDelete,showInterval}){const dc={Easy:"#6ee7a0",Medium:"#e8a84c",Hard:"#e86a6a"};return(<div style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",borderRadius:10,background:done?"rgba(255,255,255,0.03)":"rgba(255,255,255,0.04)",border:`1px solid ${done?"rgba(110,231,160,0.15)":"rgba(255,255,255,0.06)"}`}}><div onClick={onToggle} style={{width:20,height:20,borderRadius:5,flexShrink:0,border:done?`2px solid ${dc[chore.difficulty]}`:"2px solid rgba(255,255,255,0.15)",background:done?dc[chore.difficulty]:"transparent",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}>{done&&<span style={{fontSize:11,color:"#12121e",fontWeight:800}}>✓</span>}</div><div style={{flex:1,minWidth:0}} onClick={onToggle}><div style={{fontWeight:600,fontSize:13,color:done?"rgba(255,255,255,0.3)":"#e0e0e0",textDecoration:done?"line-through":"none",cursor:"pointer"}}>{chore.name}</div>{showInterval&&<div style={{fontSize:10.5,color:"rgba(255,255,255,0.2)",marginTop:1}}>{chore.type==="one-off"?"One-off":INTERVALS.find(i=>i.value===chore.interval)?.label}</div>}</div><span style={{fontSize:9.5,fontWeight:700,color:dc[chore.difficulty],background:`${dc[chore.difficulty]}12`,padding:"2px 7px",borderRadius:4}}>{chore.difficulty.toUpperCase()}</span><span style={{fontSize:11,fontWeight:700,color:"rgba(255,255,255,0.25)"}}>+{DIFF_PTS[chore.difficulty]}</span>{onDelete&&<button onClick={onDelete} style={{background:"none",border:"none",cursor:"pointer",fontSize:14,color:"rgba(255,255,255,0.15)",padding:"2px 4px"}}>×</button>}</div>);}
 
-function Modal({ children, onClose }) {
+function Modal({children,onClose}){return(<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.6)",backdropFilter:"blur(8px)",display:"flex",alignItems:"flex-end",justifyContent:"center",zIndex:200}} onClick={e=>{if(e.target===e.currentTarget)onClose()}}><div style={{width:"100%",maxWidth:440,background:"#1e1e30",borderRadius:"20px 20px 0 0",padding:"24px 20px 32px",animation:"su 0.3s cubic-bezier(.4,0,.2,1)",border:"1px solid rgba(255,255,255,0.08)",borderBottom:"none",maxHeight:"85vh",overflowY:"auto"}}>{children}</div></div>);}
+
+// ═══ LOGIN SCREEN ═══
+function LoginScreen({ onSignIn, loading }) {
   return (
-    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", backdropFilter: "blur(8px)", display: "flex", alignItems: "flex-end", justifyContent: "center", zIndex: 200 }} onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
-      <div style={{ width: "100%", maxWidth: 440, background: "#1e1e30", borderRadius: "20px 20px 0 0", padding: "24px 20px 32px", animation: "su 0.3s cubic-bezier(.4,0,.2,1)", border: "1px solid rgba(255,255,255,0.08)", borderBottom: "none", maxHeight: "85vh", overflowY: "auto" }}>{children}</div>
+    <div style={{ minHeight: "100vh", background: "#12121e", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", fontFamily: "'Inter', -apple-system, sans-serif", padding: 32 }}>
+      <div style={{ animation: "bfl 2.8s ease-in-out infinite", marginBottom: 24 }}>
+        <BuddyFace mood="content" level={2} hat={false} buddyType="bird" size={120} />
+      </div>
+      <h1 style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 28, fontWeight: 700, color: "#fff", letterSpacing: -1, marginBottom: 8 }}>MY BUDDY</h1>
+      <p style={{ fontSize: 13, color: "rgba(255,255,255,0.3)", marginBottom: 32, textAlign: "center", lineHeight: 1.5 }}>Track your habits, complete tasks,<br />and watch your Buddy grow.</p>
+      <button onClick={onSignIn} disabled={loading} style={{
+        padding: "14px 32px", borderRadius: 12, border: "none", cursor: loading ? "wait" : "pointer",
+        background: loading ? "rgba(255,255,255,0.1)" : "white", color: "#12121e",
+        fontWeight: 700, fontSize: 14, display: "flex", alignItems: "center", gap: 10,
+        boxShadow: "0 4px 20px rgba(255,255,255,0.1)", transition: "all 0.2s",
+      }}>
+        <svg width="18" height="18" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+        {loading ? "Signing in..." : "Sign in with Google"}
+      </button>
     </div>
   );
 }
 
 // ═══ MAIN APP ═══
 export default function App() {
+  const [user, setUser] = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
+  const [signInLoading, setSignInLoading] = useState(false);
+  const [dataLoaded, setDataLoaded] = useState(false);
+
   const today = TODAY();
-  const [goals, setGoals] = useState(() => ld("bg4", { water: 100, sleep: 8, meals: 3 }));
-  const [log, setLog] = useState(() => { const s = ld("bl4", {}); return s[today] || { water: 0, sleep: 0, meals: 0 }; });
-  const [chores, setChores] = useState(() => ld("bc4", []));
-  const [choreLog, setChoreLog] = useState(() => { const s = ld("bcl4", {}); return s[today] || {}; });
-  const [xp, setXp] = useState(() => ld("bxp4", 0));
-  const [bdays, setBdays] = useState(() => ld("bbd4", []));
-  const [wishes, setWishes] = useState(() => { const s = ld("bw4", {}); return s[today] || {}; });
-  const [activeBuddy, setActiveBuddy] = useState(() => ld("bab4", "bird"));
+  const [goals, setGoals] = useState({ water: 100, sleep: 8, meals: 3 });
+  const [log, setLog] = useState({ water: 0, sleep: 0, meals: 0 });
+  const [chores, setChores] = useState([]);
+  const [choreLog, setChoreLog] = useState({});
+  const [xp, setXp] = useState(0);
+  const [bdays, setBdays] = useState([]);
+  const [wishes, setWishes] = useState({});
+  const [activeBuddy, setActiveBuddy] = useState("bird");
   const [tab, setTab] = useState("home");
   const [modal, setModal] = useState(null);
   const [nc, setNc] = useState({ name: "", difficulty: "Easy", interval: "daily", type: "recurring" });
@@ -751,15 +139,65 @@ export default function App() {
   const [viewingBd, setViewingBd] = useState(null);
   const [editNotes, setEditNotes] = useState("");
 
-  useEffect(() => { sv("bg4", goals); }, [goals]);
-  useEffect(() => { const s = ld("bl4", {}); s[today] = log; sv("bl4", s); }, [log, today]);
-  useEffect(() => { sv("bc4", chores); }, [chores]);
-  useEffect(() => { const s = ld("bcl4", {}); s[today] = choreLog; sv("bcl4", s); }, [choreLog, today]);
-  useEffect(() => { sv("bxp4", xp); }, [xp]);
-  useEffect(() => { sv("bbd4", bdays); }, [bdays]);
-  useEffect(() => { const s = ld("bw4", {}); s[today] = wishes; sv("bw4", s); }, [wishes, today]);
-  useEffect(() => { sv("bab4", activeBuddy); }, [activeBuddy]);
+  // Debounced save to Firebase
+  const saveTimer = useRef(null);
+  const save = useCallback((path, data) => {
+    if (!user) return;
+    if (saveTimer.current) clearTimeout(saveTimer.current);
+    saveTimer.current = setTimeout(() => saveData(user.uid, path, data), 300);
+  }, [user]);
 
+  // Auth listener
+  useEffect(() => {
+    const unsub = onAuthChange((u) => { setUser(u); setAuthLoading(false); });
+    return unsub;
+  }, []);
+
+  // Load data from Firebase when user signs in
+  useEffect(() => {
+    if (!user) { setDataLoaded(false); return; }
+    (async () => {
+      const [g, x, c, b, ab] = await Promise.all([
+        loadData(user.uid, "goals"),
+        loadData(user.uid, "xp"),
+        loadData(user.uid, "chores"),
+        loadData(user.uid, "birthdays"),
+        loadData(user.uid, "activeBuddy"),
+      ]);
+      const dl = await loadData(user.uid, `dailyLog/${today}`);
+      const cl = await loadData(user.uid, `choreLog/${today}`);
+      const w = await loadData(user.uid, `wishes/${today}`);
+
+      if (g) setGoals(g);
+      if (typeof x === "number") setXp(x);
+      if (c) setChores(Object.values(c));
+      if (b) setBdays(Object.values(b));
+      if (ab) setActiveBuddy(ab);
+      if (dl) setLog(dl);
+      if (cl) setChoreLog(cl);
+      if (w) setWishes(w);
+      setDataLoaded(true);
+    })();
+  }, [user, today]);
+
+  // Save to Firebase on changes (only after initial load)
+  useEffect(() => { if (dataLoaded && user) save("goals", goals); }, [goals, dataLoaded]);
+  useEffect(() => { if (dataLoaded && user) save(`dailyLog/${today}`, log); }, [log, dataLoaded]);
+  useEffect(() => { if (dataLoaded && user) { const obj = {}; chores.forEach(c => obj[c.id] = c); save("chores", obj); } }, [chores, dataLoaded]);
+  useEffect(() => { if (dataLoaded && user) save(`choreLog/${today}`, choreLog); }, [choreLog, dataLoaded]);
+  useEffect(() => { if (dataLoaded && user) save("xp", xp); }, [xp, dataLoaded]);
+  useEffect(() => { if (dataLoaded && user) { const obj = {}; bdays.forEach(b => obj[b.id] = b); save("birthdays", obj); } }, [bdays, dataLoaded]);
+  useEffect(() => { if (dataLoaded && user) save(`wishes/${today}`, wishes); }, [wishes, dataLoaded]);
+  useEffect(() => { if (dataLoaded && user) save("activeBuddy", activeBuddy); }, [activeBuddy, dataLoaded]);
+
+  const handleSignIn = async () => { setSignInLoading(true); await signInGoogle(); setSignInLoading(false); };
+
+  // Show loading or login
+  if (authLoading) return <div style={{ minHeight: "100vh", background: "#12121e", display: "flex", alignItems: "center", justifyContent: "center", color: "rgba(255,255,255,0.3)", fontFamily: "'Inter', sans-serif", fontSize: 13 }}>Loading...</div>;
+  if (!user) return <LoginScreen onSignIn={handleSignIn} loading={signInLoading} />;
+  if (!dataLoaded) return <div style={{ minHeight: "100vh", background: "#12121e", display: "flex", alignItems: "center", justifyContent: "center", color: "rgba(255,255,255,0.3)", fontFamily: "'Inter', sans-serif", fontSize: 13 }}>Loading your data...</div>;
+
+  // ─── Game logic (same as before) ───
   const pcts = [goals.water > 0 ? log.water / goals.water : 1, goals.sleep > 0 ? log.sleep / goals.sleep : 1, goals.meals > 0 ? log.meals / goals.meals : 1];
   const avg = pcts.reduce((a, b) => a + b, 0) / 3;
   const mood = avg >= 1 ? "happy" : avg >= 0.5 ? "content" : "sad";
@@ -767,7 +205,6 @@ export default function App() {
   const allWished = todayBd.length > 0 && todayBd.every(b => wishes[b.name]);
   const li = getLvl(xp);
   const accent = (BUDDY_TYPES.find(b => b.id === activeBuddy) || BUDDY_TYPES[0]).accent;
-
   const dailyChores = chores.filter(c => isDaily(c));
   const recurringChores = chores.filter(c => isRecurring(c));
   const oneOffChores = chores.filter(c => c.type === "one-off");
@@ -781,7 +218,6 @@ export default function App() {
   const toggleWish = (name) => { setWishes(p => { const n = { ...p }; if (n[name]) delete n[name]; else n[name] = true; return { ...n }; }); };
   const saveChore = () => { if (!nc.name.trim()) return; setChores(p => [...p, { ...nc, id: Date.now().toString(), createdDate: today }]); setNc({ name: "", difficulty: "Easy", interval: "daily", type: "recurring" }); setModal(null); };
   const saveBd = () => { if (!nb.name.trim() || !nb.date) return; setBdays(p => [...p, { ...nb, id: Date.now().toString() }]); setNb({ name: "", date: "", notes: "" }); setModal(null); };
-
   const filteredBdays = bdays.filter(b => { if (bdSearch && !b.name.toLowerCase().includes(bdSearch.toLowerCase())) return false; const d = daysUntil(b.date); if (bdFilter === "week") return d <= 7; if (bdFilter === "month") return d <= 30; return true; }).sort((a, b) => daysUntil(a.date) - daysUntil(b.date));
   const sortedTodayBd = [...todayBd].sort((a, b) => (wishes[a.name] ? 1 : 0) - (wishes[b.name] ? 1 : 0));
   const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
@@ -836,18 +272,19 @@ export default function App() {
             </div>
           ))}
           <div style={{ marginTop: 8, fontSize: 10, color: "rgba(255,255,255,0.12)" }}>Easy=10 · Med=25 · Hard=50 · Core 100%=+10 each</div>
+          <div style={{ marginTop: 12, paddingTop: 10, borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <span style={{ fontSize: 11, color: "rgba(255,255,255,0.3)" }}>Signed in as {user.displayName || user.email}</span>
+              <button onClick={signOutUser} style={{ fontSize: 10, fontWeight: 700, border: "1px solid rgba(232,106,106,0.3)", borderRadius: 6, padding: "4px 10px", cursor: "pointer", background: "transparent", color: "#e86a6a" }}>Sign Out</button>
+            </div>
+          </div>
         </div>
       )}
 
       {sortedTodayBd.length > 0 && (
         <div style={{ margin: "4px 20px 6px", padding: "10px 14px", borderRadius: 10, background: `${accent}08`, border: `1px solid ${accent}18`, animation: "fi 0.4s ease" }}>
           <div style={{ fontWeight: 700, fontSize: 10, color: accent, marginBottom: 6, letterSpacing: 1 }}>🎂 BIRTHDAY TODAY</div>
-          {sortedTodayBd.map(b => (
-            <div key={b.name} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 3, opacity: wishes[b.name] ? 0.5 : 1 }}>
-              <span style={{ fontSize: 12.5, fontWeight: 600 }}>{b.name}</span>
-              <button onClick={() => toggleWish(b.name)} style={{ fontSize: 10.5, fontWeight: 700, border: "none", borderRadius: 6, padding: "4px 10px", cursor: "pointer", background: wishes[b.name] ? "rgba(255,255,255,0.06)" : accent, color: wishes[b.name] ? "rgba(255,255,255,0.4)" : "#12121e" }}>{wishes[b.name] ? "↩ Undo" : "Wish HBD"}</button>
-            </div>
-          ))}
+          {sortedTodayBd.map(b => (<div key={b.name} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 3, opacity: wishes[b.name] ? 0.5 : 1 }}><span style={{ fontSize: 12.5, fontWeight: 600 }}>{b.name}</span><button onClick={() => toggleWish(b.name)} style={{ fontSize: 10.5, fontWeight: 700, border: "none", borderRadius: 6, padding: "4px 10px", cursor: "pointer", background: wishes[b.name] ? "rgba(255,255,255,0.06)" : accent, color: wishes[b.name] ? "rgba(255,255,255,0.4)" : "#12121e" }}>{wishes[b.name] ? "↩ Undo" : "Wish HBD"}</button></div>))}
         </div>
       )}
 
@@ -857,141 +294,23 @@ export default function App() {
         <div style={{ position: "absolute", bottom: 2, fontSize: 10, fontWeight: 600, letterSpacing: 1.5, textTransform: "uppercase", color: mood === "happy" ? accent : mood === "content" ? "rgba(255,255,255,0.3)" : "rgba(232,106,106,0.6)" }}>{mood === "happy" ? "Happy" : mood === "content" ? "Content" : "Needs care"}</div>
       </div>
 
-      <div style={{ display: "flex", gap: 2, padding: "4px 20px", marginBottom: 10 }}>
-        {tBtn("home", "Today", "◉")}{tBtn("tasks", "Tasks", "☰")}{tBtn("collection", "Buddies", "◈")}{tBtn("birthdays", "Birthdays", "♡")}
-      </div>
+      <div style={{ display: "flex", gap: 2, padding: "4px 20px", marginBottom: 10 }}>{tBtn("home", "Today", "◉")}{tBtn("tasks", "Tasks", "☰")}{tBtn("collection", "Buddies", "◈")}{tBtn("birthdays", "Birthdays", "♡")}</div>
       <div style={{ height: 1, background: "rgba(255,255,255,0.04)", margin: "0 20px 12px" }} />
 
-      {tab === "home" && (
-        <div style={{ padding: "0 20px 80px", animation: "fi 0.25s ease" }}>
-          {sL("Core Trackers")}
-          <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 20 }}>
-            <Tracker label="Hydration" value={log.water} max={goals.water} unit="oz" color="#5baed6" icon="💧" step={1} onChange={v => updateCore("water", v)} />
-            <Tracker label="Sleep" value={log.sleep} max={goals.sleep} unit="hrs" color="#9c7cb8" icon="🌙" step={0.5} onChange={v => updateCore("sleep", v)} />
-            <Tracker label="Healthy Meals" value={log.meals} max={goals.meals} unit="" color="#6ee7a0" icon="🥗" step={1} onChange={v => updateCore("meals", v)} />
-          </div>
-          {dueDailies.length > 0 && <>{sL("Daily Tasks")}<div style={{ display: "flex", flexDirection: "column", gap: 5, marginBottom: 16 }}>{dueDailies.map(c => <TaskRow key={c.id} chore={c} done={!!choreLog[c.id]} onToggle={() => toggleChore(c.id)} showInterval={false} />)}</div></>}
-          {dueRecurring.length > 0 && <>{sL("Recurring — Due Today")}<div style={{ display: "flex", flexDirection: "column", gap: 5, marginBottom: 16 }}>{dueRecurring.map(c => <TaskRow key={c.id} chore={c} done={!!choreLog[c.id]} onToggle={() => toggleChore(c.id)} showInterval />)}</div></>}
-          {dueOneOffs.length > 0 && <>{sL("One-off Tasks")}<div style={{ display: "flex", flexDirection: "column", gap: 5 }}>{dueOneOffs.map(c => <TaskRow key={c.id} chore={c} done={!!choreLog[c.id]} onToggle={() => toggleChore(c.id)} showInterval={false} />)}</div></>}
-          {dueDailies.length === 0 && dueRecurring.length === 0 && dueOneOffs.length === 0 && <div style={{ textAlign: "center", padding: 28, color: "rgba(255,255,255,0.12)", fontSize: 12 }}>No tasks due today</div>}
-        </div>
-      )}
+      {tab === "home" && (<div style={{ padding: "0 20px 80px", animation: "fi 0.25s ease" }}>{sL("Core Trackers")}<div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 20 }}><Tracker label="Hydration" value={log.water} max={goals.water} unit="oz" color="#5baed6" icon="💧" step={1} onChange={v => updateCore("water", v)} /><Tracker label="Sleep" value={log.sleep} max={goals.sleep} unit="hrs" color="#9c7cb8" icon="🌙" step={0.5} onChange={v => updateCore("sleep", v)} /><Tracker label="Healthy Meals" value={log.meals} max={goals.meals} unit="" color="#6ee7a0" icon="🥗" step={1} onChange={v => updateCore("meals", v)} /></div>{dueDailies.length>0&&<>{sL("Daily Tasks")}<div style={{display:"flex",flexDirection:"column",gap:5,marginBottom:16}}>{dueDailies.map(c=><TaskRow key={c.id} chore={c} done={!!choreLog[c.id]} onToggle={()=>toggleChore(c.id)} showInterval={false}/>)}</div></>}{dueRecurring.length>0&&<>{sL("Recurring — Due Today")}<div style={{display:"flex",flexDirection:"column",gap:5,marginBottom:16}}>{dueRecurring.map(c=><TaskRow key={c.id} chore={c} done={!!choreLog[c.id]} onToggle={()=>toggleChore(c.id)} showInterval/>)}</div></>}{dueOneOffs.length>0&&<>{sL("One-off Tasks")}<div style={{display:"flex",flexDirection:"column",gap:5}}>{dueOneOffs.map(c=><TaskRow key={c.id} chore={c} done={!!choreLog[c.id]} onToggle={()=>toggleChore(c.id)} showInterval={false}/>)}</div></>}{dueDailies.length===0&&dueRecurring.length===0&&dueOneOffs.length===0&&<div style={{textAlign:"center",padding:28,color:"rgba(255,255,255,0.12)",fontSize:12}}>No tasks due today</div>}</div>)}
 
-      {tab === "tasks" && (
-        <div style={{ padding: "0 20px 80px", animation: "fi 0.25s ease" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
-            <span style={{ fontWeight: 700, fontSize: 14, color: "#fff" }}>Task Manager</span>
-            <button onClick={() => { setNc({ name: "", difficulty: "Easy", interval: "daily", type: "recurring" }); setModal("chore"); }} style={{ fontWeight: 700, fontSize: 11, border: "none", borderRadius: 8, padding: "6px 14px", cursor: "pointer", background: accent, color: "#12121e" }}>+ New Task</button>
-          </div>
-          {sL("Daily")}<div style={{ display: "flex", flexDirection: "column", gap: 5, marginBottom: 16 }}>{dailyChores.map(c => <TaskRow key={c.id} chore={c} done={!!choreLog[c.id]} onToggle={() => toggleChore(c.id)} onDelete={() => setChores(p => p.filter(x => x.id !== c.id))} showInterval={false} />)}{dailyChores.length === 0 && <div style={{ fontSize: 11, color: "rgba(255,255,255,0.1)", textAlign: "center", padding: 12 }}>No daily tasks</div>}</div>
-          {sL("Recurring")}<div style={{ display: "flex", flexDirection: "column", gap: 5, marginBottom: 16 }}>{recurringChores.map(c => <TaskRow key={c.id} chore={c} done={!!choreLog[c.id]} onToggle={() => toggleChore(c.id)} onDelete={() => setChores(p => p.filter(x => x.id !== c.id))} showInterval />)}{recurringChores.length === 0 && <div style={{ fontSize: 11, color: "rgba(255,255,255,0.1)", textAlign: "center", padding: 12 }}>No recurring tasks</div>}</div>
-          {sL("One-off")}<div style={{ display: "flex", flexDirection: "column", gap: 5 }}>{oneOffChores.map(c => <TaskRow key={c.id} chore={c} done={!!choreLog[c.id] || !!c.completedDate} onToggle={() => toggleChore(c.id)} onDelete={() => setChores(p => p.filter(x => x.id !== c.id))} showInterval={false} />)}{oneOffChores.length === 0 && <div style={{ fontSize: 11, color: "rgba(255,255,255,0.1)", textAlign: "center", padding: 12 }}>No one-off tasks</div>}</div>
-        </div>
-      )}
+      {tab === "tasks" && (<div style={{ padding: "0 20px 80px", animation: "fi 0.25s ease" }}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}><span style={{fontWeight:700,fontSize:14,color:"#fff"}}>Task Manager</span><button onClick={()=>{setNc({name:"",difficulty:"Easy",interval:"daily",type:"recurring"});setModal("chore")}} style={{fontWeight:700,fontSize:11,border:"none",borderRadius:8,padding:"6px 14px",cursor:"pointer",background:accent,color:"#12121e"}}>+ New Task</button></div>{sL("Daily")}<div style={{display:"flex",flexDirection:"column",gap:5,marginBottom:16}}>{dailyChores.map(c=><TaskRow key={c.id} chore={c} done={!!choreLog[c.id]} onToggle={()=>toggleChore(c.id)} onDelete={()=>setChores(p=>p.filter(x=>x.id!==c.id))} showInterval={false}/>)}{dailyChores.length===0&&<div style={{fontSize:11,color:"rgba(255,255,255,0.1)",textAlign:"center",padding:12}}>No daily tasks</div>}</div>{sL("Recurring")}<div style={{display:"flex",flexDirection:"column",gap:5,marginBottom:16}}>{recurringChores.map(c=><TaskRow key={c.id} chore={c} done={!!choreLog[c.id]} onToggle={()=>toggleChore(c.id)} onDelete={()=>setChores(p=>p.filter(x=>x.id!==c.id))} showInterval/>)}{recurringChores.length===0&&<div style={{fontSize:11,color:"rgba(255,255,255,0.1)",textAlign:"center",padding:12}}>No recurring tasks</div>}</div>{sL("One-off")}<div style={{display:"flex",flexDirection:"column",gap:5}}>{oneOffChores.map(c=><TaskRow key={c.id} chore={c} done={!!choreLog[c.id]||!!c.completedDate} onToggle={()=>toggleChore(c.id)} onDelete={()=>setChores(p=>p.filter(x=>x.id!==c.id))} showInterval={false}/>)}{oneOffChores.length===0&&<div style={{fontSize:11,color:"rgba(255,255,255,0.1)",textAlign:"center",padding:12}}>No one-off tasks</div>}</div></div>)}
 
-      {tab === "collection" && (
-        <div style={{ padding: "0 20px 80px", animation: "fi 0.25s ease" }}>
-          {sL("Choose Your Buddy")}
-          <p style={{ fontSize: 11, color: "rgba(255,255,255,0.2)", marginBottom: 14, lineHeight: 1.5 }}>Each buddy evolves through 5 stages as you level up — from Egg to fully evolved form.</p>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-            {BUDDY_TYPES.map(bt => {
-              const active = activeBuddy === bt.id;
-              return (
-                <div key={bt.id} onClick={() => setActiveBuddy(bt.id)} style={{ padding: "14px 10px 12px", borderRadius: 12, cursor: "pointer", background: active ? `${bt.accent}0c` : "rgba(255,255,255,0.02)", border: `1.5px solid ${active ? bt.accent + "44" : "rgba(255,255,255,0.05)"}` }}>
-                  <div style={{ display: "flex", justifyContent: "center", marginBottom: 8 }}><BuddyFace mood="happy" level={4} hat={false} buddyType={bt.id} size={80} /></div>
-                  <div style={{ textAlign: "center" }}>
-                    <div style={{ fontWeight: 700, fontSize: 13, color: active ? bt.accent : "#e0e0e0" }}>{bt.name}</div>
-                    <div style={{ fontSize: 10, color: "rgba(255,255,255,0.2)", marginTop: 2 }}>{bt.desc}</div>
-                    {active && <div style={{ fontSize: 9, fontWeight: 700, color: bt.accent, marginTop: 4, letterSpacing: 1 }}>ACTIVE</div>}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
+      {tab === "collection" && (<div style={{ padding: "0 20px 80px", animation: "fi 0.25s ease" }}>{sL("Choose Your Buddy")}<p style={{fontSize:11,color:"rgba(255,255,255,0.2)",marginBottom:14,lineHeight:1.5}}>Each buddy evolves through 5 stages as you level up.</p><div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>{BUDDY_TYPES.map(bt=>{const active=activeBuddy===bt.id;return(<div key={bt.id} onClick={()=>setActiveBuddy(bt.id)} style={{padding:"14px 10px 12px",borderRadius:12,cursor:"pointer",background:active?`${bt.accent}0c`:"rgba(255,255,255,0.02)",border:`1.5px solid ${active?bt.accent+"44":"rgba(255,255,255,0.05)"}`}}><div style={{display:"flex",justifyContent:"center",marginBottom:8}}><BuddyFace mood="happy" level={4} hat={false} buddyType={bt.id} size={80}/></div><div style={{textAlign:"center"}}><div style={{fontWeight:700,fontSize:13,color:active?bt.accent:"#e0e0e0"}}>{bt.name}</div><div style={{fontSize:10,color:"rgba(255,255,255,0.2)",marginTop:2}}>{bt.desc}</div>{active&&<div style={{fontSize:9,fontWeight:700,color:bt.accent,marginTop:4,letterSpacing:1}}>ACTIVE</div>}</div></div>)})}</div></div>)}
 
-      {tab === "birthdays" && (
-        <div style={{ padding: "0 20px 80px", animation: "fi 0.25s ease" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-            <span style={{ fontWeight: 700, fontSize: 14, color: "#fff" }}>Birthdays</span>
-            <button onClick={() => { setNb({ name: "", date: "", notes: "" }); setModal("birthday"); }} style={{ fontWeight: 700, fontSize: 11, border: "none", borderRadius: 8, padding: "6px 14px", cursor: "pointer", background: "#e86a8a", color: "#fff" }}>+ Add</button>
-          </div>
-          <input placeholder="Search names..." value={bdSearch} onChange={e => setBdSearch(e.target.value)} style={{ width: "100%", padding: "8px 12px", borderRadius: 8, border: "1px solid rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.04)", fontSize: 12.5, color: "#fff", marginBottom: 10, outline: "none" }} />
-          <div style={{ display: "flex", gap: 4, marginBottom: 14 }}>
-            {[{ v: "all", l: "All" }, { v: "week", l: "This Week" }, { v: "month", l: "Next 30 Days" }].map(f => (
-              <button key={f.v} onClick={() => setBdFilter(f.v)} style={{ padding: "5px 12px", borderRadius: 6, border: `1px solid ${bdFilter === f.v ? accent + "44" : "rgba(255,255,255,0.06)"}`, cursor: "pointer", fontWeight: 600, fontSize: 11, background: bdFilter === f.v ? `${accent}12` : "transparent", color: bdFilter === f.v ? accent : "rgba(255,255,255,0.3)" }}>{f.l}</button>
-            ))}
-          </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
-            {filteredBdays.map(b => {
-              const bd = new Date(b.date + "T00:00:00"), d = daysUntil(b.date), isTd = d === 0;
-              return (
-                <div key={b.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", borderRadius: 10, background: isTd ? `${accent}08` : "rgba(255,255,255,0.03)", border: `1px solid ${isTd ? accent + "20" : "rgba(255,255,255,0.05)"}`, cursor: "pointer" }} onClick={() => { setViewingBd(b); setEditNotes(b.notes || ""); setModal("viewBd"); }}>
-                  <div style={{ width: 34, height: 34, borderRadius: 8, background: isTd ? `${accent}20` : "rgba(255,255,255,0.05)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15, flexShrink: 0 }}>🎂</div>
-                  <div style={{ flex: 1, minWidth: 0 }}><div style={{ fontWeight: 600, fontSize: 13 }}>{b.name}</div><div style={{ fontSize: 10.5, color: "rgba(255,255,255,0.2)" }}>{months[bd.getMonth()]} {bd.getDate()}{b.notes ? " · 📝" : ""}</div></div>
-                  <div style={{ textAlign: "right", flexShrink: 0 }}>
-                    {isTd ? <button onClick={e => { e.stopPropagation(); toggleWish(b.name); }} style={{ fontSize: 10, fontWeight: 700, border: "none", borderRadius: 6, padding: "4px 10px", cursor: "pointer", background: wishes[b.name] ? "rgba(255,255,255,0.06)" : accent, color: wishes[b.name] ? "rgba(255,255,255,0.4)" : "#12121e" }}>{wishes[b.name] ? "↩ Undo" : "Wish"}</button> :
-                    <span style={{ fontSize: 10.5, color: "rgba(255,255,255,0.15)", fontWeight: 600 }}>{d === 1 ? "Tomorrow" : `${d}d`}</span>}
-                  </div>
-                </div>
-              );
-            })}
-            {filteredBdays.length === 0 && <div style={{ textAlign: "center", padding: 24, color: "rgba(255,255,255,0.1)", fontSize: 12 }}>{bdSearch ? "No matches" : "No birthdays saved"}</div>}
-          </div>
-          <div style={{ textAlign: "center", marginTop: 12, fontSize: 10, color: "rgba(255,255,255,0.1)" }}>{bdays.length} total</div>
-        </div>
-      )}
+      {tab === "birthdays" && (<div style={{ padding: "0 20px 80px", animation: "fi 0.25s ease" }}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}><span style={{fontWeight:700,fontSize:14,color:"#fff"}}>Birthdays</span><button onClick={()=>{setNb({name:"",date:"",notes:""});setModal("birthday")}} style={{fontWeight:700,fontSize:11,border:"none",borderRadius:8,padding:"6px 14px",cursor:"pointer",background:"#e86a8a",color:"#fff"}}>+ Add</button></div><input placeholder="Search names..." value={bdSearch} onChange={e=>setBdSearch(e.target.value)} style={{width:"100%",padding:"8px 12px",borderRadius:8,border:"1px solid rgba(255,255,255,0.08)",background:"rgba(255,255,255,0.04)",fontSize:12.5,color:"#fff",marginBottom:10,outline:"none"}}/><div style={{display:"flex",gap:4,marginBottom:14}}>{[{v:"all",l:"All"},{v:"week",l:"This Week"},{v:"month",l:"Next 30 Days"}].map(f=>(<button key={f.v} onClick={()=>setBdFilter(f.v)} style={{padding:"5px 12px",borderRadius:6,border:`1px solid ${bdFilter===f.v?accent+"44":"rgba(255,255,255,0.06)"}`,cursor:"pointer",fontWeight:600,fontSize:11,background:bdFilter===f.v?`${accent}12`:"transparent",color:bdFilter===f.v?accent:"rgba(255,255,255,0.3)"}}>{f.l}</button>))}</div><div style={{display:"flex",flexDirection:"column",gap:5}}>{filteredBdays.map(b=>{const bd=new Date(b.date+"T00:00:00"),d=daysUntil(b.date),isTd=d===0;return(<div key={b.id} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",borderRadius:10,background:isTd?`${accent}08`:"rgba(255,255,255,0.03)",border:`1px solid ${isTd?accent+"20":"rgba(255,255,255,0.05)"}`,cursor:"pointer"}} onClick={()=>{setViewingBd(b);setEditNotes(b.notes||"");setModal("viewBd")}}><div style={{width:34,height:34,borderRadius:8,background:isTd?`${accent}20`:"rgba(255,255,255,0.05)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:15,flexShrink:0}}>🎂</div><div style={{flex:1,minWidth:0}}><div style={{fontWeight:600,fontSize:13}}>{b.name}</div><div style={{fontSize:10.5,color:"rgba(255,255,255,0.2)"}}>{months[bd.getMonth()]} {bd.getDate()}{b.notes?" · 📝":""}</div></div><div style={{textAlign:"right",flexShrink:0}}>{isTd?<button onClick={e=>{e.stopPropagation();toggleWish(b.name)}} style={{fontSize:10,fontWeight:700,border:"none",borderRadius:6,padding:"4px 10px",cursor:"pointer",background:wishes[b.name]?"rgba(255,255,255,0.06)":accent,color:wishes[b.name]?"rgba(255,255,255,0.4)":"#12121e"}}>{wishes[b.name]?"↩ Undo":"Wish"}</button>:<span style={{fontSize:10.5,color:"rgba(255,255,255,0.15)",fontWeight:600}}>{d===1?"Tomorrow":`${d}d`}</span>}</div></div>)})}{filteredBdays.length===0&&<div style={{textAlign:"center",padding:24,color:"rgba(255,255,255,0.1)",fontSize:12}}>{bdSearch?"No matches":"No birthdays saved"}</div>}</div><div style={{textAlign:"center",marginTop:12,fontSize:10,color:"rgba(255,255,255,0.1)"}}>{bdays.length} total</div></div>)}
 
       {/* Modals */}
-      {modal === "chore" && (
-        <Modal onClose={() => setModal(null)}>
-          <div style={{ fontFamily: "'Space Grotesk'", fontSize: 16, fontWeight: 700, color: "#fff", marginBottom: 16 }}>New Task</div>
-          <input placeholder="Task name..." value={nc.name} onChange={e => setNc(p => ({ ...p, name: e.target.value }))} autoFocus style={{ width: "100%", padding: "10px 14px", borderRadius: 8, border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.04)", fontSize: 13, fontWeight: 600, color: "#fff", marginBottom: 12, outline: "none" }} />
-          <div style={{ display: "flex", gap: 4, marginBottom: 12 }}>
-            {[{ t: "recurring", l: "♻ Recurring" }, { t: "one-off", l: "◎ One-off" }].map(x => (
-              <button key={x.t} onClick={() => setNc(p => ({ ...p, type: x.t }))} style={{ flex: 1, padding: "8px 0", borderRadius: 8, border: `1px solid ${nc.type === x.t ? "rgba(255,255,255,0.2)" : "rgba(255,255,255,0.06)"}`, cursor: "pointer", fontWeight: 700, fontSize: 11.5, background: nc.type === x.t ? "rgba(255,255,255,0.08)" : "transparent", color: nc.type === x.t ? "#fff" : "rgba(255,255,255,0.3)" }}>{x.l}</button>
-            ))}
-          </div>
-          {nc.type === "recurring" && <div style={{ marginBottom: 12 }}><div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.2)", marginBottom: 6, letterSpacing: 1 }}>FREQUENCY</div><div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>{INTERVALS.map(i => <button key={i.value} onClick={() => setNc(p => ({ ...p, interval: i.value }))} style={{ padding: "5px 10px", borderRadius: 6, border: `1px solid ${nc.interval === i.value ? accent + "44" : "rgba(255,255,255,0.06)"}`, cursor: "pointer", fontWeight: 600, fontSize: 11, background: nc.interval === i.value ? `${accent}15` : "transparent", color: nc.interval === i.value ? accent : "rgba(255,255,255,0.3)" }}>{i.label}</button>)}</div></div>}
-          <div style={{ marginBottom: 16 }}><div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.2)", marginBottom: 6, letterSpacing: 1 }}>DIFFICULTY</div><div style={{ display: "flex", gap: 6 }}>{[{ d: "Easy", c: "#6ee7a0" }, { d: "Medium", c: "#e8a84c" }, { d: "Hard", c: "#e86a6a" }].map(x => <button key={x.d} onClick={() => setNc(p => ({ ...p, difficulty: x.d }))} style={{ flex: 1, padding: "10px 0", borderRadius: 8, border: `1.5px solid ${nc.difficulty === x.d ? x.c + "66" : "rgba(255,255,255,0.06)"}`, cursor: "pointer", fontWeight: 700, fontSize: 12, background: nc.difficulty === x.d ? `${x.c}12` : "transparent", color: x.c }}>{x.d}<div style={{ fontSize: 9, fontWeight: 600, marginTop: 2, opacity: 0.5 }}>+{DIFF_PTS[x.d]} XP</div></button>)}</div></div>
-          <div style={{ display: "flex", gap: 8 }}>
-            <button onClick={() => setModal(null)} style={{ flex: 1, padding: "11px 0", borderRadius: 10, border: "1px solid rgba(255,255,255,0.08)", background: "transparent", cursor: "pointer", fontWeight: 700, fontSize: 12, color: "rgba(255,255,255,0.3)" }}>Cancel</button>
-            <button onClick={saveChore} style={{ flex: 2, padding: "11px 0", borderRadius: 10, border: "none", background: accent, cursor: "pointer", fontWeight: 700, fontSize: 12, color: "#12121e" }}>Add Task</button>
-          </div>
-        </Modal>
-      )}
+      {modal === "chore" && (<Modal onClose={() => setModal(null)}><div style={{fontFamily:"'Space Grotesk'",fontSize:16,fontWeight:700,color:"#fff",marginBottom:16}}>New Task</div><input placeholder="Task name..." value={nc.name} onChange={e=>setNc(p=>({...p,name:e.target.value}))} autoFocus style={{width:"100%",padding:"10px 14px",borderRadius:8,border:"1px solid rgba(255,255,255,0.1)",background:"rgba(255,255,255,0.04)",fontSize:13,fontWeight:600,color:"#fff",marginBottom:12,outline:"none"}}/><div style={{display:"flex",gap:4,marginBottom:12}}>{[{t:"recurring",l:"♻ Recurring"},{t:"one-off",l:"◎ One-off"}].map(x=>(<button key={x.t} onClick={()=>setNc(p=>({...p,type:x.t}))} style={{flex:1,padding:"8px 0",borderRadius:8,border:`1px solid ${nc.type===x.t?"rgba(255,255,255,0.2)":"rgba(255,255,255,0.06)"}`,cursor:"pointer",fontWeight:700,fontSize:11.5,background:nc.type===x.t?"rgba(255,255,255,0.08)":"transparent",color:nc.type===x.t?"#fff":"rgba(255,255,255,0.3)"}}>{x.l}</button>))}</div>{nc.type==="recurring"&&<div style={{marginBottom:12}}><div style={{fontSize:10,fontWeight:700,color:"rgba(255,255,255,0.2)",marginBottom:6,letterSpacing:1}}>FREQUENCY</div><div style={{display:"flex",gap:4,flexWrap:"wrap"}}>{INTERVALS.map(i=><button key={i.value} onClick={()=>setNc(p=>({...p,interval:i.value}))} style={{padding:"5px 10px",borderRadius:6,border:`1px solid ${nc.interval===i.value?accent+"44":"rgba(255,255,255,0.06)"}`,cursor:"pointer",fontWeight:600,fontSize:11,background:nc.interval===i.value?`${accent}15`:"transparent",color:nc.interval===i.value?accent:"rgba(255,255,255,0.3)"}}>{i.label}</button>)}</div></div>}<div style={{marginBottom:16}}><div style={{fontSize:10,fontWeight:700,color:"rgba(255,255,255,0.2)",marginBottom:6,letterSpacing:1}}>DIFFICULTY</div><div style={{display:"flex",gap:6}}>{[{d:"Easy",c:"#6ee7a0"},{d:"Medium",c:"#e8a84c"},{d:"Hard",c:"#e86a6a"}].map(x=><button key={x.d} onClick={()=>setNc(p=>({...p,difficulty:x.d}))} style={{flex:1,padding:"10px 0",borderRadius:8,border:`1.5px solid ${nc.difficulty===x.d?x.c+"66":"rgba(255,255,255,0.06)"}`,cursor:"pointer",fontWeight:700,fontSize:12,background:nc.difficulty===x.d?`${x.c}12`:"transparent",color:x.c}}>{x.d}<div style={{fontSize:9,fontWeight:600,marginTop:2,opacity:0.5}}>+{DIFF_PTS[x.d]} XP</div></button>)}</div></div><div style={{display:"flex",gap:8}}><button onClick={()=>setModal(null)} style={{flex:1,padding:"11px 0",borderRadius:10,border:"1px solid rgba(255,255,255,0.08)",background:"transparent",cursor:"pointer",fontWeight:700,fontSize:12,color:"rgba(255,255,255,0.3)"}}>Cancel</button><button onClick={saveChore} style={{flex:2,padding:"11px 0",borderRadius:10,border:"none",background:accent,cursor:"pointer",fontWeight:700,fontSize:12,color:"#12121e"}}>Add Task</button></div></Modal>)}
 
-      {modal === "birthday" && (
-        <Modal onClose={() => setModal(null)}>
-          <div style={{ fontFamily: "'Space Grotesk'", fontSize: 16, fontWeight: 700, color: "#fff", marginBottom: 16 }}>Add Birthday</div>
-          <input placeholder="Name..." value={nb.name} onChange={e => setNb(p => ({ ...p, name: e.target.value }))} autoFocus style={{ width: "100%", padding: "10px 14px", borderRadius: 8, border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.04)", fontSize: 13, fontWeight: 600, color: "#fff", marginBottom: 10, outline: "none" }} />
-          <input type="date" value={nb.date} onChange={e => setNb(p => ({ ...p, date: e.target.value }))} style={{ width: "100%", padding: "10px 14px", borderRadius: 8, border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.04)", fontSize: 13, fontWeight: 600, color: "#fff", marginBottom: 10, outline: "none", colorScheme: "dark" }} />
-          <textarea placeholder="Notes (gift ideas, interests...)..." value={nb.notes} onChange={e => setNb(p => ({ ...p, notes: e.target.value }))} rows={3} style={{ width: "100%", padding: "10px 14px", borderRadius: 8, border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.04)", fontSize: 12.5, color: "#fff", marginBottom: 16, outline: "none", lineHeight: 1.5 }} />
-          <div style={{ display: "flex", gap: 8 }}>
-            <button onClick={() => setModal(null)} style={{ flex: 1, padding: "11px 0", borderRadius: 10, border: "1px solid rgba(255,255,255,0.08)", background: "transparent", cursor: "pointer", fontWeight: 700, fontSize: 12, color: "rgba(255,255,255,0.3)" }}>Cancel</button>
-            <button onClick={saveBd} style={{ flex: 2, padding: "11px 0", borderRadius: 10, border: "none", background: "#e86a8a", cursor: "pointer", fontWeight: 700, fontSize: 12, color: "#fff" }}>Save</button>
-          </div>
-        </Modal>
-      )}
+      {modal === "birthday" && (<Modal onClose={() => setModal(null)}><div style={{fontFamily:"'Space Grotesk'",fontSize:16,fontWeight:700,color:"#fff",marginBottom:16}}>Add Birthday</div><input placeholder="Name..." value={nb.name} onChange={e=>setNb(p=>({...p,name:e.target.value}))} autoFocus style={{width:"100%",padding:"10px 14px",borderRadius:8,border:"1px solid rgba(255,255,255,0.1)",background:"rgba(255,255,255,0.04)",fontSize:13,fontWeight:600,color:"#fff",marginBottom:10,outline:"none"}}/><input type="date" value={nb.date} onChange={e=>setNb(p=>({...p,date:e.target.value}))} style={{width:"100%",padding:"10px 14px",borderRadius:8,border:"1px solid rgba(255,255,255,0.1)",background:"rgba(255,255,255,0.04)",fontSize:13,fontWeight:600,color:"#fff",marginBottom:10,outline:"none",colorScheme:"dark"}}/><textarea placeholder="Notes (gift ideas, interests...)..." value={nb.notes} onChange={e=>setNb(p=>({...p,notes:e.target.value}))} rows={3} style={{width:"100%",padding:"10px 14px",borderRadius:8,border:"1px solid rgba(255,255,255,0.1)",background:"rgba(255,255,255,0.04)",fontSize:12.5,color:"#fff",marginBottom:16,outline:"none",lineHeight:1.5}}/><div style={{display:"flex",gap:8}}><button onClick={()=>setModal(null)} style={{flex:1,padding:"11px 0",borderRadius:10,border:"1px solid rgba(255,255,255,0.08)",background:"transparent",cursor:"pointer",fontWeight:700,fontSize:12,color:"rgba(255,255,255,0.3)"}}>Cancel</button><button onClick={saveBd} style={{flex:2,padding:"11px 0",borderRadius:10,border:"none",background:"#e86a8a",cursor:"pointer",fontWeight:700,fontSize:12,color:"#fff"}}>Save</button></div></Modal>)}
 
-      {modal === "viewBd" && viewingBd && (
-        <Modal onClose={() => { setModal(null); setViewingBd(null); }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
-            <div>
-              <div style={{ fontFamily: "'Space Grotesk'", fontSize: 18, fontWeight: 700, color: "#fff" }}>{viewingBd.name}</div>
-              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.3)", marginTop: 2 }}>{months[new Date(viewingBd.date + "T00:00:00").getMonth()]} {new Date(viewingBd.date + "T00:00:00").getDate()} · {daysUntil(viewingBd.date) === 0 ? "Today!" : `${daysUntil(viewingBd.date)}d away`}</div>
-            </div>
-            <button onClick={() => { setBdays(p => p.filter(x => x.id !== viewingBd.id)); setModal(null); setViewingBd(null); }} style={{ fontSize: 10, fontWeight: 700, border: "1px solid rgba(232,106,106,0.3)", borderRadius: 6, padding: "4px 10px", cursor: "pointer", background: "transparent", color: "#e86a6a" }}>Delete</button>
-          </div>
-          <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.2)", marginBottom: 6, letterSpacing: 1 }}>NOTES</div>
-          <textarea value={editNotes} onChange={e => setEditNotes(e.target.value)} rows={5} placeholder="Gift ideas, relationship notes..." style={{ width: "100%", padding: "10px 14px", borderRadius: 8, border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.04)", fontSize: 12.5, color: "#fff", outline: "none", lineHeight: 1.6, marginBottom: 14 }} />
-          <div style={{ display: "flex", gap: 8 }}>
-            <button onClick={() => { setModal(null); setViewingBd(null); }} style={{ flex: 1, padding: "11px 0", borderRadius: 10, border: "1px solid rgba(255,255,255,0.08)", background: "transparent", cursor: "pointer", fontWeight: 700, fontSize: 12, color: "rgba(255,255,255,0.3)" }}>Close</button>
-            <button onClick={() => { setBdays(p => p.map(b => b.id === viewingBd.id ? { ...b, notes: editNotes } : b)); setModal(null); setViewingBd(null); }} style={{ flex: 2, padding: "11px 0", borderRadius: 10, border: "none", background: accent, cursor: "pointer", fontWeight: 700, fontSize: 12, color: "#12121e" }}>Save Notes</button>
-          </div>
-        </Modal>
-      )}
+      {modal === "viewBd" && viewingBd && (<Modal onClose={() => {setModal(null);setViewingBd(null)}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:16}}><div><div style={{fontFamily:"'Space Grotesk'",fontSize:18,fontWeight:700,color:"#fff"}}>{viewingBd.name}</div><div style={{fontSize:12,color:"rgba(255,255,255,0.3)",marginTop:2}}>{months[new Date(viewingBd.date+"T00:00:00").getMonth()]} {new Date(viewingBd.date+"T00:00:00").getDate()} · {daysUntil(viewingBd.date)===0?"Today!":`${daysUntil(viewingBd.date)}d away`}</div></div><button onClick={()=>{setBdays(p=>p.filter(x=>x.id!==viewingBd.id));setModal(null);setViewingBd(null)}} style={{fontSize:10,fontWeight:700,border:"1px solid rgba(232,106,106,0.3)",borderRadius:6,padding:"4px 10px",cursor:"pointer",background:"transparent",color:"#e86a6a"}}>Delete</button></div><div style={{fontSize:10,fontWeight:700,color:"rgba(255,255,255,0.2)",marginBottom:6,letterSpacing:1}}>NOTES</div><textarea value={editNotes} onChange={e=>setEditNotes(e.target.value)} rows={5} placeholder="Gift ideas, relationship notes..." style={{width:"100%",padding:"10px 14px",borderRadius:8,border:"1px solid rgba(255,255,255,0.1)",background:"rgba(255,255,255,0.04)",fontSize:12.5,color:"#fff",outline:"none",lineHeight:1.6,marginBottom:14}}/><div style={{display:"flex",gap:8}}><button onClick={()=>{setModal(null);setViewingBd(null)}} style={{flex:1,padding:"11px 0",borderRadius:10,border:"1px solid rgba(255,255,255,0.08)",background:"transparent",cursor:"pointer",fontWeight:700,fontSize:12,color:"rgba(255,255,255,0.3)"}}>Close</button><button onClick={()=>{setBdays(p=>p.map(b=>b.id===viewingBd.id?{...b,notes:editNotes}:b));setModal(null);setViewingBd(null)}} style={{flex:2,padding:"11px 0",borderRadius:10,border:"none",background:accent,cursor:"pointer",fontWeight:700,fontSize:12,color:"#12121e"}}>Save Notes</button></div></Modal>)}
     </div>
   );
 }
