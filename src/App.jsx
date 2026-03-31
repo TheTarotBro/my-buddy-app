@@ -16,6 +16,14 @@ const BUDDY_TYPES = [
   { id: "monkey", name: "Mochi", desc: "Playful primate", accent: "#e8a84c" },
   { id: "robot", name: "Bolt", desc: "Friendly mech", accent: "#b07ae8" },
 ];
+const ENVIRONMENTS = [
+  { id: "office", name: "Office", icon: "🏢" },
+  { id: "livingroom", name: "Living Room", icon: "🛋️" },
+  { id: "park", name: "Park", icon: "🌳" },
+  { id: "rave", name: "Rave", icon: "🎆" },
+  { id: "beach", name: "Beach", icon: "🏖️" },
+  { id: "forest", name: "Forest", icon: "🌲" },
+];
 
 function isDueToday(ch, td) {
   if (ch.type === "one-off") return !ch.completedDate;
@@ -83,6 +91,184 @@ function BuddyFace({ mood, level, hat, buddyType, size = 140 }) {
   return (<div style={{ position:"relative", display:"inline-block", animation:ani }}>{hat&&(<svg width={size*0.35} height={size*0.3} viewBox="0 0 70 50" style={{position:"absolute",top:level===0?-size*0.05:-size*0.1,left:size*0.33,zIndex:2,filter:"drop-shadow(0 2px 4px rgba(0,0,0,0.3))"}}><polygon points="35,3 52,36 18,36" fill={bt.accent} stroke="rgba(255,255,255,0.2)" strokeWidth="1"/><circle cx="35" cy="3" r="3.5" fill="#ffe066"/><rect x="18" y="35" width="34" height="4" rx="2" fill="rgba(255,255,255,0.2)"/></svg>)}{content}</div>);
 }
 
+// ═══ ENVIRONMENT BACKGROUNDS ═══
+function EnvironmentBg({ envId, width = 320, height = 180 }) {
+  const w = width, h = height;
+  if (envId === "office") return (
+    <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} style={{position:"absolute",bottom:0,left:"50%",transform:"translateX(-50%)"}}>
+      <rect width={w} height={h} fill="#1a1a2e"/>
+      {/* Wall */}
+      <rect y={0} width={w} height={h*0.65} fill="#1e2038"/>
+      {/* Floor */}
+      <rect y={h*0.65} width={w} height={h*0.35} fill="#252540"/>
+      <line x1={0} y1={h*0.65} x2={w} y2={h*0.65} stroke="rgba(255,255,255,0.06)" strokeWidth="1"/>
+      {/* Window */}
+      <rect x={w*0.35} y={h*0.08} width={w*0.3} height={h*0.35} rx="3" fill="#2a3a5c" stroke="rgba(255,255,255,0.08)" strokeWidth="1"/>
+      <line x1={w*0.5} y1={h*0.08} x2={w*0.5} y2={h*0.43} stroke="rgba(255,255,255,0.06)" strokeWidth="1"/>
+      <line x1={w*0.35} y1={h*0.25} x2={w*0.65} y2={h*0.25} stroke="rgba(255,255,255,0.06)" strokeWidth="1"/>
+      {/* Desk */}
+      <rect x={w*0.1} y={h*0.55} width={w*0.35} height={h*0.04} rx="2" fill="#3a3a5a"/>
+      <rect x={w*0.14} y={h*0.59} width={w*0.04} height={h*0.15} fill="#333350"/>
+      <rect x={w*0.38} y={h*0.59} width={w*0.04} height={h*0.15} fill="#333350"/>
+      {/* Monitor */}
+      <rect x={w*0.18} y={h*0.35} width={w*0.18} height={h*0.18} rx="2" fill="#333358" stroke="rgba(255,255,255,0.08)" strokeWidth="1"/>
+      <rect x={w*0.2} y={h*0.37} width={w*0.14} height={h*0.12} rx="1" fill="#4a5a8a" opacity="0.4"/>
+      <rect x={w*0.25} y={h*0.53} width={w*0.04} height={h*0.02} fill="#333358"/>
+      {/* Plant */}
+      <rect x={w*0.78} y={h*0.5} width={w*0.06} height={h*0.08} rx="2" fill="#4a3a2a"/>
+      <circle cx={w*0.81} cy={h*0.46} r={w*0.04} fill="#2d5a3a"/>
+      <circle cx={w*0.78} cy={h*0.42} r={w*0.03} fill="#3a6b4a"/>
+      {/* Coffee mug */}
+      <rect x={w*0.06} y={h*0.5} width={w*0.035} height={h*0.05} rx="1.5" fill="#5a4a3a"/>
+    </svg>
+  );
+  if (envId === "livingroom") return (
+    <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} style={{position:"absolute",bottom:0,left:"50%",transform:"translateX(-50%)"}}>
+      <rect width={w} height={h} fill="#1a1a2e"/>
+      <rect y={0} width={w} height={h*0.6} fill="#22202e"/>
+      <rect y={h*0.6} width={w} height={h*0.4} fill="#2a2535"/>
+      {/* Rug */}
+      <ellipse cx={w*0.5} cy={h*0.78} rx={w*0.3} ry={h*0.1} fill="#3a2a3a" opacity="0.5"/>
+      {/* Couch */}
+      <rect x={w*0.08} y={h*0.45} width={w*0.38} height={h*0.2} rx="6" fill="#4a3a5a"/>
+      <rect x={w*0.1} y={h*0.42} width={w*0.1} height={h*0.22} rx="5" fill="#4a3a5a"/>
+      <rect x={w*0.34} y={h*0.42} width={w*0.1} height={h*0.22} rx="5" fill="#4a3a5a"/>
+      {/* Cushions */}
+      <rect x={w*0.15} y={h*0.46} width={w*0.08} height={h*0.1} rx="3" fill="#5a4a6a"/>
+      <rect x={w*0.26} y={h*0.46} width={w*0.08} height={h*0.1} rx="3" fill="#5a4a6a"/>
+      {/* Lamp */}
+      <rect x={w*0.72} y={h*0.2} width={w*0.015} height={h*0.38} fill="#5a5a6a"/>
+      <path d={`M ${w*0.68} ${h*0.2} Q ${w*0.73} ${h*0.1} ${w*0.78} ${h*0.2}`} fill="#6a5a3a" opacity="0.8"/>
+      <circle cx={w*0.73} cy={h*0.18} r={w*0.008} fill="#ffe088" opacity="0.6"/>
+      {/* Side table */}
+      <rect x={w*0.68} y={h*0.52} width={w*0.1} height={h*0.04} rx="2" fill="#3a3545"/>
+      <rect x={w*0.71} y={h*0.56} width={w*0.04} height={h*0.12} fill="#333040"/>
+      {/* Picture frame */}
+      <rect x={w*0.55} y={h*0.12} width={w*0.12} height={h*0.16} rx="2" stroke="rgba(255,255,255,0.1)" strokeWidth="1" fill="#2a2a3a"/>
+      {/* Bookshelf */}
+      <rect x={w*0.82} y={h*0.15} width={w*0.12} height={h*0.4} rx="2" fill="#332e3e"/>
+      <rect x={w*0.83} y={h*0.18} width={w*0.03} height={h*0.06} rx="1" fill="#5a4a4a"/><rect x={w*0.87} y={h*0.18} width={w*0.025} height={h*0.06} rx="1" fill="#4a5a5a"/><rect x={w*0.9} y={h*0.18} width={w*0.02} height={h*0.06} rx="1" fill="#5a5a4a"/>
+      <rect x={w*0.83} y={h*0.28} width={w*0.035} height={h*0.06} rx="1" fill="#4a4a5a"/><rect x={w*0.875} y={h*0.28} width={w*0.03} height={h*0.06} rx="1" fill="#5a4a5a"/>
+    </svg>
+  );
+  if (envId === "park") return (
+    <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} style={{position:"absolute",bottom:0,left:"50%",transform:"translateX(-50%)"}}>
+      {/* Sky */}
+      <rect width={w} height={h} fill="#1a2a3e"/>
+      <rect y={h*0.55} width={w} height={h*0.45} fill="#1a3a2a"/>
+      {/* Path */}
+      <path d={`M ${w*0.3} ${h} Q ${w*0.45} ${h*0.65} ${w*0.7} ${h}`} fill="#2a2a1a" opacity="0.4"/>
+      {/* Trees */}
+      <rect x={w*0.08} y={h*0.3} width={w*0.025} height={h*0.35} fill="#3a2a1a"/>
+      <circle cx={w*0.09} cy={h*0.25} r={w*0.06} fill="#2a5a3a"/><circle cx={w*0.07} cy={h*0.2} r={w*0.04} fill="#3a6a4a"/>
+      <rect x={w*0.82} y={h*0.25} width={w*0.025} height={h*0.4} fill="#3a2a1a"/>
+      <circle cx={w*0.83} cy={h*0.2} r={w*0.065} fill="#2a5a3a"/><circle cx={w*0.85} cy={h*0.15} r={w*0.04} fill="#3a6a4a"/>
+      {/* Bench */}
+      <rect x={w*0.55} y={h*0.58} width={w*0.15} height={h*0.025} rx="2" fill="#5a4a3a"/>
+      <rect x={w*0.55} y={h*0.55} width={w*0.15} height={h*0.025} rx="2" fill="#5a4a3a"/>
+      <rect x={w*0.57} y={h*0.6} width={w*0.015} height={h*0.08} fill="#4a3a2a"/>
+      <rect x={w*0.68} y={h*0.6} width={w*0.015} height={h*0.08} fill="#4a3a2a"/>
+      {/* Flowers */}
+      <circle cx={w*0.2} cy={h*0.62} r={3} fill="#e86a8a" opacity="0.7"/><circle cx={w*0.24} cy={h*0.65} r={2.5} fill="#e8a84c" opacity="0.6"/>
+      <circle cx={w*0.75} cy={h*0.6} r={3} fill="#b07ae8" opacity="0.6"/><circle cx={w*0.78} cy={h*0.63} r={2.5} fill="#e86a8a" opacity="0.5"/>
+      {/* Stars */}
+      <circle cx={w*0.15} cy={h*0.08} r="1.5" fill="white" opacity="0.3"/><circle cx={w*0.5} cy={h*0.05} r="1" fill="white" opacity="0.25"/>
+      <circle cx={w*0.8} cy={h*0.1} r="1.5" fill="white" opacity="0.2"/><circle cx={w*0.35} cy={h*0.12} r="1" fill="white" opacity="0.15"/>
+      {/* Moon */}
+      <circle cx={w*0.85} cy={h*0.08} r={w*0.03} fill="#e8e0c0" opacity="0.4"/>
+    </svg>
+  );
+  if (envId === "rave") return (
+    <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} style={{position:"absolute",bottom:0,left:"50%",transform:"translateX(-50%)"}}>
+      <rect width={w} height={h} fill="#0a0a14"/>
+      {/* Floor glow */}
+      <rect y={h*0.7} width={w} height={h*0.3} fill="#0e0e1a"/>
+      <rect y={h*0.7} width={w} height={h*0.01} fill="#ff00ff" opacity="0.15"/>
+      {/* Neon beams */}
+      <line x1={w*0.1} y1={0} x2={w*0.3} y2={h} stroke="#ff00ff" strokeWidth="1.5" opacity="0.2"><animate attributeName="opacity" values="0.2;0.05;0.2" dur="1.5s" repeatCount="indefinite"/></line>
+      <line x1={w*0.5} y1={0} x2={w*0.4} y2={h} stroke="#00ffff" strokeWidth="1.5" opacity="0.15"><animate attributeName="opacity" values="0.15;0.05;0.15" dur="2s" repeatCount="indefinite"/></line>
+      <line x1={w*0.9} y1={0} x2={w*0.7} y2={h} stroke="#ff00ff" strokeWidth="1.5" opacity="0.2"><animate attributeName="opacity" values="0.2;0.05;0.2" dur="1.8s" repeatCount="indefinite"/></line>
+      <line x1={w*0.7} y1={0} x2={w*0.85} y2={h} stroke="#00ff88" strokeWidth="1" opacity="0.12"><animate attributeName="opacity" values="0.12;0.03;0.12" dur="2.2s" repeatCount="indefinite"/></line>
+      <line x1={w*0.3} y1={0} x2={w*0.15} y2={h} stroke="#00ffff" strokeWidth="1" opacity="0.1"><animate attributeName="opacity" values="0.1;0.03;0.1" dur="1.7s" repeatCount="indefinite"/></line>
+      {/* Speaker stacks */}
+      <rect x={w*0.02} y={h*0.35} width={w*0.08} height={h*0.35} rx="3" fill="#1a1a2a" stroke="#ff00ff" strokeWidth="0.5" opacity="0.5"/>
+      <circle cx={w*0.06} cy={h*0.45} r={w*0.02} fill="#1a1a2a" stroke="#ff00ff" strokeWidth="0.5" opacity="0.4"/>
+      <circle cx={w*0.06} cy={h*0.58} r={w*0.025} fill="#1a1a2a" stroke="#ff00ff" strokeWidth="0.5" opacity="0.4"/>
+      <rect x={w*0.9} y={h*0.35} width={w*0.08} height={h*0.35} rx="3" fill="#1a1a2a" stroke="#00ffff" strokeWidth="0.5" opacity="0.5"/>
+      <circle cx={w*0.94} cy={h*0.45} r={w*0.02} fill="#1a1a2a" stroke="#00ffff" strokeWidth="0.5" opacity="0.4"/>
+      <circle cx={w*0.94} cy={h*0.58} r={w*0.025} fill="#1a1a2a" stroke="#00ffff" strokeWidth="0.5" opacity="0.4"/>
+      {/* Floating particles */}
+      <circle cx={w*0.2} cy={h*0.2} r="2" fill="#ff00ff" opacity="0.5"><animate attributeName="cy" values={`${h*0.2};${h*0.15};${h*0.2}`} dur="3s" repeatCount="indefinite"/></circle>
+      <circle cx={w*0.6} cy={h*0.3} r="1.5" fill="#00ffff" opacity="0.4"><animate attributeName="cy" values={`${h*0.3};${h*0.25};${h*0.3}`} dur="2.5s" repeatCount="indefinite"/></circle>
+      <circle cx={w*0.8} cy={h*0.15} r="2" fill="#00ff88" opacity="0.3"><animate attributeName="cy" values={`${h*0.15};${h*0.1};${h*0.15}`} dur="3.5s" repeatCount="indefinite"/></circle>
+      <circle cx={w*0.4} cy={h*0.1} r="1.5" fill="#ff00ff" opacity="0.35"><animate attributeName="cy" values={`${h*0.1};${h*0.06};${h*0.1}`} dur="2.8s" repeatCount="indefinite"/></circle>
+      {/* Floor tiles glow */}
+      <rect x={w*0.15} y={h*0.78} width={w*0.1} height={h*0.02} rx="1" fill="#ff00ff" opacity="0.1"><animate attributeName="opacity" values="0.1;0.25;0.1" dur="1.2s" repeatCount="indefinite"/></rect>
+      <rect x={w*0.45} y={h*0.82} width={w*0.1} height={h*0.02} rx="1" fill="#00ffff" opacity="0.1"><animate attributeName="opacity" values="0.1;0.2;0.1" dur="1.6s" repeatCount="indefinite"/></rect>
+      <rect x={w*0.72} y={h*0.76} width={w*0.1} height={h*0.02} rx="1" fill="#00ff88" opacity="0.08"><animate attributeName="opacity" values="0.08;0.2;0.08" dur="1.4s" repeatCount="indefinite"/></rect>
+    </svg>
+  );
+  if (envId === "beach") return (
+    <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} style={{position:"absolute",bottom:0,left:"50%",transform:"translateX(-50%)"}}>
+      {/* Night sky */}
+      <rect width={w} height={h} fill="#0e1a2e"/>
+      {/* Ocean */}
+      <rect y={h*0.35} width={w} height={h*0.25} fill="#142840"/>
+      {/* Wave lines */}
+      <path d={`M 0 ${h*0.4} Q ${w*0.15} ${h*0.38} ${w*0.3} ${h*0.4} Q ${w*0.45} ${h*0.42} ${w*0.6} ${h*0.4} Q ${w*0.75} ${h*0.38} ${w} ${h*0.4}`} stroke="rgba(255,255,255,0.06)" strokeWidth="1" fill="none"><animate attributeName="d" values={`M 0 ${h*0.4} Q ${w*0.15} ${h*0.38} ${w*0.3} ${h*0.4} Q ${w*0.45} ${h*0.42} ${w*0.6} ${h*0.4} Q ${w*0.75} ${h*0.38} ${w} ${h*0.4};M 0 ${h*0.4} Q ${w*0.15} ${h*0.42} ${w*0.3} ${h*0.4} Q ${w*0.45} ${h*0.38} ${w*0.6} ${h*0.4} Q ${w*0.75} ${h*0.42} ${w} ${h*0.4};M 0 ${h*0.4} Q ${w*0.15} ${h*0.38} ${w*0.3} ${h*0.4} Q ${w*0.45} ${h*0.42} ${w*0.6} ${h*0.4} Q ${w*0.75} ${h*0.38} ${w} ${h*0.4}`} dur="4s" repeatCount="indefinite"/></path>
+      {/* Sand */}
+      <rect y={h*0.6} width={w} height={h*0.4} fill="#2a2518"/>
+      <path d={`M 0 ${h*0.6} Q ${w*0.25} ${h*0.57} ${w*0.5} ${h*0.6} Q ${w*0.75} ${h*0.63} ${w} ${h*0.6}`} fill="#2a2518"/>
+      {/* Palm tree */}
+      <path d={`M ${w*0.15} ${h*0.62} Q ${w*0.14} ${h*0.4} ${w*0.16} ${h*0.2}`} stroke="#3a2a1a" strokeWidth="4" fill="none" strokeLinecap="round"/>
+      <path d={`M ${w*0.16} ${h*0.2} Q ${w*0.25} ${h*0.15} ${w*0.32} ${h*0.22}`} stroke="#2a5a3a" strokeWidth="3" fill="none" strokeLinecap="round"/>
+      <path d={`M ${w*0.16} ${h*0.2} Q ${w*0.08} ${h*0.14} ${w*0.02} ${h*0.2}`} stroke="#2a5a3a" strokeWidth="3" fill="none" strokeLinecap="round"/>
+      <path d={`M ${w*0.16} ${h*0.2} Q ${w*0.2} ${h*0.1} ${w*0.22} ${h*0.18}`} stroke="#3a6a4a" strokeWidth="2.5" fill="none" strokeLinecap="round"/>
+      {/* Shells */}
+      <circle cx={w*0.6} cy={h*0.72} r="2" fill="#5a5040" opacity="0.5"/>
+      <circle cx={w*0.75} cy={h*0.68} r="1.5" fill="#6a5a4a" opacity="0.4"/>
+      {/* Stars */}
+      <circle cx={w*0.3} cy={h*0.06} r="1.5" fill="white" opacity="0.3"/><circle cx={w*0.55} cy={h*0.1} r="1" fill="white" opacity="0.2"/>
+      <circle cx={w*0.7} cy={h*0.04} r="1.5" fill="white" opacity="0.25"/><circle cx={w*0.45} cy={h*0.15} r="1" fill="white" opacity="0.15"/>
+      {/* Moon */}
+      <circle cx={w*0.82} cy={h*0.08} r={w*0.035} fill="#e8e0c0" opacity="0.35"/>
+      <circle cx={w*0.82} cy={h*0.08} r={w*0.035} fill="none" stroke="#e8e0c0" strokeWidth="0.5" opacity="0.15"/>
+    </svg>
+  );
+  // Forest (default)
+  return (
+    <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} style={{position:"absolute",bottom:0,left:"50%",transform:"translateX(-50%)"}}>
+      <rect width={w} height={h} fill="#0e1a12"/>
+      {/* Ground */}
+      <rect y={h*0.6} width={w} height={h*0.4} fill="#142218"/>
+      {/* Back trees */}
+      <rect x={w*0.05} y={h*0.15} width={w*0.02} height={h*0.5} fill="#1a2a1a"/>
+      <polygon points={`${w*0.06},${h*0.15} ${w*0.12},${h*0.35} ${w*0},${h*0.35}`} fill="#1a3a1e" opacity="0.7"/>
+      <polygon points={`${w*0.06},${h*0.08} ${w*0.1},${h*0.22} ${w*0.02},${h*0.22}`} fill="#1a3a1e" opacity="0.6"/>
+      <rect x={w*0.28} y={h*0.1} width={w*0.025} height={h*0.55} fill="#1a2a1a"/>
+      <polygon points={`${w*0.29},${h*0.1} ${w*0.36},${h*0.32} ${w*0.22},${h*0.32}`} fill="#1e3a20" opacity="0.7"/>
+      <polygon points={`${w*0.29},${h*0.02} ${w*0.34},${h*0.18} ${w*0.24},${h*0.18}`} fill="#1e3a20" opacity="0.6"/>
+      <rect x={w*0.72} y={h*0.12} width={w*0.025} height={h*0.52} fill="#1a2a1a"/>
+      <polygon points={`${w*0.73},${h*0.12} ${w*0.8},${h*0.34} ${w*0.66},${h*0.34}`} fill="#1a3a1e" opacity="0.7"/>
+      <polygon points={`${w*0.73},${h*0.04} ${w*0.78},${h*0.2} ${w*0.68},${h*0.2}`} fill="#1a3a1e" opacity="0.6"/>
+      <rect x={w*0.92} y={h*0.18} width={w*0.02} height={h*0.46} fill="#1a2a1a"/>
+      <polygon points={`${w*0.93},${h*0.18} ${w*0.99},${h*0.38} ${w*0.87},${h*0.38}`} fill="#1e3a20" opacity="0.7"/>
+      {/* Mushrooms */}
+      <rect x={w*0.48} y={h*0.66} width={w*0.01} height={h*0.05} fill="#5a4a3a"/>
+      <ellipse cx={w*0.485} cy={h*0.66} rx={w*0.02} ry={h*0.02} fill="#8a3a3a" opacity="0.7"/>
+      <rect x={w*0.85} y={h*0.68} width={w*0.008} height={h*0.04} fill="#5a4a3a"/>
+      <ellipse cx={w*0.854} cy={h*0.68} rx={w*0.015} ry={h*0.015} fill="#8a5a3a" opacity="0.6"/>
+      {/* Fireflies */}
+      <circle cx={w*0.2} cy={h*0.35} r="2" fill="#aaee66" opacity="0.4"><animate attributeName="opacity" values="0.4;0.1;0.4" dur="2.5s" repeatCount="indefinite"/></circle>
+      <circle cx={w*0.55} cy={h*0.25} r="1.5" fill="#aaee66" opacity="0.3"><animate attributeName="opacity" values="0.3;0.05;0.3" dur="3s" repeatCount="indefinite"/></circle>
+      <circle cx={w*0.8} cy={h*0.4} r="2" fill="#aaee66" opacity="0.35"><animate attributeName="opacity" values="0.35;0.08;0.35" dur="2.2s" repeatCount="indefinite"/></circle>
+      <circle cx={w*0.4} cy={h*0.45} r="1.5" fill="#aaee66" opacity="0.25"><animate attributeName="opacity" values="0.25;0.05;0.25" dur="3.2s" repeatCount="indefinite"/></circle>
+      {/* Fog */}
+      <rect y={h*0.55} width={w} height={h*0.1} fill="rgba(255,255,255,0.02)"/>
+    </svg>
+  );
+}
+
 // ═══ UI COMPONENTS ═══
 function Tracker({label,value,max,unit,color,onChange,step,icon}){const pct=max>0?Math.min(value/max,1):0;return(<div style={{background:"rgba(255,255,255,0.04)",borderRadius:12,padding:"14px 16px",border:"1px solid rgba(255,255,255,0.06)"}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}><div style={{display:"flex",alignItems:"center",gap:8}}><span style={{fontSize:15}}>{icon}</span><span style={{fontWeight:600,fontSize:13,color:"#e0e0e0"}}>{label}</span></div><div style={{display:"flex",alignItems:"center",gap:8}}><span style={{fontSize:13,color:pct>=1?color:"rgba(255,255,255,0.4)",fontWeight:700,fontVariantNumeric:"tabular-nums"}}>{value}{unit?` / ${max} ${unit}`:` / ${max}`}</span>{pct>=1&&<span style={{fontSize:10,fontWeight:700,color:"#12121e",background:color,padding:"2px 6px",borderRadius:4}}>✓</span>}</div></div><div style={{position:"relative",height:28,display:"flex",alignItems:"center"}}><div style={{position:"absolute",left:0,right:0,height:6,background:"rgba(255,255,255,0.08)",borderRadius:3}}><div style={{height:"100%",width:`${pct*100}%`,borderRadius:3,background:`linear-gradient(90deg, ${color}88, ${color})`,transition:"width 0.15s ease",boxShadow:pct>0?`0 0 12px ${color}33`:"none"}}/></div><input type="range" min="0" max={max} step={step} value={Math.min(value,max)} onChange={e=>onChange(Number(e.target.value))} style={{position:"absolute",left:0,right:0,width:"100%",height:28,opacity:0,cursor:"pointer",margin:0}}/><div style={{position:"absolute",left:`calc(${pct*100}% - 8px)`,width:16,height:16,borderRadius:"50%",background:color,boxShadow:`0 0 10px ${color}66, 0 2px 4px rgba(0,0,0,0.3)`,border:"2px solid rgba(255,255,255,0.2)",transition:"left 0.15s ease",pointerEvents:"none"}}/></div></div>);}
 
@@ -128,6 +314,7 @@ export default function App() {
   const [bdays, setBdays] = useState([]);
   const [wishes, setWishes] = useState({});
   const [activeBuddy, setActiveBuddy] = useState("bird");
+  const [activeEnv, setActiveEnv] = useState("park");
   const [tab, setTab] = useState("home");
   const [modal, setModal] = useState(null);
   const [nc, setNc] = useState({ name: "", difficulty: "Easy", interval: "daily", type: "recurring" });
@@ -157,12 +344,13 @@ export default function App() {
   useEffect(() => {
     if (!user) { setDataLoaded(false); return; }
     (async () => {
-      const [g, x, c, b, ab] = await Promise.all([
+      const [g, x, c, b, ab, ae] = await Promise.all([
         loadData(user.uid, "goals"),
         loadData(user.uid, "xp"),
         loadData(user.uid, "chores"),
         loadData(user.uid, "birthdays"),
         loadData(user.uid, "activeBuddy"),
+        loadData(user.uid, "activeEnv"),
       ]);
       const dl = await loadData(user.uid, `dailyLog/${today}`);
       const cl = await loadData(user.uid, `choreLog/${today}`);
@@ -173,6 +361,7 @@ export default function App() {
       if (c) setChores(Object.values(c));
       if (b) setBdays(Object.values(b));
       if (ab) setActiveBuddy(ab);
+      if (ae) setActiveEnv(ae);
       if (dl) setLog(dl);
       if (cl) setChoreLog(cl);
       if (w) setWishes(w);
@@ -189,6 +378,7 @@ export default function App() {
   useEffect(() => { if (dataLoaded && user) { const obj = {}; bdays.forEach(b => obj[b.id] = b); save("birthdays", obj); } }, [bdays, dataLoaded]);
   useEffect(() => { if (dataLoaded && user) save(`wishes/${today}`, wishes); }, [wishes, dataLoaded]);
   useEffect(() => { if (dataLoaded && user) save("activeBuddy", activeBuddy); }, [activeBuddy, dataLoaded]);
+  useEffect(() => { if (dataLoaded && user) save("activeEnv", activeEnv); }, [activeEnv, dataLoaded]);
 
   const handleSignIn = async () => { setSignInLoading(true); await signInGoogle(); setSignInLoading(false); };
 
@@ -300,10 +490,13 @@ export default function App() {
         </div>
       )}
 
-      <div style={{ display: "flex", justifyContent: "center", padding: "6px 0 6px", position: "relative" }}>
-        <BuddyFace mood={mood} level={li.lv} hat={allWished} buddyType={activeBuddy} size={140} />
-        {popup && <div style={{ position: "absolute", top: 4, left: "50%", transform: "translateX(-50%)", fontFamily: "'Space Grotesk', sans-serif", fontSize: 18, fontWeight: 700, color: popup.startsWith("-") ? "#e86a6a" : accent, textShadow: `0 0 12px ${popup.startsWith("-") ? "rgba(232,106,106,0.4)" : accent + "44"}`, animation: "xpP 1.2s ease forwards", pointerEvents: "none" }}>{popup}</div>}
-        <div style={{ position: "absolute", bottom: 2, fontSize: 10, fontWeight: 600, letterSpacing: 1.5, textTransform: "uppercase", color: mood === "happy" ? accent : mood === "content" ? "rgba(255,255,255,0.3)" : "rgba(232,106,106,0.6)" }}>{mood === "happy" ? "Happy" : mood === "content" ? "Content" : "Needs care"}</div>
+      <div style={{ display: "flex", justifyContent: "center", padding: "0", position: "relative", margin: "0 20px 6px", borderRadius: 16, overflow: "hidden", height: 180, background: "#12121e" }}>
+        <EnvironmentBg envId={activeEnv} width={440} height={180} />
+        <div style={{ position: "relative", zIndex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-end", paddingBottom: 6 }}>
+          <BuddyFace mood={mood} level={li.lv} hat={allWished} buddyType={activeBuddy} size={130} />
+        </div>
+        {popup && <div style={{ position: "absolute", top: 8, left: "50%", transform: "translateX(-50%)", zIndex: 2, fontFamily: "'Space Grotesk', sans-serif", fontSize: 18, fontWeight: 700, color: popup.startsWith("-") ? "#e86a6a" : accent, textShadow: `0 0 12px ${popup.startsWith("-") ? "rgba(232,106,106,0.4)" : accent + "44"}`, animation: "xpP 1.2s ease forwards", pointerEvents: "none" }}>{popup}</div>}
+        <div style={{ position: "absolute", bottom: 6, zIndex: 1, fontSize: 10, fontWeight: 600, letterSpacing: 1.5, textTransform: "uppercase", color: mood === "happy" ? accent : mood === "content" ? "rgba(255,255,255,0.4)" : "rgba(232,106,106,0.7)", textShadow: "0 1px 4px rgba(0,0,0,0.5)" }}>{mood === "happy" ? "Happy" : mood === "content" ? "Content" : "Needs care"}</div>
       </div>
 
 
@@ -313,7 +506,31 @@ export default function App() {
 
       {tab === "tasks" && (<div style={{ padding: "0 20px 80px", animation: "fi 0.25s ease" }}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}><span style={{fontWeight:700,fontSize:14,color:"#fff"}}>Task Manager</span><button onClick={()=>{setNc({name:"",difficulty:"Easy",interval:"daily",type:"recurring"});setModal("chore")}} style={{fontWeight:700,fontSize:11,border:"none",borderRadius:8,padding:"6px 14px",cursor:"pointer",background:accent,color:"#12121e"}}>+ New Task</button></div>{sL("Daily")}<div style={{display:"flex",flexDirection:"column",gap:5,marginBottom:16}}>{dailyChores.map(c=><TaskRow key={c.id} chore={c} done={!!choreLog[c.id]} onToggle={()=>toggleChore(c.id)} onDelete={()=>setChores(p=>p.filter(x=>x.id!==c.id))} showInterval={false}/>)}{dailyChores.length===0&&<div style={{fontSize:11,color:"rgba(255,255,255,0.1)",textAlign:"center",padding:12}}>No daily tasks</div>}</div>{sL("Recurring")}<div style={{display:"flex",flexDirection:"column",gap:5,marginBottom:16}}>{recurringChores.map(c=><TaskRow key={c.id} chore={c} done={!!choreLog[c.id]} onToggle={()=>toggleChore(c.id)} onDelete={()=>setChores(p=>p.filter(x=>x.id!==c.id))} showInterval/>)}{recurringChores.length===0&&<div style={{fontSize:11,color:"rgba(255,255,255,0.1)",textAlign:"center",padding:12}}>No recurring tasks</div>}</div>{sL("One-off")}<div style={{display:"flex",flexDirection:"column",gap:5}}>{oneOffChores.map(c=><TaskRow key={c.id} chore={c} done={!!choreLog[c.id]||!!c.completedDate} onToggle={()=>toggleChore(c.id)} onDelete={()=>setChores(p=>p.filter(x=>x.id!==c.id))} showInterval={false}/>)}{oneOffChores.length===0&&<div style={{fontSize:11,color:"rgba(255,255,255,0.1)",textAlign:"center",padding:12}}>No one-off tasks</div>}</div></div>)}
 
-      {tab === "collection" && (<div style={{ padding: "0 20px 80px", animation: "fi 0.25s ease" }}>{sL("Choose Your Buddy")}<p style={{fontSize:11,color:"rgba(255,255,255,0.2)",marginBottom:14,lineHeight:1.5}}>Each buddy evolves through 5 stages as you level up.</p><div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>{BUDDY_TYPES.map(bt=>{const active=activeBuddy===bt.id;return(<div key={bt.id} onClick={()=>setActiveBuddy(bt.id)} style={{padding:"14px 10px 12px",borderRadius:12,cursor:"pointer",background:active?`${bt.accent}0c`:"rgba(255,255,255,0.02)",border:`1.5px solid ${active?bt.accent+"44":"rgba(255,255,255,0.05)"}`}}><div style={{display:"flex",justifyContent:"center",marginBottom:8}}><BuddyFace mood="happy" level={4} hat={false} buddyType={bt.id} size={80}/></div><div style={{textAlign:"center"}}><div style={{fontWeight:700,fontSize:13,color:active?bt.accent:"#e0e0e0"}}>{bt.name}</div><div style={{fontSize:10,color:"rgba(255,255,255,0.2)",marginTop:2}}>{bt.desc}</div>{active&&<div style={{fontSize:9,fontWeight:700,color:bt.accent,marginTop:4,letterSpacing:1}}>ACTIVE</div>}</div></div>)})}</div></div>)}
+      {tab === "collection" && (<div style={{ padding: "0 20px 80px", animation: "fi 0.25s ease" }}>{sL("Choose Your Buddy")}<p style={{fontSize:11,color:"rgba(255,255,255,0.2)",marginBottom:14,lineHeight:1.5}}>Each buddy evolves through 5 stages as you level up.</p><div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:24}}>{BUDDY_TYPES.map(bt=>{const active=activeBuddy===bt.id;return(<div key={bt.id} onClick={()=>setActiveBuddy(bt.id)} style={{padding:"14px 10px 12px",borderRadius:12,cursor:"pointer",background:active?`${bt.accent}0c`:"rgba(255,255,255,0.02)",border:`1.5px solid ${active?bt.accent+"44":"rgba(255,255,255,0.05)"}`}}><div style={{display:"flex",justifyContent:"center",marginBottom:8}}><BuddyFace mood="happy" level={4} hat={false} buddyType={bt.id} size={80}/></div><div style={{textAlign:"center"}}><div style={{fontWeight:700,fontSize:13,color:active?bt.accent:"#e0e0e0"}}>{bt.name}</div><div style={{fontSize:10,color:"rgba(255,255,255,0.2)",marginTop:2}}>{bt.desc}</div>{active&&<div style={{fontSize:9,fontWeight:700,color:bt.accent,marginTop:4,letterSpacing:1}}>ACTIVE</div>}</div></div>)})}</div>
+
+        {sL("Environment")}
+        <p style={{fontSize:11,color:"rgba(255,255,255,0.2)",marginBottom:14,lineHeight:1.5}}>Pick a scene for your buddy to hang out in.</p>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:6}}>
+          {ENVIRONMENTS.map(env => {
+            const active = activeEnv === env.id;
+            return (
+              <div key={env.id} onClick={() => setActiveEnv(env.id)} style={{
+                padding: "10px 6px", borderRadius: 10, cursor: "pointer", textAlign: "center",
+                background: active ? `${accent}10` : "rgba(255,255,255,0.02)",
+                border: `1.5px solid ${active ? accent + "44" : "rgba(255,255,255,0.05)"}`,
+                transition: "all 0.2s",
+              }}>
+                <div style={{ position: "relative", width: "100%", height: 50, borderRadius: 6, overflow: "hidden", marginBottom: 6 }}>
+                  <EnvironmentBg envId={env.id} width={120} height={50} />
+                </div>
+                <div style={{ fontSize: 14, marginBottom: 2 }}>{env.icon}</div>
+                <div style={{ fontWeight: 600, fontSize: 10.5, color: active ? accent : "rgba(255,255,255,0.5)" }}>{env.name}</div>
+                {active && <div style={{ fontSize: 8, fontWeight: 700, color: accent, marginTop: 2, letterSpacing: 1 }}>ACTIVE</div>}
+              </div>
+            );
+          })}
+        </div>
+      </div>)}
 
       {tab === "birthdays" && (<div style={{ padding: "0 20px 80px", animation: "fi 0.25s ease" }}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}><span style={{fontWeight:700,fontSize:14,color:"#fff"}}>Birthdays</span><button onClick={()=>{setNb({name:"",date:"",notes:""});setModal("birthday")}} style={{fontWeight:700,fontSize:11,border:"none",borderRadius:8,padding:"6px 14px",cursor:"pointer",background:"#e86a8a",color:"#fff"}}>+ Add</button></div><input placeholder="Search names..." value={bdSearch} onChange={e=>setBdSearch(e.target.value)} style={{width:"100%",padding:"8px 12px",borderRadius:8,border:"1px solid rgba(255,255,255,0.08)",background:"rgba(255,255,255,0.04)",fontSize:12.5,color:"#fff",marginBottom:10,outline:"none"}}/><div style={{display:"flex",gap:4,marginBottom:14}}>{[{v:"all",l:"All"},{v:"week",l:"This Week"},{v:"month",l:"Next 30 Days"}].map(f=>(<button key={f.v} onClick={()=>setBdFilter(f.v)} style={{padding:"5px 12px",borderRadius:6,border:`1px solid ${bdFilter===f.v?accent+"44":"rgba(255,255,255,0.06)"}`,cursor:"pointer",fontWeight:600,fontSize:11,background:bdFilter===f.v?`${accent}12`:"transparent",color:bdFilter===f.v?accent:"rgba(255,255,255,0.3)"}}>{f.l}</button>))}</div><div style={{display:"flex",flexDirection:"column",gap:5}}>{filteredBdays.map(b=>{const bd=new Date(b.date+"T00:00:00"),d=daysUntil(b.date),isTd=d===0;return(<div key={b.id} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",borderRadius:10,background:isTd?`${accent}08`:"rgba(255,255,255,0.03)",border:`1px solid ${isTd?accent+"20":"rgba(255,255,255,0.05)"}`,cursor:"pointer"}} onClick={()=>{setViewingBd(b);setEditNotes(b.notes||"");setModal("viewBd")}}><div style={{width:34,height:34,borderRadius:8,background:isTd?`${accent}20`:"rgba(255,255,255,0.05)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:15,flexShrink:0}}>🎂</div><div style={{flex:1,minWidth:0}}><div style={{fontWeight:600,fontSize:13}}>{b.name}</div><div style={{fontSize:10.5,color:"rgba(255,255,255,0.2)"}}>{months[bd.getMonth()]} {bd.getDate()}{b.notes?" · 📝":""}</div></div><div style={{textAlign:"right",flexShrink:0}}>{isTd?<button onClick={e=>{e.stopPropagation();toggleWish(b.name)}} style={{fontSize:10,fontWeight:700,border:"none",borderRadius:6,padding:"4px 10px",cursor:"pointer",background:wishes[b.name]?"rgba(255,255,255,0.06)":accent,color:wishes[b.name]?"rgba(255,255,255,0.4)":"#12121e"}}>{wishes[b.name]?"↩ Undo":"Wish"}</button>:<span style={{fontSize:10.5,color:"rgba(255,255,255,0.15)",fontWeight:600}}>{d===1?"Tomorrow":`${d}d`}</span>}</div></div>)})}{filteredBdays.length===0&&<div style={{textAlign:"center",padding:24,color:"rgba(255,255,255,0.1)",fontSize:12}}>{bdSearch?"No matches":"No birthdays saved"}</div>}</div><div style={{textAlign:"center",marginTop:12,fontSize:10,color:"rgba(255,255,255,0.1)"}}>{bdays.length} total</div></div>)}
 
