@@ -306,18 +306,21 @@ function Tracker({label,value,max,unit,color,onChange,step,icon}){
   </div>);
 }
 
-function TaskRow({chore,done,onToggle,onDelete,showInterval,onView}){const dc={Easy:"#6ee7a0",Medium:"#e8a84c",Hard:"#e86a6a"};return(<div style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",borderRadius:10,background:done?"rgba(255,255,255,0.03)":"rgba(255,255,255,0.04)",border:`1px solid ${done?"rgba(110,231,160,0.15)":"rgba(255,255,255,0.06)"}`}}>
-    <div onClick={onToggle} style={{width:20,height:20,borderRadius:5,flexShrink:0,border:done?`2px solid ${dc[chore.difficulty]}`:"2px solid rgba(255,255,255,0.15)",background:done?dc[chore.difficulty]:"transparent",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}>{done&&<span style={{fontSize:11,color:"#12121e",fontWeight:800}}>✓</span>}</div>
+function TaskRow({chore,done,onToggle,onDelete,showInterval,onView,choreLog7,accent}){const dc={Easy:"#6ee7a0",Medium:"#e8a84c",Hard:"#e86a6a"};const isRec=chore.type==="recurring";return(<div style={{display:"flex",alignItems:"flex-start",gap:10,padding:"10px 14px",borderRadius:10,background:done?"rgba(255,255,255,0.03)":"rgba(255,255,255,0.04)",border:`1px solid ${done?"rgba(110,231,160,0.15)":"rgba(255,255,255,0.06)"}`}}>
+    <div onClick={onToggle} style={{width:20,height:20,borderRadius:5,flexShrink:0,border:done?`2px solid ${dc[chore.difficulty]}`:"2px solid rgba(255,255,255,0.15)",background:done?dc[chore.difficulty]:"transparent",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",marginTop:2}}>{done&&<span style={{fontSize:11,color:"#12121e",fontWeight:800}}>✓</span>}</div>
     <div style={{flex:1,minWidth:0,cursor:onView?"pointer":"default"}} onClick={onView||undefined}>
       <div style={{fontWeight:600,fontSize:13,color:done?"rgba(255,255,255,0.3)":"#e0e0e0",textDecoration:done?"line-through":"none"}}>{chore.name}</div>
       <div style={{fontSize:10.5,color:"rgba(255,255,255,0.2)",marginTop:1}}>
         {showInterval&&(chore.type==="one-off"?"One-off":INTERVALS.find(i=>i.value===chore.interval)?.label)}
-        {chore.type==="one-off"&&chore.completedDate&&<span> · Done {chore.completedDate}</span>}
+        {chore.type==="one-off"&&chore.completedDate&&<span style={{color:"rgba(110,231,160,0.5)"}}> · Done {chore.completedDate}</span>}
       </div>
+      {isRec&&choreLog7&&<WeekDots choreId={chore.id} choreLog7={choreLog7} accent={accent||dc[chore.difficulty]}/>}
     </div>
-    <span style={{fontSize:9.5,fontWeight:700,color:dc[chore.difficulty],background:`${dc[chore.difficulty]}12`,padding:"2px 7px",borderRadius:4}}>{chore.difficulty.toUpperCase()}</span>
-    <span style={{fontSize:11,fontWeight:700,color:"rgba(255,255,255,0.25)"}}>+{DIFF_PTS[chore.difficulty]}</span>
-    {onDelete&&<button onClick={onDelete} style={{background:"none",border:"none",cursor:"pointer",fontSize:14,color:"rgba(255,255,255,0.15)",padding:"2px 4px"}}>×</button>}
+    <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:2,flexShrink:0}}>
+      <span style={{fontSize:9.5,fontWeight:700,color:dc[chore.difficulty],background:`${dc[chore.difficulty]}12`,padding:"2px 7px",borderRadius:4}}>{chore.difficulty.toUpperCase()}</span>
+      <span style={{fontSize:11,fontWeight:700,color:"rgba(255,255,255,0.25)"}}>+{DIFF_PTS[chore.difficulty]}</span>
+    </div>
+    {onDelete&&<button onClick={onDelete} style={{background:"none",border:"none",cursor:"pointer",fontSize:14,color:"rgba(255,255,255,0.15)",padding:"2px 4px",marginTop:2}}>×</button>}
   </div>);}
 
 function Modal({children,onClose}){
@@ -326,7 +329,106 @@ function Modal({children,onClose}){
   </div>);
 }
 
-// ═══ LOGIN SCREEN ═══
+// ═══ WEEK DOTS — shows last 7 days completion for a recurring task ═══
+function WeekDots({ choreId, choreLog7, accent }) {
+  const days = ["M","T","W","T","F","S","S"];
+  const today = new Date();
+  const dots = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(today);
+    d.setDate(d.getDate() - i);
+    const key = d.toISOString().slice(0, 10);
+    const done = choreLog7[key] && choreLog7[key][choreId];
+    const isToday = i === 0;
+    dots.push({ day: days[(d.getDay() + 6) % 7], done, isToday, key });
+  }
+  return (
+    <div style={{ display: "flex", gap: 4, alignItems: "center", marginTop: 6 }}>
+      {dots.map((d, i) => (
+        <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
+          <div style={{ width: 8, height: 8, borderRadius: "50%", background: d.done ? accent : "rgba(255,255,255,0.08)", border: d.isToday ? `1.5px solid ${accent}88` : "1.5px solid transparent", transition: "all 0.2s" }} />
+          <span style={{ fontSize: 7, color: d.isToday ? "rgba(255,255,255,0.4)" : "rgba(255,255,255,0.15)", fontWeight: d.isToday ? 700 : 400 }}>{d.day}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ═══ DRAGGABLE LIST — long press to pick up, drag to reorder ═══
+function DraggableList({ items, renderItem, onReorder, keyExtractor }) {
+  const [dragIdx, setDragIdx] = useState(null);
+  const [overIdx, setOverIdx] = useState(null);
+  const timerRef = useRef(null);
+  const startYRef = useRef(0);
+  const itemRefs = useRef([]);
+  const isDragging = useRef(false);
+
+  const handleTouchStart = (idx, e) => {
+    startYRef.current = e.touches[0].clientY;
+    isDragging.current = false;
+    timerRef.current = setTimeout(() => {
+      isDragging.current = true;
+      setDragIdx(idx);
+      setOverIdx(idx);
+      if (navigator.vibrate) navigator.vibrate(30);
+    }, 400);
+  };
+
+  const handleTouchMove = (e) => {
+    if (!isDragging.current) {
+      const dy = Math.abs(e.touches[0].clientY - startYRef.current);
+      if (dy > 8) { clearTimeout(timerRef.current); return; }
+    }
+    if (!isDragging.current) return;
+    e.preventDefault();
+    const y = e.touches[0].clientY;
+    let closest = dragIdx;
+    let minDist = Infinity;
+    itemRefs.current.forEach((el, i) => {
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
+      const mid = rect.top + rect.height / 2;
+      const dist = Math.abs(y - mid);
+      if (dist < minDist) { minDist = dist; closest = i; }
+    });
+    setOverIdx(closest);
+  };
+
+  const handleTouchEnd = () => {
+    clearTimeout(timerRef.current);
+    if (isDragging.current && dragIdx !== null && overIdx !== null && dragIdx !== overIdx) {
+      const newItems = [...items];
+      const [moved] = newItems.splice(dragIdx, 1);
+      newItems.splice(overIdx, 0, moved);
+      onReorder(newItems);
+    }
+    isDragging.current = false;
+    setDragIdx(null);
+    setOverIdx(null);
+  };
+
+  return (
+    <div onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd} style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+      {items.map((item, i) => {
+        const isDrag = dragIdx === i;
+        const isOver = overIdx === i && dragIdx !== null && dragIdx !== i;
+        return (
+          <div key={keyExtractor(item)} ref={el => itemRefs.current[i] = el}
+            onTouchStart={e => handleTouchStart(i, e)}
+            style={{
+              opacity: isDrag ? 0.5 : 1,
+              transform: isOver ? `translateY(${dragIdx < i ? -4 : 4}px)` : "none",
+              transition: isDrag ? "none" : "transform 0.15s ease, opacity 0.15s ease",
+              borderLeft: isOver ? `2px solid rgba(255,255,255,0.2)` : "2px solid transparent",
+              paddingLeft: isOver ? 2 : 0,
+            }}>
+            {renderItem(item, i)}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 function LoginScreen({ onSignIn, loading }) {
   return (
     <div style={{ minHeight: "100vh", background: "#12121e", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", fontFamily: "'Inter', -apple-system, sans-serif", padding: 32, paddingTop: "calc(env(safe-area-inset-top, 20px) + 32px)" }}>
@@ -360,6 +462,7 @@ export default function App() {
   const [log, setLog] = useState({ water: 0, sleep: 0, meals: 0 });
   const [chores, setChores] = useState([]);
   const [choreLog, setChoreLog] = useState({});
+  const [choreLog7, setChoreLog7] = useState({}); // { "2026-03-28": { choreId: true }, ... }
   const [xp, setXp] = useState(0);
   const [bdays, setBdays] = useState([]);
   const [wishes, setWishes] = useState({});
@@ -417,6 +520,15 @@ export default function App() {
       if (dl) setLog(dl);
       if (cl) setChoreLog(cl);
       if (w) setWishes(w);
+      // Load 7 days of chore history
+      const log7 = {};
+      for (let i = 0; i < 7; i++) {
+        const d = new Date(); d.setDate(d.getDate() - i);
+        const dk = d.toISOString().slice(0, 10);
+        if (dk === today && cl) { log7[dk] = cl; }
+        else { const dayLog = await loadData(user.uid, `choreLog/${dk}`); if (dayLog) log7[dk] = dayLog; }
+      }
+      setChoreLog7(log7);
       setDataLoaded(true);
     })();
   }, [user, today]);
@@ -426,6 +538,7 @@ export default function App() {
   useEffect(() => { if (dataLoaded && user) save(`dailyLog/${today}`, log); }, [log, dataLoaded]);
   useEffect(() => { if (dataLoaded && user) { const obj = {}; chores.forEach(c => obj[c.id] = c); save("chores", obj); } }, [chores, dataLoaded]);
   useEffect(() => { if (dataLoaded && user) save(`choreLog/${today}`, choreLog); }, [choreLog, dataLoaded]);
+  useEffect(() => { if (dataLoaded) setChoreLog7(prev => ({ ...prev, [today]: choreLog })); }, [choreLog, dataLoaded, today]);
   useEffect(() => { if (dataLoaded && user) save("xp", xp); }, [xp, dataLoaded]);
   useEffect(() => { if (dataLoaded && user) { const obj = {}; bdays.forEach(b => obj[b.id] = b); save("birthdays", obj); } }, [bdays, dataLoaded]);
   useEffect(() => { if (dataLoaded && user) save(`wishes/${today}`, wishes); }, [wishes, dataLoaded]);
@@ -461,6 +574,17 @@ export default function App() {
   const saveChore = () => { if (!nc.name.trim()) return; setChores(p => [...p, { ...nc, id: Date.now().toString(), createdDate: today }]); setNc({ name: "", difficulty: "Easy", interval: "daily", type: "recurring" }); setModal(null); };
   const saveTaskEdit = () => { if (!editTask || !editTask.name.trim()) return; setChores(p => p.map(c => c.id === editTask.id ? { ...c, name: editTask.name, difficulty: editTask.difficulty, interval: editTask.interval, type: editTask.type } : c)); setModal(null); setViewingTask(null); setEditTask(null); };
   const saveBd = () => { if (!nb.name.trim() || !nb.date) return; setBdays(p => [...p, { ...nb, id: Date.now().toString() }]); setNb({ name: "", date: "", notes: "" }); setModal(null); };
+  const reorderChores = (type, newList) => {
+    // Replace chores of given type with reordered list, keep others in place
+    setChores(prev => {
+      const others = prev.filter(c => {
+        if (type === "daily") return !isDaily(c);
+        if (type === "recurring") return !isRecurring(c);
+        return c.type !== "one-off";
+      });
+      return [...others, ...newList];
+    });
+  };
   const filteredBdays = bdays.filter(b => { if (bdSearch && !b.name.toLowerCase().includes(bdSearch.toLowerCase())) return false; const d = daysUntil(b.date); if (bdFilter === "week") return d <= 7; if (bdFilter === "month") return d <= 30; return true; }).sort((a, b) => daysUntil(a.date) - daysUntil(b.date));
   const sortedTodayBd = [...todayBd].sort((a, b) => (wishes[a.name] ? 1 : 0) - (wishes[b.name] ? 1 : 0));
   const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
@@ -554,9 +678,23 @@ export default function App() {
 
 
 
-      {tab === "home" && (<div style={{ padding: "0 20px 80px", animation: "fi 0.25s ease" }}>{sL("Core Trackers")}<div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 20 }}><Tracker label="Hydration" value={log.water} max={goals.water} unit="oz" color="#5baed6" icon="💧" step={1} onChange={v => updateCore("water", v)} /><Tracker label="Sleep" value={log.sleep} max={goals.sleep} unit="hrs" color="#9c7cb8" icon="🌙" step={0.5} onChange={v => updateCore("sleep", v)} /><Tracker label="Healthy Meals" value={log.meals} max={goals.meals} unit="" color="#6ee7a0" icon="🥗" step={1} onChange={v => updateCore("meals", v)} /></div>{dueDailies.length>0&&<>{sL("Daily Tasks")}<div style={{display:"flex",flexDirection:"column",gap:5,marginBottom:16}}>{dueDailies.map(c=><TaskRow key={c.id} chore={c} done={!!choreLog[c.id]} onToggle={()=>toggleChore(c.id)} showInterval={false}/>)}</div></>}{dueRecurring.length>0&&<>{sL("Recurring — Due Today")}<div style={{display:"flex",flexDirection:"column",gap:5,marginBottom:16}}>{dueRecurring.map(c=><TaskRow key={c.id} chore={c} done={!!choreLog[c.id]} onToggle={()=>toggleChore(c.id)} showInterval/>)}</div></>}{dueOneOffs.length>0&&<>{sL("One-off Tasks")}<div style={{display:"flex",flexDirection:"column",gap:5}}>{dueOneOffs.map(c=><TaskRow key={c.id} chore={c} done={!!choreLog[c.id]} onToggle={()=>toggleChore(c.id)} showInterval={false}/>)}</div></>}{dueDailies.length===0&&dueRecurring.length===0&&dueOneOffs.length===0&&<div style={{textAlign:"center",padding:28,color:"rgba(255,255,255,0.12)",fontSize:12}}>No tasks due today</div>}</div>)}
+      {tab === "home" && (<div style={{ padding: "0 20px 80px", animation: "fi 0.25s ease" }}>{sL("Core Trackers")}<div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 20 }}><Tracker label="Hydration" value={log.water} max={goals.water} unit="oz" color="#5baed6" icon="💧" step={1} onChange={v => updateCore("water", v)} /><Tracker label="Sleep" value={log.sleep} max={goals.sleep} unit="hrs" color="#9c7cb8" icon="🌙" step={0.5} onChange={v => updateCore("sleep", v)} /><Tracker label="Healthy Meals" value={log.meals} max={goals.meals} unit="" color="#6ee7a0" icon="🥗" step={1} onChange={v => updateCore("meals", v)} /></div>{dueDailies.length>0&&<>{sL("Daily Tasks")}<div style={{display:"flex",flexDirection:"column",gap:5,marginBottom:16}}>{dueDailies.map(c=><TaskRow key={c.id} chore={c} done={!!choreLog[c.id]} onToggle={()=>toggleChore(c.id)} choreLog7={choreLog7} accent={accent} showInterval={false}/>)}</div></>}{dueRecurring.length>0&&<>{sL("Recurring — Due Today")}<div style={{display:"flex",flexDirection:"column",gap:5,marginBottom:16}}>{dueRecurring.map(c=><TaskRow key={c.id} chore={c} done={!!choreLog[c.id]} onToggle={()=>toggleChore(c.id)} choreLog7={choreLog7} accent={accent} showInterval/>)}</div></>}{dueOneOffs.length>0&&<>{sL("One-off Tasks")}<div style={{display:"flex",flexDirection:"column",gap:5}}>{dueOneOffs.map(c=><TaskRow key={c.id} chore={c} done={!!choreLog[c.id]} onToggle={()=>toggleChore(c.id)} showInterval={false}/>)}</div></>}{dueDailies.length===0&&dueRecurring.length===0&&dueOneOffs.length===0&&<div style={{textAlign:"center",padding:28,color:"rgba(255,255,255,0.12)",fontSize:12}}>No tasks due today</div>}</div>)}
 
-      {tab === "tasks" && (<div style={{ padding: "0 20px 80px", animation: "fi 0.25s ease" }}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}><span style={{fontWeight:700,fontSize:14,color:"#fff"}}>Task Manager</span><button onClick={()=>{setNc({name:"",difficulty:"Easy",interval:"daily",type:"recurring"});setModal("chore")}} style={{fontWeight:700,fontSize:11,border:"none",borderRadius:8,padding:"6px 14px",cursor:"pointer",background:accent,color:"#12121e"}}>+ New Task</button></div>{sL("Daily")}<div style={{display:"flex",flexDirection:"column",gap:5,marginBottom:16}}>{dailyChores.map(c=><TaskRow key={c.id} chore={c} done={!!choreLog[c.id]} onToggle={()=>toggleChore(c.id)} onDelete={()=>setChores(p=>p.filter(x=>x.id!==c.id))} onView={()=>{setViewingTask(c);setEditTask({...c});setModal("editTask")}} showInterval={false}/>)}{dailyChores.length===0&&<div style={{fontSize:11,color:"rgba(255,255,255,0.1)",textAlign:"center",padding:12}}>No daily tasks</div>}</div>{sL("Recurring")}<div style={{display:"flex",flexDirection:"column",gap:5,marginBottom:16}}>{recurringChores.map(c=><TaskRow key={c.id} chore={c} done={!!choreLog[c.id]} onToggle={()=>toggleChore(c.id)} onDelete={()=>setChores(p=>p.filter(x=>x.id!==c.id))} onView={()=>{setViewingTask(c);setEditTask({...c});setModal("editTask")}} showInterval/>)}{recurringChores.length===0&&<div style={{fontSize:11,color:"rgba(255,255,255,0.1)",textAlign:"center",padding:12}}>No recurring tasks</div>}</div>{sL("One-off")}<div style={{display:"flex",flexDirection:"column",gap:5}}>{oneOffChores.map(c=><TaskRow key={c.id} chore={c} done={!!choreLog[c.id]||!!c.completedDate} onToggle={()=>toggleChore(c.id)} onDelete={()=>setChores(p=>p.filter(x=>x.id!==c.id))} onView={()=>{setViewingTask(c);setEditTask({...c});setModal("editTask")}} showInterval={false}/>)}{oneOffChores.length===0&&<div style={{fontSize:11,color:"rgba(255,255,255,0.1)",textAlign:"center",padding:12}}>No one-off tasks</div>}</div></div>)}
+      {tab === "tasks" && (<div style={{ padding: "0 20px 80px", animation: "fi 0.25s ease" }}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
+          <span style={{fontWeight:700,fontSize:14,color:"#fff"}}>Task Manager</span>
+          <button onClick={()=>{setNc({name:"",difficulty:"Easy",interval:"daily",type:"recurring"});setModal("chore")}} style={{fontWeight:700,fontSize:11,border:"none",borderRadius:8,padding:"6px 14px",cursor:"pointer",background:accent,color:"#12121e"}}>+ New Task</button>
+        </div>
+        <div style={{fontSize:10,color:"rgba(255,255,255,0.12)",marginBottom:12}}>Long-press and drag to reorder tasks</div>
+        {sL("Daily")}
+        {dailyChores.length>0 ? <DraggableList items={dailyChores} keyExtractor={c=>c.id} onReorder={nl=>reorderChores("daily",nl)} renderItem={(c)=><TaskRow chore={c} done={!!choreLog[c.id]} onToggle={()=>toggleChore(c.id)} onDelete={()=>setChores(p=>p.filter(x=>x.id!==c.id))} onView={()=>{setViewingTask(c);setEditTask({...c});setModal("editTask")}} choreLog7={choreLog7} accent={accent} showInterval={false}/>} /> : <div style={{fontSize:11,color:"rgba(255,255,255,0.1)",textAlign:"center",padding:12}}>No daily tasks</div>}
+        <div style={{marginBottom:16}}/>
+        {sL("Recurring")}
+        {recurringChores.length>0 ? <DraggableList items={recurringChores} keyExtractor={c=>c.id} onReorder={nl=>reorderChores("recurring",nl)} renderItem={(c)=><TaskRow chore={c} done={!!choreLog[c.id]} onToggle={()=>toggleChore(c.id)} onDelete={()=>setChores(p=>p.filter(x=>x.id!==c.id))} onView={()=>{setViewingTask(c);setEditTask({...c});setModal("editTask")}} choreLog7={choreLog7} accent={accent} showInterval/>} /> : <div style={{fontSize:11,color:"rgba(255,255,255,0.1)",textAlign:"center",padding:12}}>No recurring tasks</div>}
+        <div style={{marginBottom:16}}/>
+        {sL("One-off")}
+        {oneOffChores.length>0 ? <DraggableList items={oneOffChores} keyExtractor={c=>c.id} onReorder={nl=>reorderChores("one-off",nl)} renderItem={(c)=><TaskRow chore={c} done={!!choreLog[c.id]||!!c.completedDate} onToggle={()=>toggleChore(c.id)} onDelete={()=>setChores(p=>p.filter(x=>x.id!==c.id))} onView={()=>{setViewingTask(c);setEditTask({...c});setModal("editTask")}} showInterval={false}/>} /> : <div style={{fontSize:11,color:"rgba(255,255,255,0.1)",textAlign:"center",padding:12}}>No one-off tasks</div>}
+      </div>)}
 
       {tab === "collection" && (<div style={{ padding: "0 20px 80px", animation: "fi 0.25s ease" }}>{sL("Choose Your Buddy")}<p style={{fontSize:11,color:"rgba(255,255,255,0.2)",marginBottom:14,lineHeight:1.5}}>Each buddy evolves through 5 stages as you level up.</p><div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:24}}>{BUDDY_TYPES.map(bt=>{const active=activeBuddy===bt.id;return(<div key={bt.id} onClick={()=>setActiveBuddy(bt.id)} style={{padding:"14px 10px 12px",borderRadius:12,cursor:"pointer",background:active?`${bt.accent}0c`:"rgba(255,255,255,0.02)",border:`1.5px solid ${active?bt.accent+"44":"rgba(255,255,255,0.05)"}`}}><div style={{display:"flex",justifyContent:"center",marginBottom:8}}><BuddyFace mood="happy" level={4} hat={false} buddyType={bt.id} size={80}/></div><div style={{textAlign:"center"}}><div style={{fontWeight:700,fontSize:13,color:active?bt.accent:"#e0e0e0"}}>{bt.name}</div><div style={{fontSize:10,color:"rgba(255,255,255,0.2)",marginTop:2}}>{bt.desc}</div>{active&&<div style={{fontSize:9,fontWeight:700,color:bt.accent,marginTop:4,letterSpacing:1}}>ACTIVE</div>}</div></div>)})}</div>
 
