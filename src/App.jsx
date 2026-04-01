@@ -25,6 +25,76 @@ const ENVIRONMENTS = [
   { id: "forest", name: "Forest", icon: "🌲" },
 ];
 
+const ZODIAC = [
+  { sign: "Aries", symbol: "♈", start: [3,21], end: [4,19], color: "#e84040",
+    traits: "Bold, ambitious, and energetic. Natural leaders who love a challenge.",
+    likes: "Comfortable clothes, taking on leadership, individual sports, physical challenges",
+    dislikes: "Inactivity, delays, work that doesn't use their talents" },
+  { sign: "Taurus", symbol: "♉", start: [4,20], end: [5,20], color: "#e87040",
+    traits: "Reliable, patient, and devoted. Lovers of beauty and comfort.",
+    likes: "Gardening, cooking, good music, romance, quality craftsmanship",
+    dislikes: "Sudden changes, complications, insecurity, synthetic fabrics" },
+  { sign: "Gemini", symbol: "♊", start: [5,21], end: [6,20], color: "#e8a840",
+    traits: "Curious, adaptable, and expressive. Quick-witted social butterflies.",
+    likes: "Music, books, magazines, chats with nearly anyone, short trips",
+    dislikes: "Being alone, being confined, repetition and routine" },
+  { sign: "Cancer", symbol: "♋", start: [6,21], end: [7,22], color: "#c8d840",
+    traits: "Intuitive, sentimental, and protective. Deeply caring and loyal.",
+    likes: "Art, home-based hobbies, helping loved ones, a good meal with friends",
+    dislikes: "Strangers, criticism of their loved ones, revealing personal life" },
+  { sign: "Leo", symbol: "♌", start: [7,23], end: [8,22], color: "#60c848",
+    traits: "Creative, passionate, and generous. Warm-hearted natural performers.",
+    likes: "Theater, vacations, being admired, fun with friends, bright colors",
+    dislikes: "Being ignored, facing reality, not being treated like royalty" },
+  { sign: "Virgo", symbol: "♍", start: [8,23], end: [9,22], color: "#40b8a0",
+    traits: "Analytical, practical, and hardworking. Detail-oriented perfectionists.",
+    likes: "Animals, healthy food, books, nature, cleanliness and order",
+    dislikes: "Rudeness, asking for help, being the center of attention" },
+  { sign: "Libra", symbol: "♎", start: [9,23], end: [10,22], color: "#40a0d8",
+    traits: "Diplomatic, gracious, and fair-minded. Seekers of balance and harmony.",
+    likes: "Harmony, gentleness, sharing with others, the outdoors",
+    dislikes: "Violence, injustice, loudmouths, conformity" },
+  { sign: "Scorpio", symbol: "♏", start: [10,23], end: [11,21], color: "#4878d8",
+    traits: "Resourceful, powerful, and passionate. Intense and magnetic.",
+    likes: "Truth, facts, being right, longtime friends, teasing, grand passion",
+    dislikes: "Dishonesty, revealing secrets, superficiality, small talk" },
+  { sign: "Sagittarius", symbol: "♐", start: [11,22], end: [12,21], color: "#6858c8",
+    traits: "Adventurous, optimistic, and freedom-loving. Philosophical wanderers.",
+    likes: "Freedom, travel, philosophy, being outdoors, open-minded people",
+    dislikes: "Clingy people, being constrained, off-the-wall theories, details" },
+  { sign: "Capricorn", symbol: "♑", start: [12,22], end: [1,19], color: "#8848b8",
+    traits: "Disciplined, responsible, and ambitious. Masters of self-control.",
+    likes: "Family, tradition, quality craftsmanship, understated status",
+    dislikes: "Almost everything at some point, public displays of emotion" },
+  { sign: "Aquarius", symbol: "♒", start: [1,20], end: [2,18], color: "#a840a8",
+    traits: "Progressive, original, and independent. Humanitarian visionaries.",
+    likes: "Fun with friends, intellectual conversation, fighting for causes",
+    dislikes: "Limitations, broken promises, being lonely, dull or boring situations" },
+  { sign: "Pisces", symbol: "♓", start: [2,19], end: [3,20], color: "#c840a0",
+    traits: "Compassionate, artistic, and intuitive. Gentle dreamers and healers.",
+    likes: "Being alone, music, romance, visual media, swimming, spiritual themes",
+    dislikes: "Know-it-alls, being criticized, the past coming back to haunt, cruelty" },
+];
+
+function getZodiacSign(dateStr) {
+  const d = new Date(dateStr + "T00:00:00");
+  const m = d.getMonth() + 1, day = d.getDate();
+  return ZODIAC.find(z => {
+    const [sm, sd] = z.start, [em, ed] = z.end;
+    if (sm <= em) return (m > sm || (m === sm && day >= sd)) && (m < em || (m === em && day <= ed));
+    return (m > sm || (m === sm && day >= sd)) || (m < em || (m === em && day <= ed));
+  }) || ZODIAC[0];
+}
+
+function getZodiacDaysUntilStart(z) {
+  const now = new Date();
+  const year = now.getFullYear();
+  const [sm, sd] = z.start;
+  let target = new Date(year, sm - 1, sd);
+  if (target < now) target = new Date(year + 1, sm - 1, sd);
+  return Math.round((target - now) / 86400000);
+}
+
 function isDueToday(ch, td) {
   if (ch.type === "one-off") return !ch.completedDate;
   const cr = new Date(ch.createdDate + "T00:00:00"), t = new Date(td + "T00:00:00"), d = Math.round((t - cr) / 86400000);
@@ -505,6 +575,7 @@ export default function App() {
   const [editNotes, setEditNotes] = useState("");
   const [viewingTask, setViewingTask] = useState(null);
   const [editTask, setEditTask] = useState(null);
+  const [viewingZodiac, setViewingZodiac] = useState(null);
 
   // Save to Firebase — immediate for critical data, debounced for frequent updates
   const saveTimers = useRef({});
@@ -840,7 +911,106 @@ export default function App() {
         </div>
       </div>)}
 
-      {tab === "birthdays" && (<div style={{ padding: "0 20px 80px", animation: "fi 0.25s ease" }}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}><span style={{fontWeight:700,fontSize:14,color:"#3a2e24"}}>Birthdays</span><button onClick={()=>{setNb({name:"",date:"",notes:""});setModal("birthday")}} style={{fontWeight:700,fontSize:11,border:"none",borderRadius:8,padding:"6px 14px",cursor:"pointer",background:"#e86a8a",color:"#3a2e24"}}>+ Add</button></div><input placeholder="Search names..." value={bdSearch} onChange={e=>setBdSearch(e.target.value)} style={{width:"100%",padding:"8px 12px",borderRadius:8,border:"1px solid rgba(90,74,62,0.1)",background:"rgba(90,74,62,0.04)",fontSize:12.5,color:"#3a2e24",marginBottom:10,outline:"none"}}/><div style={{display:"flex",gap:4,marginBottom:14}}>{[{v:"all",l:"All"},{v:"week",l:"This Week"},{v:"month",l:"Next 30 Days"}].map(f=>(<button key={f.v} onClick={()=>setBdFilter(f.v)} style={{padding:"5px 12px",borderRadius:6,border:`1px solid ${bdFilter===f.v?accent+"44":"rgba(90,74,62,0.08)"}`,cursor:"pointer",fontWeight:600,fontSize:11,background:bdFilter===f.v?`${accent}12`:"transparent",color:bdFilter===f.v?accent:"#8a7a6a"}}>{f.l}</button>))}</div><div style={{display:"flex",flexDirection:"column",gap:5}}>{filteredBdays.map(b=>{const bd=new Date(b.date+"T00:00:00"),d=daysUntil(b.date),isTd=d===0;return(<div key={b.id} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",borderRadius:10,background:isTd?`${accent}08`:"rgba(90,74,62,0.03)",border:`1px solid ${isTd?accent+"20":"rgba(90,74,62,0.06)"}`,cursor:"pointer"}} onClick={()=>{setViewingBd(b);setEditNotes(b.notes||"");setModal("viewBd")}}><div style={{width:34,height:34,borderRadius:8,background:isTd?`${accent}20`:"rgba(90,74,62,0.05)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:15,flexShrink:0}}>🎂</div><div style={{flex:1,minWidth:0}}><div style={{fontWeight:600,fontSize:13}}>{b.name}</div><div style={{fontSize:10.5,color:"#b4a494"}}>{months[bd.getMonth()]} {bd.getDate()}{b.notes?" · 📝":""}</div></div><div style={{textAlign:"right",flexShrink:0}}>{isTd?<button onClick={e=>{e.stopPropagation();toggleWish(b.name)}} style={{fontSize:10,fontWeight:700,border:"none",borderRadius:6,padding:"4px 10px",cursor:"pointer",background:wishes[b.name]?"rgba(90,74,62,0.08)":accent,color:wishes[b.name]?"#8a7a6a":"white"}}>{wishes[b.name]?"↩ Undo":"Wish"}</button>:<span style={{fontSize:10.5,color:"#c4b4a4",fontWeight:600}}>{d===1?"Tomorrow":`${d}d`}</span>}</div></div>)})}{filteredBdays.length===0&&<div style={{textAlign:"center",padding:24,color:"#c4b4a4",fontSize:12}}>{bdSearch?"No matches":"No birthdays saved"}</div>}</div><div style={{textAlign:"center",marginTop:12,fontSize:10,color:"#c4b4a4"}}>{bdays.length} total</div></div>)}
+      {tab === "birthdays" && (()=>{
+        // Build zodiac sections — split the currently active sign into upcoming/passed
+        const now = new Date();
+        const currentMonth = now.getMonth() + 1, currentDay = now.getDate();
+
+        // Determine which sign is currently active
+        const activeSign = ZODIAC.find(z => {
+          const [sm, sd] = z.start, [em, ed] = z.end;
+          if (sm <= em) return (currentMonth > sm || (currentMonth === sm && currentDay >= sd)) && (currentMonth < em || (currentMonth === em && currentDay <= ed));
+          return (currentMonth > sm || (currentMonth === sm && currentDay >= sd)) || (currentMonth < em || (currentMonth === em && currentDay <= ed));
+        });
+
+        // Group birthdays by sign
+        const bdaysBySign = {};
+        filteredBdays.forEach(b => {
+          const z = getZodiacSign(b.date);
+          if (!bdaysBySign[z.sign]) bdaysBySign[z.sign] = [];
+          bdaysBySign[z.sign].push(b);
+        });
+
+        // Sort signs by days until start, but split active sign
+        const zodiacOrder = [...ZODIAC].sort((a, b) => getZodiacDaysUntilStart(a) - getZodiacDaysUntilStart(b));
+
+        // Build render sections: each has { zodiac, bdays, label? }
+        const sections = [];
+        zodiacOrder.forEach(z => {
+          const signBdays = bdaysBySign[z.sign];
+          if (!signBdays || signBdays.length === 0) return;
+          if (activeSign && z.sign === activeSign.sign) {
+            const upcoming = signBdays.filter(b => daysUntil(b.date) > 0 || daysUntil(b.date) === 0);
+            const passed = signBdays.filter(b => daysUntil(b.date) > 0 ? false : daysUntil(b.date) === 0 ? false : true);
+            // Actually: daysUntil wraps to next year, so "passed" = daysUntil > 300 (their bday just happened)
+            const up = signBdays.filter(b => daysUntil(b.date) <= 183);
+            const past = signBdays.filter(b => daysUntil(b.date) > 183);
+            if (up.length > 0) sections.unshift({ zodiac: z, bdays: up, key: z.sign + "-upcoming", sublabel: "upcoming" });
+            if (past.length > 0) sections.push({ zodiac: z, bdays: past, key: z.sign + "-passed", sublabel: "passed" });
+          } else {
+            sections.push({ zodiac: z, bdays: signBdays, key: z.sign });
+          }
+        });
+
+        const signMonths = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+        const fmtRange = (z) => `${signMonths[z.start[0]-1]} ${z.start[1]} – ${signMonths[z.end[0]-1]} ${z.end[1]}`;
+        return (<div style={{ padding: "0 20px 80px", animation: "fi 0.25s ease" }}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+            <span style={{fontWeight:700,fontSize:14,color:"#3a2e24"}}>Birthdays</span>
+            <button onClick={()=>{setNb({name:"",date:"",notes:""});setModal("birthday")}} style={{fontWeight:700,fontSize:11,border:"none",borderRadius:8,padding:"6px 14px",cursor:"pointer",background:"#e86a8a",color:"white"}}>+ Add</button>
+          </div>
+          <input placeholder="Search names..." value={bdSearch} onChange={e=>setBdSearch(e.target.value)} style={{width:"100%",padding:"8px 12px",borderRadius:8,border:"1px solid rgba(90,74,62,0.1)",background:"rgba(90,74,62,0.04)",fontSize:12.5,color:"#3a2e24",marginBottom:10,outline:"none"}}/>
+          <div style={{display:"flex",gap:4,marginBottom:14}}>
+            {[{v:"all",l:"All"},{v:"week",l:"This Week"},{v:"month",l:"Next 30 Days"}].map(f=>(
+              <button key={f.v} onClick={()=>setBdFilter(f.v)} style={{padding:"5px 12px",borderRadius:6,border:`1px solid ${bdFilter===f.v?accent+"44":"rgba(90,74,62,0.08)"}`,cursor:"pointer",fontWeight:600,fontSize:11,background:bdFilter===f.v?`${accent}12`:"transparent",color:bdFilter===f.v?accent:"#8a7a6a"}}>{f.l}</button>
+            ))}
+          </div>
+          <div style={{display:"flex",flexDirection:"column",gap:0}}>
+            {sections.map(sec => {
+              const z = sec.zodiac;
+              const signBdays = sec.bdays;
+              return (
+                <div key={sec.key} style={{display:"flex",gap:0,marginBottom:8}}>
+                  {/* Vertical color bar + sign info */}
+                  <div style={{display:"flex",flexDirection:"column",alignItems:"center",width:42,flexShrink:0,paddingTop:2}}>
+                    <div onClick={()=>setViewingZodiac(z)} style={{cursor:"pointer",textAlign:"center",marginBottom:4}}>
+                      <div style={{fontSize:20,lineHeight:1,color:z.color,opacity:sec.sublabel==="passed"?0.4:1}}>{z.symbol}</div>
+                      <div style={{fontSize:7.5,fontWeight:700,color:z.color,letterSpacing:0.3,marginTop:2,lineHeight:1.1,opacity:sec.sublabel==="passed"?0.4:1}}>{z.sign.toUpperCase()}</div>
+                      {sec.sublabel && <div style={{fontSize:6.5,fontWeight:600,color:sec.sublabel==="passed"?"#c4b4a4":z.color,marginTop:1,letterSpacing:0.5}}>{sec.sublabel==="passed"?"PASSED":"SOON"}</div>}
+                    </div>
+                    <div style={{flex:1,width:3,borderRadius:2,background:z.color,opacity:sec.sublabel==="passed"?0.12:0.3,minHeight:20}}/>
+                    <div style={{fontSize:7,color:"#b4a494",marginTop:3,textAlign:"center",lineHeight:1.2,whiteSpace:"nowrap"}}>{fmtRange(z)}</div>
+                  </div>
+                  {/* Birthday cards */}
+                  <div style={{flex:1,display:"flex",flexDirection:"column",gap:5,paddingLeft:8}}>
+                    {signBdays.map(b => {
+                      const bd = new Date(b.date + "T00:00:00"), d = daysUntil(b.date), isTd = d === 0;
+                      const isPassed = sec.sublabel === "passed";
+                      return (
+                        <div key={b.id} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 12px",borderRadius:10,background:isTd?`${accent}08`:"rgba(90,74,62,0.03)",border:`1px solid ${isTd?accent+"20":"rgba(90,74,62,0.06)"}`,cursor:"pointer",opacity:isPassed?0.5:1}} onClick={()=>{setViewingBd(b);setEditNotes(b.notes||"");setModal("viewBd")}}>
+                          <div style={{width:30,height:30,borderRadius:7,background:isTd?`${accent}20`:`${z.color}12`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                            <span style={{fontSize:11,color:z.color,fontWeight:700}}>{z.symbol}</span>
+                          </div>
+                          <div style={{flex:1,minWidth:0}}>
+                            <div style={{fontWeight:600,fontSize:13,color:"#3a2e24"}}>{b.name}</div>
+                            <div style={{fontSize:10,color:"#b4a494"}}>{months[bd.getMonth()]} {bd.getDate()}{b.notes?" · 📝":""}</div>
+                          </div>
+                          <div style={{textAlign:"right",flexShrink:0}}>
+                            {isTd ? <button onClick={e=>{e.stopPropagation();toggleWish(b.name)}} style={{fontSize:10,fontWeight:700,border:"none",borderRadius:6,padding:"4px 10px",cursor:"pointer",background:wishes[b.name]?"rgba(90,74,62,0.08)":accent,color:wishes[b.name]?"#8a7a6a":"white"}}>{wishes[b.name]?"↩ Undo":"Wish"}</button>
+                            : <span style={{fontSize:10.5,color:"#c4b4a4",fontWeight:600}}>{isPassed?"Passed":(d===1?"Tomorrow":`${d}d`)}</span>}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+            {filteredBdays.length===0&&<div style={{textAlign:"center",padding:24,color:"#c4b4a4",fontSize:12}}>{bdSearch?"No matches":"No birthdays saved"}</div>}
+          </div>
+          <div style={{textAlign:"center",marginTop:12,fontSize:10,color:"#c4b4a4"}}>{bdays.length} total</div>
+        </div>);
+      })()}
 
       {/* Modals */}
       {modal === "chore" && (<Modal onClose={() => setModal(null)}><div style={{fontFamily:"'Space Grotesk'",fontSize:16,fontWeight:700,color:"#3a2e24",marginBottom:16}}>New Task</div><input placeholder="Task name..." value={nc.name} onChange={e=>setNc(p=>({...p,name:e.target.value}))} autoFocus style={{width:"100%",padding:"10px 14px",borderRadius:8,border:"1px solid rgba(90,74,62,0.12)",background:"rgba(90,74,62,0.04)",fontSize:13,fontWeight:600,color:"#3a2e24",marginBottom:12,outline:"none"}}/><div style={{display:"flex",gap:4,marginBottom:12}}>{[{t:"recurring",l:"♻ Recurring"},{t:"one-off",l:"◎ One-off"}].map(x=>(<button key={x.t} onClick={()=>setNc(p=>({...p,type:x.t}))} style={{flex:1,padding:"8px 0",borderRadius:8,border:`1px solid ${nc.type===x.t?"rgba(90,74,62,0.2)":"rgba(90,74,62,0.08)"}`,cursor:"pointer",fontWeight:700,fontSize:11.5,background:nc.type===x.t?"rgba(90,74,62,0.08)":"transparent",color:nc.type===x.t?"#3a2e24":"#8a7a6a"}}>{x.l}</button>))}</div>{nc.type==="recurring"&&<div style={{marginBottom:12}}><div style={{fontSize:10,fontWeight:700,color:"#b4a494",marginBottom:6,letterSpacing:1}}>FREQUENCY</div><div style={{display:"flex",gap:4,flexWrap:"wrap"}}>{INTERVALS.map(i=><button key={i.value} onClick={()=>setNc(p=>({...p,interval:i.value}))} style={{padding:"5px 10px",borderRadius:6,border:`1px solid ${nc.interval===i.value?accent+"44":"rgba(90,74,62,0.08)"}`,cursor:"pointer",fontWeight:600,fontSize:11,background:nc.interval===i.value?`${accent}15`:"transparent",color:nc.interval===i.value?accent:"#8a7a6a"}}>{i.label}</button>)}</div></div>}<div style={{marginBottom:16}}><div style={{fontSize:10,fontWeight:700,color:"#b4a494",marginBottom:6,letterSpacing:1}}>DIFFICULTY</div><div style={{display:"flex",gap:6}}>{[{d:"Easy",c:"#6ee7a0"},{d:"Medium",c:"#e8a84c"},{d:"Hard",c:"#e86a6a"}].map(x=><button key={x.d} onClick={()=>setNc(p=>({...p,difficulty:x.d}))} style={{flex:1,padding:"10px 0",borderRadius:8,border:`1.5px solid ${nc.difficulty===x.d?x.c+"66":"rgba(90,74,62,0.08)"}`,cursor:"pointer",fontWeight:700,fontSize:12,background:nc.difficulty===x.d?`${x.c}12`:"transparent",color:x.c}}>{x.d}<div style={{fontSize:9,fontWeight:600,marginTop:2,opacity:0.5}}>+{DIFF_PTS[x.d]} XP</div></button>)}</div></div><div style={{display:"flex",gap:8}}><button onClick={()=>setModal(null)} style={{flex:1,padding:"11px 0",borderRadius:10,border:"1px solid rgba(90,74,62,0.1)",background:"transparent",cursor:"pointer",fontWeight:700,fontSize:12,color:"#8a7a6a"}}>Cancel</button><button onClick={saveChore} style={{flex:2,padding:"11px 0",borderRadius:10,border:"none",background:accent,cursor:"pointer",fontWeight:700,fontSize:12,color:"white"}}>Add Task</button></div></Modal>)}
@@ -880,6 +1050,29 @@ export default function App() {
           <button onClick={()=>{setModal(null);setViewingTask(null);setEditTask(null)}} style={{flex:1,padding:"11px 0",borderRadius:10,border:"1px solid rgba(90,74,62,0.1)",background:"transparent",cursor:"pointer",fontWeight:700,fontSize:12,color:"#8a7a6a"}}>Cancel</button>
           <button onClick={saveTaskEdit} style={{flex:2,padding:"11px 0",borderRadius:10,border:"none",background:accent,cursor:"pointer",fontWeight:700,fontSize:12,color:"white"}}>Save Changes</button>
         </div>
+      </Modal>)}
+
+      {viewingZodiac && (<Modal onClose={() => setViewingZodiac(null)}>
+        <div style={{textAlign:"center",marginBottom:16}}>
+          <div style={{fontSize:48,lineHeight:1,color:viewingZodiac.color,marginBottom:8}}>{viewingZodiac.symbol}</div>
+          <div style={{fontFamily:"'Space Grotesk'",fontSize:20,fontWeight:700,color:"#3a2e24"}}>{viewingZodiac.sign}</div>
+          <div style={{fontSize:12,color:"#8a7a6a",marginTop:4}}>{["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][viewingZodiac.start[0]-1]} {viewingZodiac.start[1]} – {["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][viewingZodiac.end[0]-1]} {viewingZodiac.end[1]}</div>
+        </div>
+        <div style={{background:`${viewingZodiac.color}08`,borderRadius:10,padding:"12px 14px",marginBottom:12,borderLeft:`3px solid ${viewingZodiac.color}`}}>
+          <div style={{fontSize:12,color:"#3a2e24",lineHeight:1.6}}>{viewingZodiac.traits}</div>
+        </div>
+        <div style={{marginBottom:10}}>
+          <div style={{fontSize:10,fontWeight:700,color:viewingZodiac.color,marginBottom:4,letterSpacing:1}}>LIKES</div>
+          <div style={{fontSize:12,color:"#6b5c4d",lineHeight:1.5}}>{viewingZodiac.likes}</div>
+        </div>
+        <div style={{marginBottom:16}}>
+          <div style={{fontSize:10,fontWeight:700,color:viewingZodiac.color,marginBottom:4,letterSpacing:1}}>DISLIKES</div>
+          <div style={{fontSize:12,color:"#6b5c4d",lineHeight:1.5}}>{viewingZodiac.dislikes}</div>
+        </div>
+        <div style={{fontSize:10,color:"#c4b4a4",textAlign:"center",marginBottom:12}}>
+          {bdays.filter(b => getZodiacSign(b.date).sign === viewingZodiac.sign).length} birthday{bdays.filter(b => getZodiacSign(b.date).sign === viewingZodiac.sign).length !== 1 ? "s" : ""} in your list
+        </div>
+        <button onClick={() => setViewingZodiac(null)} style={{width:"100%",padding:"11px 0",borderRadius:10,border:"none",background:viewingZodiac.color,cursor:"pointer",fontWeight:700,fontSize:12,color:"white"}}>Close</button>
       </Modal>)}
     </div>
   );
