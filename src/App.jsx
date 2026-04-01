@@ -57,6 +57,228 @@ function BuddyFace({ mood, level, hat, buddyType, size = 140 }) {
   return (<div style={{ position:"relative", display:"inline-block", animation:ani }}>{hat&&(<svg width={size*0.35} height={size*0.3} viewBox="0 0 70 50" style={{position:"absolute",top:level===0?-size*0.05:-size*0.1,left:size*0.33,zIndex:2,filter:"drop-shadow(0 2px 4px rgba(0,0,0,0.15)"}}><polygon points="35,3 52,36 18,36" fill={bt.accent} stroke="rgba(58,46,36,0.1)" strokeWidth="1"/><circle cx="35" cy="3" r="3.5" fill="#ffe066"/><rect x="18" y="35" width="34" height="4" rx="2" fill="rgba(58,46,36,0.08)"/></svg>)}{content}</div>);
 }
 
+// ═══ ENVIRONMENT BACKGROUNDS — Bright warm versions ═══
+function EnvironmentBg({ envId, width = 440, height = 220 }) {
+  const w = width, h = height;
+  if (envId === "office") return (
+    <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} style={{position:"absolute",bottom:0,left:"50%",transform:"translateX(-50%)"}}>
+      {/* Warm wall */}
+      <rect width={w} height={h} fill="#f0e6d8"/>
+      <rect y={h*0.68} width={w} height={h*0.32} fill="#e8dcc8"/>
+      <line x1={0} y1={h*0.68} x2={w} y2={h*0.68} stroke="rgba(90,74,62,0.08)" strokeWidth="1"/>
+      {/* Window with sky view */}
+      <rect x={w*0.3} y={h*0.06} width={w*0.4} height={h*0.42} rx="4" fill="#d4e8f4" stroke="#c8b8a4" strokeWidth="1.5"/>
+      <line x1={w*0.5} y1={h*0.06} x2={w*0.5} y2={h*0.48} stroke="#c8b8a4" strokeWidth="1"/>
+      <line x1={w*0.3} y1={h*0.27} x2={w*0.7} y2={h*0.27} stroke="#c8b8a4" strokeWidth="1"/>
+      {/* Clouds through window */}
+      <ellipse cx={w*0.4} cy={h*0.14} rx={w*0.06} ry={h*0.03} fill="white" opacity="0.6"/>
+      <ellipse cx={w*0.58} cy={h*0.18} rx={w*0.04} ry={h*0.025} fill="white" opacity="0.5"/>
+      {/* Sunbeam */}
+      <path d={`M ${w*0.55} ${h*0.06} L ${w*0.65} ${h*0.68} L ${w*0.45} ${h*0.68} Z`} fill="rgba(255,220,140,0.06)"/>
+      {/* Desk — warm wood */}
+      <rect x={w*0.08} y={h*0.58} width={w*0.4} height={h*0.04} rx="2" fill="#b89878" stroke="#a88868" strokeWidth="0.5"/>
+      <rect x={w*0.12} y={h*0.62} width={w*0.04} height={h*0.16} fill="#a88868"/>
+      <rect x={w*0.4} y={h*0.62} width={w*0.04} height={h*0.16} fill="#a88868"/>
+      {/* Monitor */}
+      <rect x={w*0.16} y={h*0.36} width={w*0.2} height={h*0.2} rx="3" fill="#e0dcd6" stroke="#b8a898" strokeWidth="1"/>
+      <rect x={w*0.18} y={h*0.38} width={w*0.16} height={h*0.14} rx="2" fill="#c8dce8"/>
+      <rect x={w*0.24} y={h*0.56} width={w*0.04} height={h*0.02} fill="#b8a898"/>
+      {/* Coffee mug */}
+      <rect x={w*0.38} y={h*0.52} width={w*0.035} height={h*0.06} rx="2" fill="#d4a878"/>
+      <path d={`M ${w*0.415} ${h*0.54} Q ${w*0.43} ${h*0.55} ${w*0.415} ${h*0.56}`} stroke="#d4a878" strokeWidth="1.5" fill="none"/>
+      {/* Steam */}
+      <path d={`M ${w*0.39} ${h*0.5} Q ${w*0.395} ${h*0.46} ${w*0.39} ${h*0.42}`} stroke="rgba(90,74,62,0.08)" strokeWidth="1" fill="none"/>
+      <path d={`M ${w*0.4} ${h*0.5} Q ${w*0.405} ${h*0.44} ${w*0.4} ${h*0.4}`} stroke="rgba(90,74,62,0.06)" strokeWidth="1" fill="none"/>
+      {/* Plant */}
+      <rect x={w*0.78} y={h*0.52} width={w*0.07} height={h*0.1} rx="3" fill="#c4785a" opacity="0.7"/>
+      <circle cx={w*0.815} cy={h*0.46} r={w*0.045} fill="#7a9a6d"/>
+      <circle cx={w*0.795} cy={h*0.42} r={w*0.035} fill="#8aaa7a"/>
+      <circle cx={w*0.835} cy={h*0.44} r={w*0.03} fill="#6a8a5d"/>
+      {/* Picture frame on wall */}
+      <rect x={w*0.76} y={h*0.1} width={w*0.1} height={h*0.14} rx="2" fill="#ede4d8" stroke="#c8b8a4" strokeWidth="1"/>
+      <rect x={w*0.77} y={h*0.11} width={w*0.08} height={h*0.12} rx="1" fill="#d4c8b8"/>
+    </svg>
+  );
+  if (envId === "livingroom") return (
+    <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} style={{position:"absolute",bottom:0,left:"50%",transform:"translateX(-50%)"}}>
+      <rect width={w} height={h} fill="#ede4d8"/>
+      <rect y={h*0.65} width={w} height={h*0.35} fill="#ddd0c0"/>
+      {/* Rug */}
+      <ellipse cx={w*0.5} cy={h*0.82} rx={w*0.32} ry={h*0.1} fill="#c4785a" opacity="0.15"/>
+      <ellipse cx={w*0.5} cy={h*0.82} rx={w*0.26} ry={h*0.07} fill="#c4785a" opacity="0.08"/>
+      {/* Couch */}
+      <rect x={w*0.06} y={h*0.48} width={w*0.42} height={h*0.2} rx="8" fill="#9a7ab4" opacity="0.6"/>
+      <rect x={w*0.08} y={h*0.44} width={w*0.12} height={h*0.24} rx="6" fill="#9a7ab4" opacity="0.5"/>
+      <rect x={w*0.34} y={h*0.44} width={w*0.12} height={h*0.24} rx="6" fill="#9a7ab4" opacity="0.5"/>
+      {/* Cushions */}
+      <rect x={w*0.14} y={h*0.48} width={w*0.09} height={h*0.12} rx="4" fill="#b08ac4" opacity="0.5"/>
+      <rect x={w*0.26} y={h*0.48} width={w*0.09} height={h*0.12} rx="4" fill="#a88ab8" opacity="0.45"/>
+      {/* Floor lamp */}
+      <rect x={w*0.72} y={h*0.22} width={w*0.012} height={h*0.42} fill="#b8a898"/>
+      <ellipse cx={w*0.726} cy={h*0.22} rx={w*0.04} ry={h*0.06} fill="#f0e4d0" stroke="#d4c4b0" strokeWidth="0.8"/>
+      {/* Lamp glow */}
+      <ellipse cx={w*0.726} cy={h*0.32} rx={w*0.08} ry={h*0.12} fill="rgba(255,220,140,0.08)"/>
+      {/* Side table */}
+      <rect x={w*0.68} y={h*0.56} width={w*0.1} height={h*0.04} rx="2" fill="#b89878"/>
+      <rect x={w*0.71} y={h*0.6} width={w*0.04} height={h*0.12} fill="#a88868"/>
+      {/* Book on table */}
+      <rect x={w*0.69} y={h*0.53} width={w*0.05} height={h*0.03} rx="1" fill="#5a9ab4" opacity="0.6"/>
+      {/* Picture frames */}
+      <rect x={w*0.55} y={h*0.1} width={w*0.08} height={h*0.12} rx="2" fill="#ede4d8" stroke="#c8b8a4" strokeWidth="1"/>
+      <rect x={w*0.65} y={h*0.08} width={w*0.06} height={h*0.1} rx="2" fill="#ede4d8" stroke="#c8b8a4" strokeWidth="1"/>
+      {/* Bookshelf */}
+      <rect x={w*0.82} y={h*0.14} width={w*0.14} height={h*0.46} rx="3" fill="#c8b8a4" opacity="0.4"/>
+      <rect x={w*0.83} y={h*0.17} width={w*0.035} height={h*0.07} rx="1" fill="#c4785a" opacity="0.5"/>
+      <rect x={w*0.87} y={h*0.17} width={w*0.03} height={h*0.07} rx="1" fill="#5a9ab4" opacity="0.5"/>
+      <rect x={w*0.905} y={h*0.17} width={w*0.025} height={h*0.07} rx="1" fill="#7a9a6d" opacity="0.5"/>
+      <rect x={w*0.83} y={h*0.28} width={w*0.04} height={h*0.07} rx="1" fill="#e8a84c" opacity="0.4"/>
+      <rect x={w*0.88} y={h*0.28} width={w*0.03} height={h*0.07} rx="1" fill="#9a7ab4" opacity="0.4"/>
+      <rect x={w*0.83} y={h*0.39} width={w*0.03} height={h*0.07} rx="1" fill="#5bc9e8" opacity="0.4"/>
+      <rect x={w*0.87} y={h*0.39} width={w*0.04} height={h*0.07} rx="1" fill="#c4785a" opacity="0.35"/>
+    </svg>
+  );
+  if (envId === "park") return (
+    <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} style={{position:"absolute",bottom:0,left:"50%",transform:"translateX(-50%)"}}>
+      {/* Golden hour sky */}
+      <rect width={w} height={h} fill="#d4e4f0"/>
+      <rect width={w} height={h*0.3} fill="#e8d8c0" opacity="0.3"/>
+      {/* Soft clouds */}
+      <ellipse cx={w*0.2} cy={h*0.12} rx={w*0.08} ry={h*0.04} fill="white" opacity="0.5"/>
+      <ellipse cx={w*0.6} cy={h*0.08} rx={w*0.1} ry={h*0.035} fill="white" opacity="0.4"/>
+      <ellipse cx={w*0.85} cy={h*0.15} rx={w*0.06} ry={h*0.03} fill="white" opacity="0.45"/>
+      {/* Rolling green ground */}
+      <path d={`M 0 ${h*0.55} Q ${w*0.2} ${h*0.5} ${w*0.4} ${h*0.55} Q ${w*0.6} ${h*0.58} ${w*0.8} ${h*0.53} Q ${w*0.9} ${h*0.51} ${w} ${h*0.55} L ${w} ${h} L 0 ${h} Z`} fill="#8ab878"/>
+      <path d={`M 0 ${h*0.6} Q ${w*0.3} ${h*0.56} ${w*0.5} ${h*0.6} Q ${w*0.7} ${h*0.63} ${w} ${h*0.58} L ${w} ${h} L 0 ${h} Z`} fill="#7aaa68"/>
+      {/* Path */}
+      <path d={`M ${w*0.35} ${h} Q ${w*0.42} ${h*0.72} ${w*0.55} ${h*0.62} Q ${w*0.65} ${h*0.58} ${w*0.7} ${h*0.55}`} stroke="#d4c8a8" strokeWidth="12" fill="none" strokeLinecap="round" opacity="0.4"/>
+      {/* Tree left */}
+      <rect x={w*0.06} y={h*0.25} width={w*0.025} height={h*0.35} fill="#8a6a4a"/>
+      <circle cx={w*0.07} cy={h*0.22} r={w*0.055} fill="#5a8a4a"/>
+      <circle cx={w*0.055} cy={h*0.18} r={w*0.04} fill="#6a9a5a"/>
+      <circle cx={w*0.09} cy={h*0.2} r={w*0.035} fill="#4a7a3a"/>
+      {/* Tree right */}
+      <rect x={w*0.84} y={h*0.2} width={w*0.025} height={h*0.4} fill="#8a6a4a"/>
+      <circle cx={w*0.85} cy={h*0.16} r={w*0.06} fill="#5a8a4a"/>
+      <circle cx={w*0.87} cy={h*0.12} r={w*0.04} fill="#6a9a5a"/>
+      <circle cx={w*0.83} cy={h*0.14} r={w*0.035} fill="#4a7a3a"/>
+      {/* Bench */}
+      <rect x={w*0.55} y={h*0.52} width={w*0.14} height={h*0.015} rx="1" fill="#a08060"/>
+      <rect x={w*0.55} y={h*0.5} width={w*0.14} height={h*0.015} rx="1" fill="#b09070"/>
+      <rect x={w*0.57} y={h*0.535} width={w*0.012} height={h*0.06} fill="#907050"/>
+      <rect x={w*0.67} y={h*0.535} width={w*0.012} height={h*0.06} fill="#907050"/>
+      {/* Flowers */}
+      <circle cx={w*0.18} cy={h*0.6} r="3.5" fill="#e86a8a" opacity="0.6"/><circle cx={w*0.21} cy={h*0.62} r="3" fill="#e8a84c" opacity="0.5"/>
+      <circle cx={w*0.24} cy={h*0.59} r="2.5" fill="#b07ae8" opacity="0.5"/>
+      <circle cx={w*0.76} cy={h*0.57} r="3" fill="#e86a8a" opacity="0.5"/><circle cx={w*0.79} cy={h*0.59} r="2.5" fill="#5bc9e8" opacity="0.4"/>
+      {/* Distant hills */}
+      <path d={`M 0 ${h*0.55} Q ${w*0.15} ${h*0.42} ${w*0.3} ${h*0.48} Q ${w*0.5} ${h*0.4} ${w*0.7} ${h*0.46} Q ${w*0.85} ${h*0.42} ${w} ${h*0.5}`} fill="#9aba88" opacity="0.3"/>
+    </svg>
+  );
+  if (envId === "rave") return (
+    <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} style={{position:"absolute",bottom:0,left:"50%",transform:"translateX(-50%)"}}>
+      <rect width={w} height={h} fill="#0a0a18"/>
+      <rect y={h*0.72} width={w} height={h*0.28} fill="#0e0e1e"/>
+      {/* Neon beams */}
+      <line x1={w*0.1} y1={0} x2={w*0.3} y2={h} stroke="#ff00ff" strokeWidth="2" opacity="0.25"><animate attributeName="opacity" values="0.25;0.06;0.25" dur="1.5s" repeatCount="indefinite"/></line>
+      <line x1={w*0.5} y1={0} x2={w*0.38} y2={h} stroke="#00ffff" strokeWidth="2" opacity="0.2"><animate attributeName="opacity" values="0.2;0.05;0.2" dur="2s" repeatCount="indefinite"/></line>
+      <line x1={w*0.9} y1={0} x2={w*0.7} y2={h} stroke="#ff00ff" strokeWidth="2" opacity="0.25"><animate attributeName="opacity" values="0.25;0.06;0.25" dur="1.8s" repeatCount="indefinite"/></line>
+      <line x1={w*0.7} y1={0} x2={w*0.85} y2={h} stroke="#00ff88" strokeWidth="1.5" opacity="0.15"><animate attributeName="opacity" values="0.15;0.04;0.15" dur="2.2s" repeatCount="indefinite"/></line>
+      <line x1={w*0.3} y1={0} x2={w*0.15} y2={h} stroke="#00ffff" strokeWidth="1.5" opacity="0.12"><animate attributeName="opacity" values="0.12;0.03;0.12" dur="1.7s" repeatCount="indefinite"/></line>
+      {/* Speakers */}
+      <rect x={w*0.02} y={h*0.35} width={w*0.08} height={h*0.38} rx="4" fill="#1a1a2e" stroke="#ff00ff" strokeWidth="0.8" opacity="0.5"/>
+      <circle cx={w*0.06} cy={h*0.46} r={w*0.022} fill="#1a1a2e" stroke="#ff00ff" strokeWidth="0.8" opacity="0.4"/>
+      <circle cx={w*0.06} cy={h*0.6} r={w*0.028} fill="#1a1a2e" stroke="#ff00ff" strokeWidth="0.8" opacity="0.4"/>
+      <rect x={w*0.9} y={h*0.35} width={w*0.08} height={h*0.38} rx="4" fill="#1a1a2e" stroke="#00ffff" strokeWidth="0.8" opacity="0.5"/>
+      <circle cx={w*0.94} cy={h*0.46} r={w*0.022} fill="#1a1a2e" stroke="#00ffff" strokeWidth="0.8" opacity="0.4"/>
+      <circle cx={w*0.94} cy={h*0.6} r={w*0.028} fill="#1a1a2e" stroke="#00ffff" strokeWidth="0.8" opacity="0.4"/>
+      {/* Floating particles */}
+      <circle cx={w*0.2} cy={h*0.2} r="3" fill="#ff00ff" opacity="0.5"><animate attributeName="cy" values={`${h*0.2};${h*0.14};${h*0.2}`} dur="3s" repeatCount="indefinite"/></circle>
+      <circle cx={w*0.6} cy={h*0.28} r="2.5" fill="#00ffff" opacity="0.4"><animate attributeName="cy" values={`${h*0.28};${h*0.22};${h*0.28}`} dur="2.5s" repeatCount="indefinite"/></circle>
+      <circle cx={w*0.8} cy={h*0.15} r="3" fill="#00ff88" opacity="0.35"><animate attributeName="cy" values={`${h*0.15};${h*0.1};${h*0.15}`} dur="3.5s" repeatCount="indefinite"/></circle>
+      <circle cx={w*0.4} cy={h*0.1} r="2" fill="#ff00ff" opacity="0.4"><animate attributeName="cy" values={`${h*0.1};${h*0.06};${h*0.1}`} dur="2.8s" repeatCount="indefinite"/></circle>
+      {/* Floor glow tiles */}
+      <rect x={w*0.15} y={h*0.8} width={w*0.12} height={h*0.02} rx="1" fill="#ff00ff" opacity="0.12"><animate attributeName="opacity" values="0.12;0.3;0.12" dur="1.2s" repeatCount="indefinite"/></rect>
+      <rect x={w*0.44} y={h*0.84} width={w*0.12} height={h*0.02} rx="1" fill="#00ffff" opacity="0.1"><animate attributeName="opacity" values="0.1;0.25;0.1" dur="1.6s" repeatCount="indefinite"/></rect>
+      <rect x={w*0.72} y={h*0.78} width={w*0.12} height={h*0.02} rx="1" fill="#00ff88" opacity="0.1"><animate attributeName="opacity" values="0.1;0.25;0.1" dur="1.4s" repeatCount="indefinite"/></rect>
+    </svg>
+  );
+  if (envId === "beach") return (
+    <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} style={{position:"absolute",bottom:0,left:"50%",transform:"translateX(-50%)"}}>
+      {/* Warm sunset sky */}
+      <rect width={w} height={h} fill="#e8c8a0"/>
+      <rect width={w} height={h*0.35} fill="#d4e4f0" opacity="0.5"/>
+      <rect y={h*0.15} width={w} height={h*0.2} fill="#f0d8b0" opacity="0.3"/>
+      {/* Sun */}
+      <circle cx={w*0.8} cy={h*0.12} r={w*0.05} fill="#f0c868" opacity="0.5"/>
+      <circle cx={w*0.8} cy={h*0.12} r={w*0.08} fill="#f0c868" opacity="0.1"/>
+      {/* Clouds */}
+      <ellipse cx={w*0.25} cy={h*0.1} rx={w*0.07} ry={h*0.03} fill="white" opacity="0.4"/>
+      <ellipse cx={w*0.55} cy={h*0.06} rx={w*0.06} ry={h*0.025} fill="white" opacity="0.35"/>
+      {/* Ocean */}
+      <rect y={h*0.35} width={w} height={h*0.28} fill="#6ab8d8"/>
+      <rect y={h*0.35} width={w} height={h*0.12} fill="#7ac8e0" opacity="0.5"/>
+      {/* Waves */}
+      <path d={`M 0 ${h*0.42} Q ${w*0.12} ${h*0.4} ${w*0.25} ${h*0.42} Q ${w*0.38} ${h*0.44} ${w*0.5} ${h*0.42} Q ${w*0.62} ${h*0.4} ${w*0.75} ${h*0.42} Q ${w*0.88} ${h*0.44} ${w} ${h*0.42}`} stroke="white" strokeWidth="1.5" fill="none" opacity="0.2">
+        <animate attributeName="d" values={`M 0 ${h*0.42} Q ${w*0.12} ${h*0.4} ${w*0.25} ${h*0.42} Q ${w*0.38} ${h*0.44} ${w*0.5} ${h*0.42} Q ${w*0.62} ${h*0.4} ${w*0.75} ${h*0.42} Q ${w*0.88} ${h*0.44} ${w} ${h*0.42};M 0 ${h*0.42} Q ${w*0.12} ${h*0.44} ${w*0.25} ${h*0.42} Q ${w*0.38} ${h*0.4} ${w*0.5} ${h*0.42} Q ${w*0.62} ${h*0.44} ${w*0.75} ${h*0.42} Q ${w*0.88} ${h*0.4} ${w} ${h*0.42};M 0 ${h*0.42} Q ${w*0.12} ${h*0.4} ${w*0.25} ${h*0.42} Q ${w*0.38} ${h*0.44} ${w*0.5} ${h*0.42} Q ${w*0.62} ${h*0.4} ${w*0.75} ${h*0.42} Q ${w*0.88} ${h*0.44} ${w} ${h*0.42}`} dur="4s" repeatCount="indefinite"/>
+      </path>
+      {/* Sand */}
+      <path d={`M 0 ${h*0.63} Q ${w*0.25} ${h*0.6} ${w*0.5} ${h*0.63} Q ${w*0.75} ${h*0.66} ${w} ${h*0.63} L ${w} ${h} L 0 ${h} Z`} fill="#e8d4a8"/>
+      <path d={`M 0 ${h*0.68} Q ${w*0.3} ${h*0.66} ${w*0.6} ${h*0.68} Q ${w*0.8} ${h*0.7} ${w} ${h*0.68} L ${w} ${h} L 0 ${h} Z`} fill="#e0c898"/>
+      {/* Palm tree */}
+      <path d={`M ${w*0.14} ${h*0.65} Q ${w*0.13} ${h*0.4} ${w*0.15} ${h*0.2}`} stroke="#8a6a4a" strokeWidth="5" fill="none" strokeLinecap="round"/>
+      <path d={`M ${w*0.15} ${h*0.2} Q ${w*0.25} ${h*0.14} ${w*0.33} ${h*0.22}`} stroke="#5a8a4a" strokeWidth="3.5" fill="none" strokeLinecap="round"/>
+      <path d={`M ${w*0.15} ${h*0.2} Q ${w*0.06} ${h*0.14} ${w*0.0} ${h*0.2}`} stroke="#5a8a4a" strokeWidth="3.5" fill="none" strokeLinecap="round"/>
+      <path d={`M ${w*0.15} ${h*0.2} Q ${w*0.2} ${h*0.1} ${w*0.22} ${h*0.18}`} stroke="#6a9a5a" strokeWidth="3" fill="none" strokeLinecap="round"/>
+      <path d={`M ${w*0.15} ${h*0.2} Q ${w*0.1} ${h*0.12} ${w*0.08} ${h*0.16}`} stroke="#6a9a5a" strokeWidth="2.5" fill="none" strokeLinecap="round"/>
+      {/* Shells */}
+      <ellipse cx={w*0.6} cy={h*0.74} rx="3" ry="2" fill="#d4b898" opacity="0.5"/>
+      <ellipse cx={w*0.75} cy={h*0.7} rx="2.5" ry="1.5" fill="#c8a888" opacity="0.4"/>
+      {/* Foam line */}
+      <path d={`M 0 ${h*0.63} Q ${w*0.1} ${h*0.62} ${w*0.2} ${h*0.63} Q ${w*0.35} ${h*0.64} ${w*0.5} ${h*0.63} Q ${w*0.65} ${h*0.62} ${w*0.8} ${h*0.63} Q ${w*0.9} ${h*0.64} ${w} ${h*0.63}`} stroke="white" strokeWidth="2" fill="none" opacity="0.25"/>
+    </svg>
+  );
+  // Forest (default)
+  return (
+    <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} style={{position:"absolute",bottom:0,left:"50%",transform:"translateX(-50%)"}}>
+      {/* Dappled sunlight sky */}
+      <rect width={w} height={h} fill="#c8dca8"/>
+      <rect width={w} height={h*0.3} fill="#d8e8c0" opacity="0.5"/>
+      {/* Sunbeams through canopy */}
+      <path d={`M ${w*0.3} 0 L ${w*0.35} ${h*0.6} L ${w*0.25} ${h*0.6} Z`} fill="rgba(255,240,180,0.1)"/>
+      <path d={`M ${w*0.65} 0 L ${w*0.72} ${h*0.5} L ${w*0.62} ${h*0.5} Z`} fill="rgba(255,240,180,0.08)"/>
+      {/* Ground layers */}
+      <path d={`M 0 ${h*0.6} Q ${w*0.25} ${h*0.56} ${w*0.5} ${h*0.6} Q ${w*0.75} ${h*0.64} ${w} ${h*0.58} L ${w} ${h} L 0 ${h} Z`} fill="#6a8a4a"/>
+      <path d={`M 0 ${h*0.68} Q ${w*0.3} ${h*0.65} ${w*0.6} ${h*0.68} Q ${w*0.85} ${h*0.7} ${w} ${h*0.66} L ${w} ${h} L 0 ${h} Z`} fill="#5a7a3a"/>
+      {/* Back trees */}
+      <rect x={w*0.04} y={h*0.1} width={w*0.02} height={h*0.55} fill="#6a5040"/>
+      <polygon points={`${w*0.05},${h*0.1} ${w*0.12},${h*0.32} ${w*-0.02},${h*0.32}`} fill="#4a7a3a" opacity="0.8"/>
+      <polygon points={`${w*0.05},${h*0.02} ${w*0.1},${h*0.18} ${w*0.0},${h*0.18}`} fill="#5a8a4a" opacity="0.7"/>
+      <rect x={w*0.24} y={h*0.05} width={w*0.025} height={h*0.6} fill="#6a5040"/>
+      <polygon points={`${w*0.25},${h*0.05} ${w*0.34},${h*0.28} ${w*0.16},${h*0.28}`} fill="#4a7a3a" opacity="0.8"/>
+      <polygon points={`${w*0.25},${h*-0.04} ${w*0.31},${h*0.14} ${w*0.19},${h*0.14}`} fill="#5a8a4a" opacity="0.7"/>
+      <rect x={w*0.72} y={h*0.08} width={w*0.025} height={h*0.56} fill="#6a5040"/>
+      <polygon points={`${w*0.73},${h*0.08} ${w*0.82},${h*0.3} ${w*0.64},${h*0.3}`} fill="#4a7a3a" opacity="0.8"/>
+      <polygon points={`${w*0.73},${h*0.0} ${w*0.79},${h*0.16} ${w*0.67},${h*0.16}`} fill="#5a8a4a" opacity="0.7"/>
+      <rect x={w*0.92} y={h*0.12} width={w*0.02} height={h*0.5} fill="#6a5040"/>
+      <polygon points={`${w*0.93},${h*0.12} ${w*1.0},${h*0.34} ${w*0.86},${h*0.34}`} fill="#4a7a3a" opacity="0.8"/>
+      {/* Wildflowers */}
+      <circle cx={w*0.15} cy={h*0.64} r="3" fill="#e86a8a" opacity="0.5"/><circle cx={w*0.18} cy={h*0.66} r="2.5" fill="#e8a84c" opacity="0.4"/>
+      <circle cx={w*0.45} cy={h*0.62} r="2.5" fill="#b07ae8" opacity="0.45"/><circle cx={w*0.48} cy={h*0.64} r="2" fill="#e86a8a" opacity="0.4"/>
+      <circle cx={w*0.8} cy={h*0.6} r="3" fill="#5bc9e8" opacity="0.35"/><circle cx={w*0.83} cy={h*0.62} r="2" fill="#e86a8a" opacity="0.4"/>
+      {/* Mushrooms */}
+      <rect x={w*0.55} y={h*0.65} width={w*0.008} height={h*0.04} fill="#8a7060"/>
+      <ellipse cx={w*0.554} cy={h*0.65} rx={w*0.018} ry={h*0.018} fill="#c4785a" opacity="0.6"/>
+      <circle cx={w*0.56} cy={h*0.648} r="1.5" fill="white" opacity="0.3"/>
+      {/* Fireflies */}
+      <circle cx={w*0.2} cy={h*0.35} r="2.5" fill="#e8d84c" opacity="0.4"><animate attributeName="opacity" values="0.4;0.1;0.4" dur="2.5s" repeatCount="indefinite"/></circle>
+      <circle cx={w*0.55} cy={h*0.25} r="2" fill="#e8d84c" opacity="0.3"><animate attributeName="opacity" values="0.3;0.05;0.3" dur="3s" repeatCount="indefinite"/></circle>
+      <circle cx={w*0.8} cy={h*0.4} r="2.5" fill="#e8d84c" opacity="0.35"><animate attributeName="opacity" values="0.35;0.08;0.35" dur="2.2s" repeatCount="indefinite"/></circle>
+      {/* Soft mist */}
+      <rect y={h*0.55} width={w} height={h*0.1} fill="white" opacity="0.04"/>
+    </svg>
+  );
+}
+
 // ═══ UI COMPONENTS ═══
 function Tracker({label,value,max,unit,color,onChange,step,icon}){
   const pct=max>0?Math.min(value/max,1):0;
@@ -540,8 +762,8 @@ export default function App() {
         </div>
       )}
 
-      <div style={{ display: "flex", justifyContent: "center", padding: "0", position: "relative", margin: "0 20px 6px", borderRadius: 16, overflow: "hidden", height: 180, background: "#f5f0ea" }}>
-        <EnvironmentBg envId={activeEnv} width={440} height={180} />
+      <div style={{ display: "flex", justifyContent: "center", padding: "0", position: "relative", margin: "0 20px 6px", borderRadius: 16, overflow: "hidden", height: 220, background: "#f5f0ea" }}>
+        <EnvironmentBg envId={activeEnv} width={440} height={220} />
         <div style={{ position: "relative", zIndex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-end", paddingBottom: 6 }}>
           <BuddyFace mood={mood} level={li.lv} hat={allWished} buddyType={activeBuddy} size={130} />
         </div>
