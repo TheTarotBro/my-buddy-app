@@ -506,12 +506,16 @@ export default function App() {
   const [viewingTask, setViewingTask] = useState(null);
   const [editTask, setEditTask] = useState(null);
 
-  // Debounced save to Firebase (skipped in preview)
-  const saveTimer = useRef(null);
-  const save = useCallback((path, data) => {
+  // Save to Firebase — immediate for critical data, debounced for frequent updates
+  const saveTimers = useRef({});
+  const save = useCallback((path, data, immediate = false) => {
     if (!user || IS_PREVIEW) return;
-    if (saveTimer.current) clearTimeout(saveTimer.current);
-    saveTimer.current = setTimeout(() => saveData(user.uid, path, data), 300);
+    if (immediate) {
+      saveData(user.uid, path, data);
+      return;
+    }
+    if (saveTimers.current[path]) clearTimeout(saveTimers.current[path]);
+    saveTimers.current[path] = setTimeout(() => saveData(user.uid, path, data), 300);
   }, [user]);
 
   // Auth listener (skipped in preview)
@@ -558,14 +562,14 @@ export default function App() {
   // Save effects (skipped in preview)
   useEffect(() => { if (dataLoaded && !IS_PREVIEW) save("goals", goals); }, [goals, dataLoaded]);
   useEffect(() => { if (dataLoaded && !IS_PREVIEW) save(`dailyLog/${today}`, log); }, [log, dataLoaded]);
-  useEffect(() => { if (dataLoaded && !IS_PREVIEW) { const obj = {}; chores.forEach(c => obj[c.id] = c); save("chores", obj); } }, [chores, dataLoaded]);
-  useEffect(() => { if (dataLoaded && !IS_PREVIEW) save(`choreLog/${today}`, choreLog); }, [choreLog, dataLoaded]);
+  useEffect(() => { if (dataLoaded && !IS_PREVIEW) { const obj = {}; chores.forEach(c => obj[c.id] = c); save("chores", obj, true); } }, [chores, dataLoaded]);
+  useEffect(() => { if (dataLoaded && !IS_PREVIEW) save(`choreLog/${today}`, choreLog, true); }, [choreLog, dataLoaded]);
   useEffect(() => { if (dataLoaded) setChoreLog7(prev => ({ ...prev, [today]: choreLog })); }, [choreLog, dataLoaded, today]);
-  useEffect(() => { if (dataLoaded && !IS_PREVIEW) save("xp", xp); }, [xp, dataLoaded]);
-  useEffect(() => { if (dataLoaded && !IS_PREVIEW) { const obj = {}; bdays.forEach(b => obj[b.id] = b); save("birthdays", obj); } }, [bdays, dataLoaded]);
-  useEffect(() => { if (dataLoaded && !IS_PREVIEW) save(`wishes/${today}`, wishes); }, [wishes, dataLoaded]);
-  useEffect(() => { if (dataLoaded && !IS_PREVIEW) save("activeBuddy", activeBuddy); }, [activeBuddy, dataLoaded]);
-  useEffect(() => { if (dataLoaded && !IS_PREVIEW) save("activeEnv", activeEnv); }, [activeEnv, dataLoaded]);
+  useEffect(() => { if (dataLoaded && !IS_PREVIEW) save("xp", xp, true); }, [xp, dataLoaded]);
+  useEffect(() => { if (dataLoaded && !IS_PREVIEW) { const obj = {}; bdays.forEach(b => obj[b.id] = b); save("birthdays", obj, true); } }, [bdays, dataLoaded]);
+  useEffect(() => { if (dataLoaded && !IS_PREVIEW) save(`wishes/${today}`, wishes, true); }, [wishes, dataLoaded]);
+  useEffect(() => { if (dataLoaded && !IS_PREVIEW) save("activeBuddy", activeBuddy, true); }, [activeBuddy, dataLoaded]);
+  useEffect(() => { if (dataLoaded && !IS_PREVIEW) save("activeEnv", activeEnv, true); }, [activeEnv, dataLoaded]);
 
   const handleSignIn = async () => { setSignInLoading(true); await signInGoogle(); setSignInLoading(false); };
 
@@ -643,12 +647,24 @@ export default function App() {
       if (was) {
         setChoreLog(p => { const n = { ...p }; delete n[id]; return n; });
         setXp(p => Math.max(0, p - pts));
-        setChores(prev => prev.map(c => c.id === id ? { ...c, completedDate: undefined } : c));
+        const updatedChores = chores.map(c => c.id === id ? { ...c, completedDate: null } : c);
+        setChores(updatedChores);
+        // Immediately save the chore update to Firebase (don't rely on effect)
+        if (user && !IS_PREVIEW) {
+          const obj = {}; updatedChores.forEach(c => obj[c.id] = c);
+          saveData(user.uid, "chores", obj);
+        }
         flash(pts, true);
       } else {
         setChoreLog(p => ({ ...p, [id]: true }));
         setXp(p => p + pts);
-        setChores(prev => prev.map(c => c.id === id ? { ...c, completedDate: today } : c));
+        const updatedChores = chores.map(c => c.id === id ? { ...c, completedDate: today } : c);
+        setChores(updatedChores);
+        // Immediately save the chore update to Firebase (don't rely on effect)
+        if (user && !IS_PREVIEW) {
+          const obj = {}; updatedChores.forEach(c => obj[c.id] = c);
+          saveData(user.uid, "chores", obj);
+        }
         flash(pts, false);
       }
     } else {
@@ -775,7 +791,7 @@ export default function App() {
 
 
 
-      {tab === "home" && (<div style={{ padding: "0 20px 80px", animation: "fi 0.25s ease" }}>{sL("Core Trackers")}<div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 20 }}><Tracker label="Hydration" value={log.water} max={goals.water} unit="oz" color="#5baed6" icon={<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 2C8 2 3 7.5 3 10.5C3 13 5.2 15 8 15C10.8 15 13 13 13 10.5C13 7.5 8 2 8 2Z" fill="#5baed6" opacity="0.3" stroke="#5baed6" strokeWidth="1.2"/></svg>} step={1} onChange={v => updateCore("water", v)} /><Tracker label="Sleep" value={log.sleep} max={goals.sleep} unit="hrs" color="#9c7cb8" icon={<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M13 8.5C13 11.5 10.5 14 7.5 14C4.5 14 2 11.5 2 8.5C2 5.5 4.5 3 7.5 3C4.8 5 5.5 9 8 11C9.5 9.5 10.5 7 10 4C12 5.5 13 7 13 8.5Z" fill="#9c7cb8" opacity="0.3" stroke="#9c7cb8" strokeWidth="1.2"/></svg>} step={0.5} onChange={v => updateCore("sleep", v)} /><Tracker label="Meals" value={log.meals} max={goals.meals} unit="" color="#6ee7a0" icon={<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="9" r="5.5" fill="#6ee7a0" opacity="0.3" stroke="#6ee7a0" strokeWidth="1.2"/><path d="M4.5 9C5 7 6.5 6 8 6C9.5 6 11 7 11.5 9" stroke="#6ee7a0" strokeWidth="1" strokeLinecap="round" opacity="0.5"/><line x1="8" y1="3" x2="8" y2="4.5" stroke="#6ee7a0" strokeWidth="1.2" strokeLinecap="round"/><line x1="5" y1="4" x2="5.8" y2="5.3" stroke="#6ee7a0" strokeWidth="1" strokeLinecap="round"/><line x1="11" y1="4" x2="10.2" y2="5.3" stroke="#6ee7a0" strokeWidth="1" strokeLinecap="round"/></svg>} step={1} onChange={v => updateCore("meals", v)} /></div>{dueDailies.length>0&&<>{sL("Daily Tasks")}<div style={{display:"flex",flexDirection:"column",gap:5,marginBottom:16}}>{dueDailies.map(c=><TaskRow key={c.id} chore={c} done={!!choreLog[c.id]} onToggle={()=>toggleChore(c.id)} choreLog7={choreLog7} accent={accent} showInterval={false}/>)}</div></>}{dueRecurring.length>0&&<>{sL("Recurring — Due Today")}<div style={{display:"flex",flexDirection:"column",gap:5,marginBottom:16}}>{dueRecurring.map(c=><TaskRow key={c.id} chore={c} done={!!choreLog[c.id]} onToggle={()=>toggleChore(c.id)} choreLog7={choreLog7} accent={accent} showInterval/>)}</div></>}{dueOneOffs.length>0&&<>{sL("One-off Tasks")}<div style={{display:"flex",flexDirection:"column",gap:5}}>{dueOneOffs.map(c=><TaskRow key={c.id} chore={c} done={!!choreLog[c.id]} onToggle={()=>toggleChore(c.id)} showInterval={false}/>)}</div></>}{dueDailies.length===0&&dueRecurring.length===0&&dueOneOffs.length===0&&<div style={{textAlign:"center",padding:28,color:"#c4b4a4",fontSize:12}}>No tasks due today</div>}</div>)}
+      {tab === "home" && (<div style={{ padding: "0 20px 80px", animation: "fi 0.25s ease" }}>{sL("Core Trackers")}<div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 20 }}><Tracker label="Hydration" value={log.water} max={goals.water} unit="oz" color="#5baed6" icon={<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 2C8 2 3 7.5 3 10.5C3 13 5.2 15 8 15C10.8 15 13 13 13 10.5C13 7.5 8 2 8 2Z" fill="#5baed6" opacity="0.3" stroke="#5baed6" strokeWidth="1.2"/></svg>} step={1} onChange={v => updateCore("water", v)} /><Tracker label="Sleep" value={log.sleep} max={goals.sleep} unit="hrs" color="#9c7cb8" icon={<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M13 8.5C13 11.5 10.5 14 7.5 14C4.5 14 2 11.5 2 8.5C2 5.5 4.5 3 7.5 3C4.8 5 5.5 9 8 11C9.5 9.5 10.5 7 10 4C12 5.5 13 7 13 8.5Z" fill="#9c7cb8" opacity="0.3" stroke="#9c7cb8" strokeWidth="1.2"/></svg>} step={0.5} onChange={v => updateCore("sleep", v)} /><Tracker label="Meals" value={log.meals} max={goals.meals} unit="" color="#6ee7a0" icon={<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="9" r="5.5" fill="#6ee7a0" opacity="0.3" stroke="#6ee7a0" strokeWidth="1.2"/><path d="M4.5 9C5 7 6.5 6 8 6C9.5 6 11 7 11.5 9" stroke="#6ee7a0" strokeWidth="1" strokeLinecap="round" opacity="0.5"/><line x1="8" y1="3" x2="8" y2="4.5" stroke="#6ee7a0" strokeWidth="1.2" strokeLinecap="round"/><line x1="5" y1="4" x2="5.8" y2="5.3" stroke="#6ee7a0" strokeWidth="1" strokeLinecap="round"/><line x1="11" y1="4" x2="10.2" y2="5.3" stroke="#6ee7a0" strokeWidth="1" strokeLinecap="round"/></svg>} step={1} onChange={v => updateCore("meals", v)} /></div>{dueDailies.length>0&&<>{sL("Daily Tasks")}<div style={{display:"flex",flexDirection:"column",gap:5,marginBottom:16}}>{dueDailies.map(c=><TaskRow key={c.id} chore={c} done={!!choreLog[c.id]} onToggle={()=>toggleChore(c.id)} choreLog7={choreLog7} accent={accent} showInterval={false}/>)}</div></>}{dueRecurring.length>0&&<>{sL("Recurring — Due Today")}<div style={{display:"flex",flexDirection:"column",gap:5,marginBottom:16}}>{dueRecurring.map(c=><TaskRow key={c.id} chore={c} done={!!choreLog[c.id]} onToggle={()=>toggleChore(c.id)} choreLog7={choreLog7} accent={accent} showInterval/>)}</div></>}{dueOneOffs.length>0&&<>{sL("One-off Tasks")}<div style={{display:"flex",flexDirection:"column",gap:5}}>{dueOneOffs.map(c=><TaskRow key={c.id} chore={c} done={!!choreLog[c.id]||!!c.completedDate} onToggle={()=>toggleChore(c.id)} showInterval={false}/>)}</div></>}{dueDailies.length===0&&dueRecurring.length===0&&dueOneOffs.length===0&&<div style={{textAlign:"center",padding:28,color:"#c4b4a4",fontSize:12}}>No tasks due today</div>}</div>)}
 
       {tab === "tasks" && (<div style={{ padding: "0 20px 80px", animation: "fi 0.25s ease" }}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
