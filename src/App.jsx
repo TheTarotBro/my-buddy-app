@@ -543,7 +543,26 @@ export default function App() {
   const [signInLoading, setSignInLoading] = useState(false);
   const [dataLoaded, setDataLoaded] = useState(IS_PREVIEW);
 
-  const today = TODAY();
+  const [today, setToday] = useState(TODAY());
+
+  // Check for day change every 30 seconds and on visibility change
+  useEffect(() => {
+    const checkDay = () => {
+      const now = TODAY();
+      if (now !== today) {
+        setToday(now);
+        // Reset daily state for the new day
+        setLog({ water: 0, sleep: 0, meals: 0 });
+        setChoreLog({});
+        setWishes({});
+        setDataLoaded(false); // trigger re-load from Firebase
+      }
+    };
+    const interval = setInterval(checkDay, 30000);
+    const onVisible = () => { if (document.visibilityState === "visible") checkDay(); };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => { clearInterval(interval); document.removeEventListener("visibilitychange", onVisible); };
+  }, [today]);
   const [goals, setGoals] = useState({ water: 100, sleep: 8, meals: 3 });
   const [log, setLog] = useState(IS_PREVIEW ? { water: 64, sleep: 6, meals: 2 } : { water: 0, sleep: 0, meals: 0 });
   const [chores, setChores] = useState(IS_PREVIEW ? [
