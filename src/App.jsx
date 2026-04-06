@@ -407,7 +407,7 @@ export default function App() {
       {modal === "addPerson" && (<Modal onClose={() => setModal(null)}>
         <div style={{ fontFamily: "'Space Grotesk'", fontSize: 16, fontWeight: 700, color: "#3a2e24", marginBottom: 16 }}>Add Person</div>
         <input placeholder="Name..." value={nb.name} onChange={e => setNb(p => ({ ...p, name: e.target.value }))} autoFocus style={{ width: "100%", padding: "10px 14px", borderRadius: 8, border: "1px solid rgba(90,74,62,0.12)", background: "rgba(90,74,62,0.04)", fontSize: 13, fontWeight: 600, color: "#3a2e24", marginBottom: 10, outline: "none" }} />
-        <div style={{ overflow: "hidden", marginBottom: 2 }}><input type="date" value={nb.date} onChange={e => setNb(p => ({ ...p, date: e.target.value }))} style={{ display: "block", width: "100%", padding: "10px 14px", borderRadius: 8, border: "1px solid rgba(90,74,62,0.12)", background: "rgba(90,74,62,0.04)", fontSize: 13, fontWeight: 600, color: "#3a2e24", outline: "none", colorScheme: "light", boxSizing: "border-box" }} /></div>
+        <div style={{ overflow: "hidden", marginBottom: 2, width: "100%" }}><input type="date" value={nb.date} onChange={e => setNb(p => ({ ...p, date: e.target.value }))} style={{ display: "block", width: "calc(100% - 2px)", padding: "10px 10px 10px 14px", borderRadius: 8, border: "1px solid rgba(90,74,62,0.12)", background: "rgba(90,74,62,0.04)", fontSize: 13, fontWeight: 600, color: "#3a2e24", outline: "none", colorScheme: "light", boxSizing: "border-box", WebkitAppearance: "none", appearance: "none" }} /></div>
         <div style={{ fontSize: 9, color: "#b4a494", marginBottom: 10, paddingLeft: 2 }}>Birthday — optional, leave blank if unknown</div>
         <div style={{ fontSize: 9, fontWeight: 700, color: "#b4a494", marginBottom: 5, letterSpacing: 1 }}>KEEP IN TOUCH</div>
         <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginBottom: 12 }}>
@@ -447,7 +447,7 @@ export default function App() {
               <div style={{ fontSize: 11, color: "#8a7a6a" }}>{z.sign}{hasDate ? ` · ${months[bd.getMonth()]} ${bd.getDate()} · ${daysUntil(viewingPerson.date) === 0 ? "Today!" : `${daysUntil(viewingPerson.date)}d away`}` : ""}</div>
             </div>
           </div>
-          <div style={{ overflow: "hidden", marginBottom: 10 }}><input type="date" value={viewingPerson.date || ""} onChange={e => upd({ date: e.target.value })} style={{ display: "block", width: "100%", padding: "6px 10px", borderRadius: 6, border: "1px solid rgba(90,74,62,0.1)", background: "rgba(90,74,62,0.03)", fontSize: 11, color: "#6b5c4d", outline: "none", colorScheme: "light", boxSizing: "border-box" }} /></div>
+          <div style={{ overflow: "hidden", marginBottom: 10, width: "100%" }}><input type="date" value={viewingPerson.date || ""} onChange={e => upd({ date: e.target.value })} style={{ display: "block", width: "calc(100% - 2px)", padding: "6px 6px 6px 10px", borderRadius: 6, border: "1px solid rgba(90,74,62,0.1)", background: "rgba(90,74,62,0.03)", fontSize: 11, color: "#6b5c4d", outline: "none", colorScheme: "light", boxSizing: "border-box", WebkitAppearance: "none", appearance: "none" }} /></div>
           <div style={{ display: "flex", gap: 4, marginBottom: 12 }}>{pTab("info", "Info")}{pTab("touch", "Touch")}{pTab("gifts", "Gifts")}{pTab("events", "Events")}{pTab("notes", "Notes")}</div>
 
           {profileTab === "info" && <div>
