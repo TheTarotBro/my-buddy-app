@@ -1,5 +1,15 @@
 # My Buddy — Changelog
 
+## v14.0 — April 6, 2026
+### Date Overflow Fix + Unknown Birthday Support
+- Fixed: `daysUntil()` and `getZodiacSign()` no longer crash on empty/invalid dates (returned NaN, broke sorting and rendering)
+- Fixed: `getBdToday()` guards against missing dates
+- New: Birthdays can be saved without a date (date field now optional with hint)
+- New: Unknown-date birthdays appear in a "?" section at the bottom of the birthday list
+- New: Unknown-date cards show "Date unknown" and "—" instead of broken day counts
+- New: Person profile modal gracefully handles missing dates (no NaN, no crash)
+- Fixed: Zodiac sign count in sign info modal no longer crashes on dateless entries
+
 ## v8.0 — March 31, 2026
 ### Warm Neutral Theme
 - Complete visual overhaul from dark theme to warm neutral palette
