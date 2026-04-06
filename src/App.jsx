@@ -112,7 +112,8 @@ export default function App() {
   const [tab, setTab] = useState("people");
   const [modal, setModal] = useState(null);
   const [search, setSearch] = useState("");
-  const [nb, setNb] = useState({ name: "", date: "", notes: "", cadence: "monthly" });
+  const [nb, setNb] = useState({ name: "", date: "", notes: "", cadence: "monthly", interests: [] });
+  const [nbInterest, setNbInterest] = useState("");
   const [settings, setSettings] = useState(false);
   const [bdFilter, setBdFilter] = useState("all");
   const [bdSearch, setBdSearch] = useState("");
@@ -172,7 +173,7 @@ export default function App() {
   const todayBd = getBdToday(people);
   const sortedTodayBd = [...todayBd].sort((a, b) => (wishes[a.name] ? 1 : 0) - (wishes[b.name] ? 1 : 0));
   const toggleWish = (name) => setWishes(p => ({ ...p, [name]: !p[name] }));
-  const savePerson = () => { if (!nb.name.trim()) return; setPeople(p => [...p, { ...nb, id: Date.now().toString(), interests: [], gifts: [], events: [], relationships: [], touchpoints: [], cadenceBaseline: TODAY() }]); setNb({ name: "", date: "", notes: "", cadence: "monthly" }); setModal(null); };
+  const savePerson = () => { if (!nb.name.trim()) return; setPeople(p => [...p, { ...nb, id: Date.now().toString(), gifts: [], events: [], relationships: [], touchpoints: [], cadenceBaseline: TODAY() }]); setNb({ name: "", date: "", notes: "", cadence: "monthly", interests: [] }); setNbInterest(""); setModal(null); };
   const openPerson = (p) => { setViewingPerson(p); setEditNotes(p.notes || ""); setProfileTab("info"); setNewGift(""); setNewEvent(""); setNewEventDate(TODAY()); setNewInterest(""); setLinkSearch(""); setTpType("Text"); setTpNote(""); setModal("viewPerson"); };
 
   const upcoming = people.filter(p => p.date && daysUntil(p.date) > 0 && daysUntil(p.date) < Infinity).sort((a, b) => daysUntil(a.date) - daysUntil(b.date)).slice(0, 3);
@@ -212,7 +213,7 @@ export default function App() {
             </div>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <button onClick={() => { setNb({ name: "", date: "", notes: "", cadence: "monthly" }); setModal("addPerson"); }} style={{ background: accent, border: "none", borderRadius: 10, width: 36, height: 36, cursor: "pointer", fontSize: 18, color: "white", display: "flex", alignItems: "center", justifyContent: "center" }}>+</button>
+            <button onClick={() => { setNb({ name: "", date: "", notes: "", cadence: "monthly", interests: [] }); setModal("addPerson"); }} style={{ background: accent, border: "none", borderRadius: 10, width: 36, height: 36, cursor: "pointer", fontSize: 18, color: "white", display: "flex", alignItems: "center", justifyContent: "center" }}>+</button>
             <button onClick={() => setSettings(!settings)} style={{ background: "rgba(90,74,62,0.06)", border: "1px solid rgba(90,74,62,0.1)", borderRadius: 10, width: 36, height: 36, cursor: "pointer", fontSize: 15, color: "#8a7a6a", display: "flex", alignItems: "center", justifyContent: "center" }}>⚙</button>
           </div>
         </div>
@@ -237,7 +238,10 @@ export default function App() {
       </div>)}
 
       {tab === "people" && (<div style={{ padding: "0 20px 80px", animation: "fi 0.25s ease" }}>
-        <input placeholder="Search people..." value={search} onChange={e => setSearch(e.target.value)} style={{ width: "100%", padding: "10px 14px", borderRadius: 10, border: "1px solid rgba(90,74,62,0.1)", background: "rgba(90,74,62,0.04)", fontSize: 13, color: "#3a2e24", marginBottom: 14, marginTop: 8, outline: "none" }} />
+        <div style={{ position: "relative", marginBottom: 14, marginTop: 8 }}>
+          <input placeholder="Search people..." value={search} onChange={e => setSearch(e.target.value)} style={{ width: "100%", padding: "10px 36px 10px 14px", borderRadius: 10, border: "1px solid rgba(90,74,62,0.1)", background: "rgba(90,74,62,0.04)", fontSize: 13, color: "#3a2e24", outline: "none" }} />
+          {search && <button onClick={() => setSearch("")} style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", background: "rgba(90,74,62,0.12)", border: "none", borderRadius: "50%", width: 22, height: 22, cursor: "pointer", fontSize: 11, color: "#8a7a6a", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700 }}>×</button>}
+        </div>
 
         {!search && upcoming.length > 0 && (<div style={{ marginBottom: 16, padding: "14px 16px", borderRadius: 12, background: "rgba(90,74,62,0.03)", border: "1px solid rgba(90,74,62,0.06)" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
@@ -290,7 +294,7 @@ export default function App() {
         </div>
         {filteredPeople.length === 0 && (<div style={{ textAlign: "center", padding: 32, color: "#c4b4a4", fontSize: 12 }}>
           {search ? "No people match your search" : "No people added yet"}
-          <div style={{ marginTop: 12 }}><button onClick={() => { setNb({ name: "", date: "", notes: "", cadence: "monthly" }); setModal("addPerson"); }} style={{ fontSize: 12, fontWeight: 700, border: "none", borderRadius: 8, padding: "8px 18px", cursor: "pointer", background: accent, color: "white" }}>+ Add someone</button></div>
+          <div style={{ marginTop: 12 }}><button onClick={() => { setNb({ name: "", date: "", notes: "", cadence: "monthly", interests: [] }); setModal("addPerson"); }} style={{ fontSize: 12, fontWeight: 700, border: "none", borderRadius: 8, padding: "8px 18px", cursor: "pointer", background: accent, color: "white" }}>+ Add someone</button></div>
         </div>)}
       </div>)}
 
@@ -353,9 +357,12 @@ export default function App() {
         return (<div style={{ padding: "0 20px 80px", animation: "fi 0.25s ease" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12, marginTop: 8 }}>
             <span style={{ fontWeight: 700, fontSize: 14, color: "#3a2e24" }}>Birthdays</span>
-            <button onClick={() => { setNb({ name: "", date: "", notes: "", cadence: "monthly" }); setModal("addPerson"); }} style={{ fontWeight: 700, fontSize: 11, border: "none", borderRadius: 8, padding: "6px 14px", cursor: "pointer", background: "#e86a8a", color: "white" }}>+ Add</button>
+            <button onClick={() => { setNb({ name: "", date: "", notes: "", cadence: "monthly", interests: [] }); setModal("addPerson"); }} style={{ fontWeight: 700, fontSize: 11, border: "none", borderRadius: 8, padding: "6px 14px", cursor: "pointer", background: "#e86a8a", color: "white" }}>+ Add</button>
           </div>
-          <input placeholder="Search names..." value={bdSearch} onChange={e => setBdSearch(e.target.value)} style={{ width: "100%", padding: "8px 12px", borderRadius: 8, border: "1px solid rgba(90,74,62,0.1)", background: "rgba(90,74,62,0.04)", fontSize: 12.5, color: "#3a2e24", marginBottom: 10, outline: "none" }} />
+          <div style={{ position: "relative", marginBottom: 10 }}>
+            <input placeholder="Search names..." value={bdSearch} onChange={e => setBdSearch(e.target.value)} style={{ width: "100%", padding: "8px 34px 8px 12px", borderRadius: 8, border: "1px solid rgba(90,74,62,0.1)", background: "rgba(90,74,62,0.04)", fontSize: 12.5, color: "#3a2e24", outline: "none" }} />
+            {bdSearch && <button onClick={() => setBdSearch("")} style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", background: "rgba(90,74,62,0.12)", border: "none", borderRadius: "50%", width: 20, height: 20, cursor: "pointer", fontSize: 10, color: "#8a7a6a", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700 }}>×</button>}
+          </div>
           <div style={{ display: "flex", gap: 4, marginBottom: 14 }}>
             {[{ v: "all", l: "All" }, { v: "week", l: "This Week" }, { v: "month", l: "Next 30 Days" }].map(f => (
               <button key={f.v} onClick={() => setBdFilter(f.v)} style={{ padding: "5px 12px", borderRadius: 6, border: `1px solid ${bdFilter === f.v ? accent + "44" : "rgba(90,74,62,0.08)"}`, cursor: "pointer", fontWeight: 600, fontSize: 11, background: bdFilter === f.v ? `${accent}12` : "transparent", color: bdFilter === f.v ? accent : "#8a7a6a" }}>{f.l}</button>
@@ -400,13 +407,26 @@ export default function App() {
       {modal === "addPerson" && (<Modal onClose={() => setModal(null)}>
         <div style={{ fontFamily: "'Space Grotesk'", fontSize: 16, fontWeight: 700, color: "#3a2e24", marginBottom: 16 }}>Add Person</div>
         <input placeholder="Name..." value={nb.name} onChange={e => setNb(p => ({ ...p, name: e.target.value }))} autoFocus style={{ width: "100%", padding: "10px 14px", borderRadius: 8, border: "1px solid rgba(90,74,62,0.12)", background: "rgba(90,74,62,0.04)", fontSize: 13, fontWeight: 600, color: "#3a2e24", marginBottom: 10, outline: "none" }} />
-        <input type="date" value={nb.date} onChange={e => setNb(p => ({ ...p, date: e.target.value }))} style={{ width: "100%", maxWidth: "100%", minWidth: 0, padding: "10px 14px", borderRadius: 8, border: "1px solid rgba(90,74,62,0.12)", background: "rgba(90,74,62,0.04)", fontSize: 13, fontWeight: 600, color: "#3a2e24", marginBottom: 2, outline: "none", colorScheme: "light", boxSizing: "border-box" }} />
-        <div style={{ fontSize: 9, color: "#b4a494", marginBottom: 8, paddingLeft: 2 }}>Birthday — optional, leave blank if unknown</div>
+        <div style={{ overflow: "hidden", marginBottom: 2 }}><input type="date" value={nb.date} onChange={e => setNb(p => ({ ...p, date: e.target.value }))} style={{ display: "block", width: "100%", padding: "10px 14px", borderRadius: 8, border: "1px solid rgba(90,74,62,0.12)", background: "rgba(90,74,62,0.04)", fontSize: 13, fontWeight: 600, color: "#3a2e24", outline: "none", colorScheme: "light", boxSizing: "border-box" }} /></div>
+        <div style={{ fontSize: 9, color: "#b4a494", marginBottom: 10, paddingLeft: 2 }}>Birthday — optional, leave blank if unknown</div>
         <div style={{ fontSize: 9, fontWeight: 700, color: "#b4a494", marginBottom: 5, letterSpacing: 1 }}>KEEP IN TOUCH</div>
         <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginBottom: 12 }}>
           {CADENCES.map(c => (<button key={c.id} onClick={() => setNb(p => ({ ...p, cadence: c.id }))} style={{ padding: "5px 10px", borderRadius: 6, border: `1px solid ${nb.cadence === c.id ? accent + "44" : "rgba(90,74,62,0.08)"}`, cursor: "pointer", fontWeight: 600, fontSize: 10, background: nb.cadence === c.id ? `${accent}12` : "transparent", color: nb.cadence === c.id ? accent : "#8a7a6a" }}>{c.label}</button>))}
         </div>
-        <textarea placeholder="Notes..." value={nb.notes} onChange={e => setNb(p => ({ ...p, notes: e.target.value }))} rows={3} style={{ width: "100%", padding: "10px 14px", borderRadius: 8, border: "1px solid rgba(90,74,62,0.12)", background: "rgba(90,74,62,0.04)", fontSize: 12.5, color: "#3a2e24", marginBottom: 16, outline: "none", lineHeight: 1.5 }} />
+        <div style={{ fontSize: 9, fontWeight: 700, color: "#b4a494", marginBottom: 5, letterSpacing: 1 }}>INTERESTS</div>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginBottom: 6 }}>
+          {nb.interests.map((int, i) => (
+            <span key={i} style={{ fontSize: 11, padding: "3px 8px", borderRadius: 6, background: `${accent}10`, color: accent, fontWeight: 600, display: "flex", alignItems: "center", gap: 4 }}>
+              {int}<button onClick={() => setNb(p => ({ ...p, interests: p.interests.filter((_, j) => j !== i) }))} style={{ background: "none", border: "none", fontSize: 11, color: accent, cursor: "pointer", padding: 0, opacity: 0.5 }}>×</button>
+            </span>
+          ))}
+        </div>
+        <div style={{ display: "flex", gap: 4, marginBottom: 12 }}>
+          <input placeholder="Add interest..." value={nbInterest} onChange={e => setNbInterest(e.target.value)} onKeyDown={e => { if (e.key === "Enter" && nbInterest.trim()) { setNb(p => ({ ...p, interests: [...p.interests, nbInterest.trim()] })); setNbInterest(""); } }} style={{ flex: 1, padding: "6px 10px", borderRadius: 6, border: "1px solid rgba(90,74,62,0.1)", background: "rgba(90,74,62,0.03)", fontSize: 11, color: "#3a2e24", outline: "none" }} />
+          <button onClick={() => { if (nbInterest.trim()) { setNb(p => ({ ...p, interests: [...p.interests, nbInterest.trim()] })); setNbInterest(""); } }} style={{ padding: "6px 12px", borderRadius: 6, border: "none", background: accent, color: "white", fontWeight: 700, fontSize: 10, cursor: "pointer" }}>+</button>
+        </div>
+        <textarea placeholder="Notes..." value={nb.notes} onChange={e => setNb(p => ({ ...p, notes: e.target.value }))} rows={3} style={{ width: "100%", padding: "10px 14px", borderRadius: 8, border: "1px solid rgba(90,74,62,0.12)", background: "rgba(90,74,62,0.04)", fontSize: 12.5, color: "#3a2e24", marginBottom: 6, outline: "none", lineHeight: 1.5 }} />
+        <div style={{ fontSize: 9, color: "#b4a494", marginBottom: 14, paddingLeft: 2 }}>Relationships can be added after saving</div>
         <div style={{ display: "flex", gap: 8 }}><button onClick={() => setModal(null)} style={{ flex: 1, padding: "11px 0", borderRadius: 10, border: "1px solid rgba(90,74,62,0.1)", background: "transparent", cursor: "pointer", fontWeight: 700, fontSize: 12, color: "#8a7a6a" }}>Cancel</button><button onClick={savePerson} style={{ flex: 2, padding: "11px 0", borderRadius: 10, border: "none", background: accent, cursor: "pointer", fontWeight: 700, fontSize: 12, color: "white" }}>Save</button></div>
       </Modal>)}
 
@@ -427,7 +447,7 @@ export default function App() {
               <div style={{ fontSize: 11, color: "#8a7a6a" }}>{z.sign}{hasDate ? ` · ${months[bd.getMonth()]} ${bd.getDate()} · ${daysUntil(viewingPerson.date) === 0 ? "Today!" : `${daysUntil(viewingPerson.date)}d away`}` : ""}</div>
             </div>
           </div>
-          <input type="date" value={viewingPerson.date || ""} onChange={e => upd({ date: e.target.value })} style={{ width: "100%", maxWidth: "100%", minWidth: 0, padding: "6px 10px", borderRadius: 6, border: "1px solid rgba(90,74,62,0.1)", background: "rgba(90,74,62,0.03)", fontSize: 11, color: "#6b5c4d", marginBottom: 10, outline: "none", colorScheme: "light", boxSizing: "border-box" }} />
+          <div style={{ overflow: "hidden", marginBottom: 10 }}><input type="date" value={viewingPerson.date || ""} onChange={e => upd({ date: e.target.value })} style={{ display: "block", width: "100%", padding: "6px 10px", borderRadius: 6, border: "1px solid rgba(90,74,62,0.1)", background: "rgba(90,74,62,0.03)", fontSize: 11, color: "#6b5c4d", outline: "none", colorScheme: "light", boxSizing: "border-box" }} /></div>
           <div style={{ display: "flex", gap: 4, marginBottom: 12 }}>{pTab("info", "Info")}{pTab("touch", "Touch")}{pTab("gifts", "Gifts")}{pTab("events", "Events")}{pTab("notes", "Notes")}</div>
 
           {profileTab === "info" && <div>
