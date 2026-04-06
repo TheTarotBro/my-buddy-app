@@ -117,16 +117,25 @@ export default function App() {
 
   // Places state
   const [places, setPlaces] = useState(IS_PREVIEW ? [
-    { id: "p1", name: "St. Elmo (North)", notes: "Great brunch", rating: 4, mapsUrl: "", visits: [] },
+    { id: "p1", name: "St. Elmo (North)", notes: "Great brunch", rating: 4, mapsUrl: "", category: "Restaurants", visits: [{ id: "evt_1", date: "2026-03-20", note: "Birthday dinner", people: [] }] },
+    { id: "p2", name: "Zilker Park", notes: "Nice trails", rating: 5, mapsUrl: "", category: "Outdoors", visits: [] },
   ] : []);
-  const [newPlace, setNewPlace] = useState({ name: "", notes: "", rating: 0, mapsUrl: "" });
+  const [placeCategories, setPlaceCategories] = useState(["Restaurants", "Bars", "Outdoors", "Other"]);
+  const [newPlace, setNewPlace] = useState({ name: "", notes: "", rating: 0, mapsUrl: "", category: "" });
   const [viewingPlace, setViewingPlace] = useState(null);
   const [placeSearch, setPlaceSearch] = useState("");
+  const [placeCatFilter, setPlaceCatFilter] = useState("all");
+  const [placeStatusFilter, setPlaceStatusFilter] = useState("all");
+  const [placeSort, setPlaceSort] = useState("alpha");
+  const [editingCategory, setEditingCategory] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState("");
   // Visit logging state
   const [visitNote, setVisitNote] = useState("");
   const [visitDate, setVisitDate] = useState("");
   const [visitPeopleSearch, setVisitPeopleSearch] = useState("");
   const [visitPeopleSelected, setVisitPeopleSelected] = useState([]);
+  const [editingVisit, setEditingVisit] = useState(null);
+  const [evPeopleSearch, setEvPeopleSearch] = useState("");
   // In Person touchpoint linking state
   const [tpPlaceSearch, setTpPlaceSearch] = useState("");
   const [tpPlaceSelected, setTpPlaceSelected] = useState(null);
@@ -164,7 +173,7 @@ export default function App() {
     if (IS_PREVIEW) return;
     if (!user) { setDataLoaded(false); return; }
     (async () => {
-      const [b, w, pl] = await Promise.all([loadData(user.uid, "birthdays"), loadData(user.uid, `wishes/${today}`), loadData(user.uid, "places")]);
+      const [b, w, pl, cats] = await Promise.all([loadData(user.uid, "birthdays"), loadData(user.uid, `wishes/${today}`), loadData(user.uid, "places"), loadData(user.uid, "placeCategories")]);
       if (b) {
         const loaded = Object.values(b).map(p => ({
           ...p,
@@ -176,6 +185,7 @@ export default function App() {
       }
       if (w) setWishes(w);
       if (pl) setPlaces(Object.values(pl));
+      if (cats) setPlaceCategories(cats);
       setDataLoaded(true);
     })();
   }, [user, today]);
@@ -183,6 +193,7 @@ export default function App() {
   useEffect(() => { if (dataLoaded && !IS_PREVIEW) { const obj = {}; people.forEach(p => obj[p.id] = p); save("birthdays", obj, true); } }, [people, dataLoaded]);
   useEffect(() => { if (dataLoaded && !IS_PREVIEW) save(`wishes/${today}`, wishes, true); }, [wishes, dataLoaded]);
   useEffect(() => { if (dataLoaded && !IS_PREVIEW) { const obj = {}; places.forEach(p => obj[p.id] = p); save("places", obj, true); } }, [places, dataLoaded]);
+  useEffect(() => { if (dataLoaded && !IS_PREVIEW) save("placeCategories", placeCategories, true); }, [placeCategories, dataLoaded]);
 
   const handleSignIn = async () => { setSignInLoading(true); await signInGoogle(); setSignInLoading(false); };
 
@@ -426,33 +437,67 @@ export default function App() {
 
       {/* ═══ PLACES TAB ═══ */}
       {tab === "places" && (() => {
-        const filteredPlaces = places.filter(p => !placeSearch || p.name.toLowerCase().includes(placeSearch.toLowerCase())).sort((a, b) => a.name.localeCompare(b.name));
+        const lastVisitDate = (p) => { const v = (p.visits || []); if (v.length === 0) return null; return v.reduce((latest, x) => x.date > latest ? x.date : latest, ""); };
+        const daysSinceVisit = (p) => { const d = lastVisitDate(p); if (!d) return Infinity; const now = new Date(today + "T00:00:00"), last = new Date(d + "T00:00:00"); return Math.round((now - last) / 86400000); };
+        let filtered = places.filter(p => !placeSearch || p.name.toLowerCase().includes(placeSearch.toLowerCase()));
+        if (placeCatFilter !== "all") filtered = filtered.filter(p => (p.category || "Other") === placeCatFilter);
+        if (placeStatusFilter === "visited") filtered = filtered.filter(p => (p.visits || []).length > 0);
+        if (placeStatusFilter === "wantto") filtered = filtered.filter(p => (p.visits || []).length === 0);
+        if (placeSort === "alpha") filtered.sort((a, b) => a.name.localeCompare(b.name));
+        else if (placeSort === "rating") filtered.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+        else if (placeSort === "recent") filtered.sort((a, b) => { const da = lastVisitDate(a) || "", db = lastVisitDate(b) || ""; return db.localeCompare(da); });
         const stars = (n) => "★".repeat(n) + "☆".repeat(5 - n);
         return (<div style={{ padding: "0 20px 80px", animation: "fi 0.25s ease" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12, marginTop: 8 }}>
             <span style={{ fontWeight: 700, fontSize: 14, color: "#3a2e24" }}>Places</span>
-            <button onClick={() => { setNewPlace({ name: "", notes: "", rating: 0, mapsUrl: "" }); setModal("addPlace"); }} style={{ fontWeight: 700, fontSize: 11, border: "none", borderRadius: 8, padding: "6px 14px", cursor: "pointer", background: accent, color: "white" }}>+ Add</button>
+            <div style={{ display: "flex", gap: 6 }}>
+              <button onClick={() => setEditingCategory(true)} style={{ fontWeight: 600, fontSize: 10, border: "1px solid rgba(90,74,62,0.1)", borderRadius: 8, padding: "5px 10px", cursor: "pointer", background: "transparent", color: "#8a7a6a" }}>Edit tags</button>
+              <button onClick={() => { setNewPlace({ name: "", notes: "", rating: 0, mapsUrl: "", category: placeCategories[0] || "" }); setModal("addPlace"); }} style={{ fontWeight: 700, fontSize: 11, border: "none", borderRadius: 8, padding: "6px 14px", cursor: "pointer", background: accent, color: "white" }}>+ Add</button>
+            </div>
           </div>
-          <div style={{ position: "relative", marginBottom: 14 }}>
+          <div style={{ position: "relative", marginBottom: 10 }}>
             <input placeholder="Search places..." value={placeSearch} onChange={e => setPlaceSearch(e.target.value)} style={{ width: "100%", padding: "10px 36px 10px 14px", borderRadius: 10, border: "1px solid rgba(90,74,62,0.1)", background: "rgba(90,74,62,0.04)", fontSize: 13, color: "#3a2e24", outline: "none" }} />
             {placeSearch && <button onClick={() => setPlaceSearch("")} style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", background: "rgba(90,74,62,0.12)", border: "none", borderRadius: "50%", width: 22, height: 22, cursor: "pointer", fontSize: 11, color: "#8a7a6a", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700 }}>×</button>}
           </div>
+          {/* Category filter */}
+          <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginBottom: 8 }}>
+            <button onClick={() => setPlaceCatFilter("all")} style={{ padding: "4px 10px", borderRadius: 6, border: `1px solid ${placeCatFilter === "all" ? accent + "44" : "rgba(90,74,62,0.08)"}`, cursor: "pointer", fontWeight: 600, fontSize: 10, background: placeCatFilter === "all" ? `${accent}12` : "transparent", color: placeCatFilter === "all" ? accent : "#8a7a6a" }}>All</button>
+            {placeCategories.map(c => (<button key={c} onClick={() => setPlaceCatFilter(placeCatFilter === c ? "all" : c)} style={{ padding: "4px 10px", borderRadius: 6, border: `1px solid ${placeCatFilter === c ? accent + "44" : "rgba(90,74,62,0.08)"}`, cursor: "pointer", fontWeight: 600, fontSize: 10, background: placeCatFilter === c ? `${accent}12` : "transparent", color: placeCatFilter === c ? accent : "#8a7a6a" }}>{c}</button>))}
+          </div>
+          {/* Status + Sort */}
+          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 12 }}>
+            <div style={{ display: "flex", gap: 4 }}>
+              {[{ v: "all", l: "All" }, { v: "visited", l: "Visited" }, { v: "wantto", l: "Want to go" }].map(f => (
+                <button key={f.v} onClick={() => setPlaceStatusFilter(f.v)} style={{ padding: "4px 8px", borderRadius: 5, border: "none", cursor: "pointer", fontWeight: 600, fontSize: 9, background: placeStatusFilter === f.v ? "rgba(90,74,62,0.1)" : "transparent", color: placeStatusFilter === f.v ? "#3a2e24" : "#b4a494" }}>{f.l}</button>
+              ))}
+            </div>
+            <div style={{ display: "flex", gap: 4 }}>
+              {[{ v: "alpha", l: "A-Z" }, { v: "rating", l: "★" }, { v: "recent", l: "Recent" }].map(s => (
+                <button key={s.v} onClick={() => setPlaceSort(s.v)} style={{ padding: "4px 8px", borderRadius: 5, border: "none", cursor: "pointer", fontWeight: 600, fontSize: 9, background: placeSort === s.v ? "rgba(90,74,62,0.1)" : "transparent", color: placeSort === s.v ? "#3a2e24" : "#b4a494" }}>{s.l}</button>
+              ))}
+            </div>
+          </div>
+          {/* Place list */}
           <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
-            {filteredPlaces.map(p => (
-              <div key={p.id} onClick={() => { setViewingPlace(p); setVisitNote(""); setVisitDate(TODAY()); setVisitPeopleSearch(""); setVisitPeopleSelected([]); setModal("viewPlace"); }} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderRadius: 10, background: "rgba(90,74,62,0.03)", border: "1px solid rgba(90,74,62,0.06)", cursor: "pointer" }}>
-                <div style={{ width: 34, height: 34, borderRadius: 9, background: `${accent}12`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                  <span style={{ fontSize: 15, color: accent }}>◎</span>
+            {filtered.map(p => { const visitCount = (p.visits || []).length; const dsv = daysSinceVisit(p); const isWantTo = visitCount === 0; return (
+              <div key={p.id} onClick={() => { setViewingPlace(p); setVisitNote(""); setVisitDate(TODAY()); setVisitPeopleSearch(""); setVisitPeopleSelected([]); setEditingVisit(null); setEvPeopleSearch(""); setModal("viewPlace"); }} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderRadius: 10, background: isWantTo ? "rgba(90,122,106,0.04)" : "rgba(90,74,62,0.03)", border: `1px solid ${isWantTo ? accent + "15" : "rgba(90,74,62,0.06)"}`, cursor: "pointer" }}>
+                <div style={{ width: 34, height: 34, borderRadius: 9, background: isWantTo ? `${accent}18` : `${accent}12`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  <span style={{ fontSize: 15, color: accent }}>{isWantTo ? "✦" : "◎"}</span>
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontWeight: 600, fontSize: 13, color: "#3a2e24" }}>{p.name}</div>
-                  <div style={{ fontSize: 10, color: "#b4a494" }}>{p.rating > 0 ? stars(p.rating) + " · " : ""}{(p.visits || []).length} visit{(p.visits || []).length !== 1 ? "s" : ""}</div>
+                  <div style={{ fontSize: 10, color: "#b4a494" }}>
+                    {p.category && <span>{p.category} · </span>}
+                    {p.rating > 0 ? stars(p.rating) + " · " : ""}
+                    {isWantTo ? "Want to go" : `${visitCount} visit${visitCount !== 1 ? "s" : ""}${dsv < Infinity ? ` · ${dsv}d ago` : ""}`}
+                  </div>
                 </div>
                 {p.mapsUrl && <span style={{ fontSize: 12, color: accent, flexShrink: 0 }}>📍</span>}
               </div>
-            ))}
-            {filteredPlaces.length === 0 && (<div style={{ textAlign: "center", padding: 32, color: "#c4b4a4", fontSize: 12 }}>
-              {placeSearch ? "No places match your search" : "No places added yet"}
-              <div style={{ marginTop: 12 }}><button onClick={() => { setNewPlace({ name: "", notes: "", rating: 0, mapsUrl: "" }); setModal("addPlace"); }} style={{ fontSize: 12, fontWeight: 700, border: "none", borderRadius: 8, padding: "8px 18px", cursor: "pointer", background: accent, color: "white" }}>+ Add a place</button></div>
+            ); })}
+            {filtered.length === 0 && (<div style={{ textAlign: "center", padding: 32, color: "#c4b4a4", fontSize: 12 }}>
+              {placeSearch || placeCatFilter !== "all" || placeStatusFilter !== "all" ? "No places match your filters" : "No places added yet"}
+              <div style={{ marginTop: 12 }}><button onClick={() => { setNewPlace({ name: "", notes: "", rating: 0, mapsUrl: "", category: placeCategories[0] || "" }); setModal("addPlace"); }} style={{ fontSize: 12, fontWeight: 700, border: "none", borderRadius: 8, padding: "8px 18px", cursor: "pointer", background: accent, color: "white" }}>+ Add a place</button></div>
             </div>)}
           </div>
         </div>);
@@ -616,6 +661,10 @@ export default function App() {
       {modal === "addPlace" && (<Modal onClose={() => setModal(null)}>
         <div style={{ fontFamily: "'Space Grotesk'", fontSize: 16, fontWeight: 700, color: "#3a2e24", marginBottom: 16 }}>Add Place</div>
         <input placeholder="Name..." value={newPlace.name} onChange={e => setNewPlace(p => ({ ...p, name: e.target.value }))} autoFocus style={{ width: "100%", padding: "10px 14px", borderRadius: 8, border: "1px solid rgba(90,74,62,0.12)", background: "rgba(90,74,62,0.04)", fontSize: 13, fontWeight: 600, color: "#3a2e24", marginBottom: 10, outline: "none" }} />
+        <div style={{ fontSize: 9, fontWeight: 700, color: "#b4a494", marginBottom: 5, letterSpacing: 1 }}>CATEGORY</div>
+        <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginBottom: 12 }}>
+          {placeCategories.map(c => (<button key={c} onClick={() => setNewPlace(p => ({ ...p, category: c }))} style={{ padding: "5px 10px", borderRadius: 6, border: `1px solid ${newPlace.category === c ? accent + "44" : "rgba(90,74,62,0.08)"}`, cursor: "pointer", fontWeight: 600, fontSize: 10, background: newPlace.category === c ? `${accent}12` : "transparent", color: newPlace.category === c ? accent : "#8a7a6a" }}>{c}</button>))}
+        </div>
         <div style={{ fontSize: 9, fontWeight: 700, color: "#b4a494", marginBottom: 5, letterSpacing: 1 }}>RATING</div>
         <div style={{ display: "flex", gap: 4, marginBottom: 12 }}>
           {[1,2,3,4,5].map(n => (<button key={n} onClick={() => setNewPlace(p => ({ ...p, rating: p.rating === n ? 0 : n }))} style={{ fontSize: 20, background: "none", border: "none", cursor: "pointer", padding: "2px 4px", color: n <= newPlace.rating ? "#e8a84c" : "rgba(90,74,62,0.15)" }}>★</button>))}
@@ -624,7 +673,7 @@ export default function App() {
         <textarea placeholder="Notes..." value={newPlace.notes} onChange={e => setNewPlace(p => ({ ...p, notes: e.target.value }))} rows={3} style={{ width: "100%", padding: "10px 14px", borderRadius: 8, border: "1px solid rgba(90,74,62,0.12)", background: "rgba(90,74,62,0.04)", fontSize: 12.5, color: "#3a2e24", marginBottom: 16, outline: "none", lineHeight: 1.5 }} />
         <div style={{ display: "flex", gap: 8 }}>
           <button onClick={() => setModal(null)} style={{ flex: 1, padding: "11px 0", borderRadius: 10, border: "1px solid rgba(90,74,62,0.1)", background: "transparent", cursor: "pointer", fontWeight: 700, fontSize: 12, color: "#8a7a6a" }}>Cancel</button>
-          <button onClick={() => { if (!newPlace.name.trim()) return; setPlaces(p => [...p, { ...newPlace, id: Date.now().toString(), visits: [] }]); setNewPlace({ name: "", notes: "", rating: 0, mapsUrl: "" }); setModal(null); }} style={{ flex: 2, padding: "11px 0", borderRadius: 10, border: "none", background: accent, cursor: "pointer", fontWeight: 700, fontSize: 12, color: "white" }}>Save</button>
+          <button onClick={() => { if (!newPlace.name.trim()) return; setPlaces(p => [...p, { ...newPlace, id: Date.now().toString(), visits: [] }]); setNewPlace({ name: "", notes: "", rating: 0, mapsUrl: "", category: "" }); setModal(null); }} style={{ flex: 2, padding: "11px 0", borderRadius: 10, border: "none", background: accent, cursor: "pointer", fontWeight: 700, fontSize: 12, color: "white" }}>Save</button>
         </div>
       </Modal>)}
 
@@ -632,12 +681,11 @@ export default function App() {
       {modal === "viewPlace" && viewingPlace && (() => {
         const visits = viewingPlace.visits || [];
         const updP = (changes) => setViewingPlace(p => ({ ...p, ...changes }));
-        const stars = (n, setter) => <div style={{ display: "flex", gap: 2 }}>{[1,2,3,4,5].map(i => (<button key={i} onClick={() => setter(i)} style={{ fontSize: 18, background: "none", border: "none", cursor: "pointer", padding: "0 2px", color: i <= n ? "#e8a84c" : "rgba(90,74,62,0.15)" }}>★</button>))}</div>;
+        const starsR = (n, setter) => <div style={{ display: "flex", gap: 2 }}>{[1,2,3,4,5].map(i => (<button key={i} onClick={() => setter(i)} style={{ fontSize: 18, background: "none", border: "none", cursor: "pointer", padding: "0 2px", color: i <= n ? "#e8a84c" : "rgba(90,74,62,0.15)" }}>★</button>))}</div>;
         const addVisit = () => {
           const eventId = "evt_" + Date.now();
           const newVisit = { id: eventId, date: visitDate || TODAY(), note: visitNote.trim(), people: visitPeopleSelected.map(p => p.id) };
           updP({ visits: [...visits, newVisit] });
-          // Create In Person touchpoints on all tagged people
           if (visitPeopleSelected.length > 0) {
             setPeople(prev => prev.map(person => {
               if (visitPeopleSelected.find(vp => vp.id === person.id)) {
@@ -650,74 +698,96 @@ export default function App() {
         };
         const deleteVisit = (v) => {
           updP({ visits: visits.filter(x => x.id !== v.id) });
-          // Remove linked touchpoints from people
           if (v.people && v.people.length > 0) {
-            setPeople(prev => prev.map(person => ({
-              ...person, touchpoints: (person.touchpoints || []).filter(tp => tp.eventId !== v.id)
-            })));
+            setPeople(prev => prev.map(person => ({ ...person, touchpoints: (person.touchpoints || []).filter(tp => tp.eventId !== v.id) })));
           }
         };
-        const vpSearchResults = visitPeopleSearch.length > 0 ? people.filter(p => p.name.toLowerCase().includes(visitPeopleSearch.toLowerCase()) && !visitPeopleSelected.find(s => s.id === p.id)).slice(0, 5) : [];
+        const saveVisitEdit = () => {
+          if (!editingVisit) return;
+          const oldVisit = visits.find(v => v.id === editingVisit.id);
+          const oldPids = oldVisit ? (oldVisit.people || []) : [];
+          const newPids = editingVisit.people || [];
+          updP({ visits: visits.map(v => v.id === editingVisit.id ? editingVisit : v) });
+          setPeople(prev => prev.map(person => {
+            const was = oldPids.includes(person.id), is = newPids.includes(person.id);
+            let tps = [...(person.touchpoints || [])];
+            if (was && !is) tps = tps.filter(tp => tp.eventId !== editingVisit.id);
+            else if (!was && is) tps.push({ id: "tp_" + Date.now() + "_" + person.id, type: "In Person", date: editingVisit.date, note: (editingVisit.note ? editingVisit.note + " @ " : "") + viewingPlace.name, eventId: editingVisit.id, placeId: viewingPlace.id });
+            else if (was && is) tps = tps.map(tp => tp.eventId === editingVisit.id ? { ...tp, date: editingVisit.date, note: (editingVisit.note ? editingVisit.note + " @ " : "") + viewingPlace.name } : tp);
+            return { ...person, touchpoints: tps };
+          }));
+          setEditingVisit(null); setEvPeopleSearch("");
+        };
+        const vpSR = visitPeopleSearch.length > 0 ? people.filter(p => p.name.toLowerCase().includes(visitPeopleSearch.toLowerCase()) && !visitPeopleSelected.find(s => s.id === p.id)).slice(0, 5) : [];
+        const evSR = evPeopleSearch.length > 0 && editingVisit ? people.filter(p => p.name.toLowerCase().includes(evPeopleSearch.toLowerCase()) && !(editingVisit.people || []).includes(p.id)).slice(0, 5) : [];
         return (<Modal onClose={() => { setPlaces(p => p.map(x => x.id === viewingPlace.id ? viewingPlace : x)); setModal(null); setViewingPlace(null); }}>
-          {/* Header */}
           <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8 }}>
-            <div style={{ width: 44, height: 44, borderRadius: 12, background: `${accent}15`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-              <span style={{ fontSize: 20, color: accent }}>◎</span>
-            </div>
+            <div style={{ width: 44, height: 44, borderRadius: 12, background: `${accent}15`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><span style={{ fontSize: 20, color: accent }}>◎</span></div>
             <div style={{ flex: 1 }}>
               <input value={viewingPlace.name} onChange={e => updP({ name: e.target.value })} style={{ width: "100%", fontSize: 16, fontWeight: 700, color: "#3a2e24", border: "none", background: "transparent", outline: "none", padding: 0, fontFamily: "'Space Grotesk', sans-serif" }} />
-              <div style={{ fontSize: 10, color: "#8a7a6a" }}>{visits.length} visit{visits.length !== 1 ? "s" : ""}</div>
+              <div style={{ fontSize: 10, color: "#8a7a6a" }}>{viewingPlace.category || "Uncategorized"} · {visits.length} visit{visits.length !== 1 ? "s" : ""}</div>
             </div>
           </div>
-          {/* Rating */}
-          <div style={{ marginBottom: 8 }}>{stars(viewingPlace.rating, (n) => updP({ rating: viewingPlace.rating === n ? 0 : n }))}</div>
-          {/* Maps link */}
+          {starsR(viewingPlace.rating, (n) => updP({ rating: viewingPlace.rating === n ? 0 : n }))}
+          <div style={{ fontSize: 9, fontWeight: 700, color: "#b4a494", marginBottom: 5, marginTop: 10, letterSpacing: 1 }}>CATEGORY</div>
+          <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginBottom: 10 }}>
+            {placeCategories.map(c => (<button key={c} onClick={() => updP({ category: c })} style={{ padding: "4px 10px", borderRadius: 6, border: `1px solid ${viewingPlace.category === c ? accent + "44" : "rgba(90,74,62,0.08)"}`, cursor: "pointer", fontWeight: 600, fontSize: 10, background: viewingPlace.category === c ? `${accent}12` : "transparent", color: viewingPlace.category === c ? accent : "#8a7a6a" }}>{c}</button>))}
+          </div>
           <input placeholder="Google Maps link..." value={viewingPlace.mapsUrl || ""} onChange={e => updP({ mapsUrl: e.target.value })} style={{ width: "100%", padding: "6px 10px", borderRadius: 6, border: "1px solid rgba(90,74,62,0.1)", background: "rgba(90,74,62,0.03)", fontSize: 11, color: "#3a2e24", marginBottom: 4, outline: "none" }} />
           {viewingPlace.mapsUrl && <a href={viewingPlace.mapsUrl} target="_blank" rel="noopener noreferrer" style={{ fontSize: 10, color: accent, fontWeight: 600, display: "inline-block", marginBottom: 8 }}>Open in Maps →</a>}
           {!viewingPlace.mapsUrl && <div style={{ marginBottom: 8 }} />}
-          {/* Notes */}
-          <textarea value={viewingPlace.notes || ""} onChange={e => updP({ notes: e.target.value })} rows={2} placeholder="Notes about this place..." style={{ width: "100%", padding: "8px 10px", borderRadius: 6, border: "1px solid rgba(90,74,62,0.1)", background: "rgba(90,74,62,0.03)", fontSize: 11, color: "#3a2e24", marginBottom: 12, outline: "none", lineHeight: 1.5 }} />
-          {/* Log Visit */}
+          <textarea value={viewingPlace.notes || ""} onChange={e => updP({ notes: e.target.value })} rows={2} placeholder="Notes..." style={{ width: "100%", padding: "8px 10px", borderRadius: 6, border: "1px solid rgba(90,74,62,0.1)", background: "rgba(90,74,62,0.03)", fontSize: 11, color: "#3a2e24", marginBottom: 12, outline: "none", lineHeight: 1.5 }} />
           <div style={{ fontSize: 9, fontWeight: 700, color: "#b4a494", marginBottom: 5, letterSpacing: 1 }}>LOG A VISIT</div>
           <div style={{ display: "flex", gap: 4, marginBottom: 6 }}>
             <input placeholder="What happened..." value={visitNote} onChange={e => setVisitNote(e.target.value)} style={{ flex: 1, padding: "6px 10px", borderRadius: 6, border: "1px solid rgba(90,74,62,0.1)", background: "rgba(90,74,62,0.03)", fontSize: 11, color: "#3a2e24", outline: "none" }} />
             <div style={{ overflow: "hidden", width: 90, flexShrink: 0 }}><input type="date" value={visitDate} onChange={e => setVisitDate(e.target.value)} style={{ display: "block", width: "100%", padding: "6px 4px", borderRadius: 6, border: "1px solid rgba(90,74,62,0.1)", background: "rgba(90,74,62,0.03)", fontSize: 9, color: "#6b5c4d", outline: "none", colorScheme: "light", boxSizing: "border-box", WebkitAppearance: "none", appearance: "none" }} /></div>
           </div>
-          {/* Tag people */}
           <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginBottom: visitPeopleSelected.length > 0 ? 6 : 0 }}>
-            {visitPeopleSelected.map(p => (
-              <span key={p.id} style={{ fontSize: 10, padding: "2px 8px", borderRadius: 6, background: `${accent}12`, color: accent, fontWeight: 600, display: "flex", alignItems: "center", gap: 3 }}>
-                {p.name}<button onClick={() => setVisitPeopleSelected(s => s.filter(x => x.id !== p.id))} style={{ background: "none", border: "none", fontSize: 10, color: accent, cursor: "pointer", padding: 0, opacity: 0.5 }}>×</button>
-              </span>
-            ))}
+            {visitPeopleSelected.map(p => (<span key={p.id} style={{ fontSize: 10, padding: "2px 8px", borderRadius: 6, background: `${accent}12`, color: accent, fontWeight: 600, display: "flex", alignItems: "center", gap: 3 }}>{p.name}<button onClick={() => setVisitPeopleSelected(s => s.filter(x => x.id !== p.id))} style={{ background: "none", border: "none", fontSize: 10, color: accent, cursor: "pointer", padding: 0, opacity: 0.5 }}>×</button></span>))}
           </div>
           <div style={{ display: "flex", gap: 4, marginBottom: 4 }}>
             <input placeholder="Tag people..." value={visitPeopleSearch} onChange={e => setVisitPeopleSearch(e.target.value)} style={{ flex: 1, padding: "6px 10px", borderRadius: 6, border: "1px solid rgba(90,74,62,0.1)", background: "rgba(90,74,62,0.03)", fontSize: 11, color: "#3a2e24", outline: "none" }} />
             <button onClick={addVisit} style={{ padding: "6px 14px", borderRadius: 6, border: "none", background: accent, color: "white", fontWeight: 700, fontSize: 10, cursor: "pointer" }}>Log</button>
           </div>
-          {vpSearchResults.length > 0 && <div style={{ border: "1px solid rgba(90,74,62,0.08)", borderRadius: 8, overflow: "hidden", marginBottom: 8 }}>
-            {vpSearchResults.map(p => (<div key={p.id} onClick={() => { setVisitPeopleSelected(s => [...s, p]); setVisitPeopleSearch(""); }} style={{ padding: "7px 10px", fontSize: 11, color: "#3a2e24", cursor: "pointer", borderBottom: "1px solid rgba(90,74,62,0.04)", background: "rgba(90,74,62,0.02)" }}>{p.name}</div>))}
-          </div>}
-          {/* Visit History */}
+          {vpSR.length > 0 && <div style={{ border: "1px solid rgba(90,74,62,0.08)", borderRadius: 8, overflow: "hidden", marginBottom: 8 }}>{vpSR.map(p => (<div key={p.id} onClick={() => { setVisitPeopleSelected(s => [...s, p]); setVisitPeopleSearch(""); }} style={{ padding: "7px 10px", fontSize: 11, color: "#3a2e24", cursor: "pointer", borderBottom: "1px solid rgba(90,74,62,0.04)", background: "rgba(90,74,62,0.02)" }}>{p.name}</div>))}</div>}
           <div style={{ fontSize: 9, fontWeight: 700, color: "#b4a494", marginBottom: 5, marginTop: 8, letterSpacing: 1 }}>VISIT HISTORY</div>
           <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-            {[...visits].reverse().map((v, i) => (
-              <div key={v.id || i} style={{ padding: "8px 10px", borderRadius: 8, background: "rgba(90,74,62,0.03)", border: "1px solid rgba(90,74,62,0.06)" }}>
+            {[...visits].reverse().map((v, i) => {
+              const isEd = editingVisit && editingVisit.id === v.id;
+              if (isEd) return (
+                <div key={v.id || i} style={{ padding: "8px 10px", borderRadius: 8, background: `${accent}06`, border: `1px solid ${accent}22` }}>
+                  <div style={{ display: "flex", gap: 4, marginBottom: 6 }}>
+                    <input value={editingVisit.note} onChange={e => setEditingVisit(p => ({ ...p, note: e.target.value }))} placeholder="Note..." style={{ flex: 1, padding: "5px 8px", borderRadius: 5, border: "1px solid rgba(90,74,62,0.1)", background: "rgba(90,74,62,0.03)", fontSize: 10, color: "#3a2e24", outline: "none" }} />
+                    <div style={{ overflow: "hidden", width: 85, flexShrink: 0 }}><input type="date" value={editingVisit.date} onChange={e => setEditingVisit(p => ({ ...p, date: e.target.value }))} style={{ display: "block", width: "100%", padding: "5px 4px", borderRadius: 5, border: "1px solid rgba(90,74,62,0.1)", background: "rgba(90,74,62,0.03)", fontSize: 9, color: "#3a2e24", outline: "none", colorScheme: "light", boxSizing: "border-box", WebkitAppearance: "none", appearance: "none" }} /></div>
+                  </div>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 3, marginBottom: 6 }}>
+                    {(editingVisit.people || []).map(pid => { const person = people.find(x => x.id === pid); return person ? <span key={pid} style={{ fontSize: 9, padding: "2px 6px", borderRadius: 4, background: `${accent}12`, color: accent, fontWeight: 600, display: "flex", alignItems: "center", gap: 3 }}>{person.name}<button onClick={() => setEditingVisit(p => ({ ...p, people: (p.people || []).filter(x => x !== pid) }))} style={{ background: "none", border: "none", fontSize: 9, color: accent, cursor: "pointer", padding: 0, opacity: 0.5 }}>×</button></span> : null; })}
+                  </div>
+                  <div style={{ display: "flex", gap: 4, marginBottom: evSR.length > 0 ? 4 : 6 }}>
+                    <input placeholder="Tag people..." value={evPeopleSearch} onChange={e => setEvPeopleSearch(e.target.value)} style={{ flex: 1, padding: "5px 8px", borderRadius: 5, border: "1px solid rgba(90,74,62,0.1)", background: "rgba(90,74,62,0.03)", fontSize: 10, color: "#3a2e24", outline: "none" }} />
+                  </div>
+                  {evSR.length > 0 && <div style={{ border: "1px solid rgba(90,74,62,0.08)", borderRadius: 6, overflow: "hidden", marginBottom: 6 }}>{evSR.map(p => (<div key={p.id} onClick={() => { setEditingVisit(prev => ({ ...prev, people: [...(prev.people || []), p.id] })); setEvPeopleSearch(""); }} style={{ padding: "6px 8px", fontSize: 10, color: "#3a2e24", cursor: "pointer", borderBottom: "1px solid rgba(90,74,62,0.04)", background: "rgba(90,74,62,0.02)" }}>{p.name}</div>))}</div>}
+                  <div style={{ display: "flex", gap: 4 }}>
+                    <button onClick={() => { setEditingVisit(null); setEvPeopleSearch(""); }} style={{ flex: 1, padding: "5px 0", borderRadius: 5, border: "1px solid rgba(90,74,62,0.1)", background: "transparent", cursor: "pointer", fontWeight: 600, fontSize: 10, color: "#8a7a6a" }}>Cancel</button>
+                    <button onClick={saveVisitEdit} style={{ flex: 1, padding: "5px 0", borderRadius: 5, border: "none", background: accent, cursor: "pointer", fontWeight: 600, fontSize: 10, color: "white" }}>Save</button>
+                  </div>
+                </div>
+              );
+              return (
+              <div key={v.id || i} onClick={() => { setEditingVisit({ ...v }); setEvPeopleSearch(""); }} style={{ padding: "8px 10px", borderRadius: 8, background: "rgba(90,74,62,0.03)", border: "1px solid rgba(90,74,62,0.06)", cursor: "pointer" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                   <div style={{ flex: 1 }}>
                     {v.note && <div style={{ fontSize: 12, color: "#3a2e24", marginBottom: 2 }}>{v.note}</div>}
                     <div style={{ fontSize: 9, color: "#b4a494" }}>{v.date}</div>
-                    {v.people && v.people.length > 0 && <div style={{ display: "flex", flexWrap: "wrap", gap: 3, marginTop: 4 }}>
-                      {v.people.map(pid => { const person = people.find(x => x.id === pid); return person ? <span key={pid} style={{ fontSize: 9, padding: "1px 6px", borderRadius: 4, background: `${accent}10`, color: accent, fontWeight: 600 }}>{person.name}</span> : null; })}
-                    </div>}
+                    {v.people && v.people.length > 0 && <div style={{ display: "flex", flexWrap: "wrap", gap: 3, marginTop: 4 }}>{v.people.map(pid => { const person = people.find(x => x.id === pid); return person ? <span key={pid} style={{ fontSize: 9, padding: "1px 6px", borderRadius: 4, background: `${accent}10`, color: accent, fontWeight: 600 }}>{person.name}</span> : null; })}</div>}
                   </div>
-                  <button onClick={() => deleteVisit(v)} style={{ background: "none", border: "none", fontSize: 13, color: "#c4b4a4", cursor: "pointer", padding: "0 4px" }}>×</button>
+                  <button onClick={(e) => { e.stopPropagation(); deleteVisit(v); }} style={{ background: "none", border: "none", fontSize: 13, color: "#c4b4a4", cursor: "pointer", padding: "0 4px" }}>×</button>
                 </div>
               </div>
-            ))}
+              );
+            })}
             {visits.length === 0 && <div style={{ fontSize: 11, color: "#c4b4a4", textAlign: "center", padding: 8 }}>No visits logged yet</div>}
           </div>
-          {/* Footer */}
           <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
             <button onClick={() => { setPlaces(p => p.filter(x => x.id !== viewingPlace.id)); setModal(null); setViewingPlace(null); }} style={{ padding: "10px 14px", borderRadius: 10, border: "1px solid rgba(232,106,106,0.3)", background: "transparent", cursor: "pointer", fontWeight: 700, fontSize: 11, color: "#e86a6a" }}>Delete</button>
             <button onClick={() => { setModal(null); setViewingPlace(null); }} style={{ flex: 1, padding: "10px 0", borderRadius: 10, border: "1px solid rgba(90,74,62,0.1)", background: "transparent", cursor: "pointer", fontWeight: 700, fontSize: 11, color: "#8a7a6a" }}>Cancel</button>
@@ -725,6 +795,24 @@ export default function App() {
           </div>
         </Modal>);
       })()}
+
+      {/* Edit Categories Modal */}
+      {editingCategory && (<Modal onClose={() => setEditingCategory(false)}>
+        <div style={{ fontFamily: "'Space Grotesk'", fontSize: 16, fontWeight: 700, color: "#3a2e24", marginBottom: 14 }}>Edit Categories</div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 4, marginBottom: 12 }}>
+          {placeCategories.map((c, i) => (
+            <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 10px", borderRadius: 8, background: "rgba(90,74,62,0.03)", border: "1px solid rgba(90,74,62,0.06)" }}>
+              <span style={{ flex: 1, fontSize: 13, fontWeight: 600, color: "#3a2e24" }}>{c}</span>
+              <button onClick={() => setPlaceCategories(p => p.filter((_, j) => j !== i))} style={{ background: "none", border: "none", fontSize: 13, color: "#c4b4a4", cursor: "pointer", padding: "0 4px" }}>×</button>
+            </div>
+          ))}
+        </div>
+        <div style={{ display: "flex", gap: 4, marginBottom: 14 }}>
+          <input placeholder="New category..." value={newCategoryName} onChange={e => setNewCategoryName(e.target.value)} onKeyDown={e => { if (e.key === "Enter" && newCategoryName.trim()) { setPlaceCategories(p => [...p, newCategoryName.trim()]); setNewCategoryName(""); } }} style={{ flex: 1, padding: "8px 10px", borderRadius: 6, border: "1px solid rgba(90,74,62,0.1)", background: "rgba(90,74,62,0.03)", fontSize: 12, color: "#3a2e24", outline: "none" }} />
+          <button onClick={() => { if (newCategoryName.trim()) { setPlaceCategories(p => [...p, newCategoryName.trim()]); setNewCategoryName(""); } }} style={{ padding: "8px 14px", borderRadius: 6, border: "none", background: accent, color: "white", fontWeight: 700, fontSize: 11, cursor: "pointer" }}>+</button>
+        </div>
+        <button onClick={() => setEditingCategory(false)} style={{ width: "100%", padding: "11px 0", borderRadius: 10, border: "none", background: accent, cursor: "pointer", fontWeight: 700, fontSize: 12, color: "white" }}>Done</button>
+      </Modal>)}
     </div>
   );
 }
