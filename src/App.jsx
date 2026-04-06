@@ -114,6 +114,24 @@ export default function App() {
   const [search, setSearch] = useState("");
   const [nb, setNb] = useState({ name: "", date: "", notes: "", cadence: "monthly", interests: [] });
   const [nbInterest, setNbInterest] = useState("");
+
+  // Places state
+  const [places, setPlaces] = useState(IS_PREVIEW ? [
+    { id: "p1", name: "St. Elmo (North)", notes: "Great brunch", rating: 4, mapsUrl: "", visits: [] },
+  ] : []);
+  const [newPlace, setNewPlace] = useState({ name: "", notes: "", rating: 0, mapsUrl: "" });
+  const [viewingPlace, setViewingPlace] = useState(null);
+  const [placeSearch, setPlaceSearch] = useState("");
+  // Visit logging state
+  const [visitNote, setVisitNote] = useState("");
+  const [visitDate, setVisitDate] = useState("");
+  const [visitPeopleSearch, setVisitPeopleSearch] = useState("");
+  const [visitPeopleSelected, setVisitPeopleSelected] = useState([]);
+  // In Person touchpoint linking state
+  const [tpPlaceSearch, setTpPlaceSearch] = useState("");
+  const [tpPlaceSelected, setTpPlaceSelected] = useState(null);
+  const [tpPeopleSearch, setTpPeopleSearch] = useState("");
+  const [tpPeopleSelected, setTpPeopleSelected] = useState([]);
   const [settings, setSettings] = useState(false);
   const [bdFilter, setBdFilter] = useState("all");
   const [bdSearch, setBdSearch] = useState("");
@@ -146,7 +164,7 @@ export default function App() {
     if (IS_PREVIEW) return;
     if (!user) { setDataLoaded(false); return; }
     (async () => {
-      const [b, w] = await Promise.all([loadData(user.uid, "birthdays"), loadData(user.uid, `wishes/${today}`)]);
+      const [b, w, pl] = await Promise.all([loadData(user.uid, "birthdays"), loadData(user.uid, `wishes/${today}`), loadData(user.uid, "places")]);
       if (b) {
         const loaded = Object.values(b).map(p => ({
           ...p,
@@ -157,12 +175,14 @@ export default function App() {
         setPeople(loaded);
       }
       if (w) setWishes(w);
+      if (pl) setPlaces(Object.values(pl));
       setDataLoaded(true);
     })();
   }, [user, today]);
 
   useEffect(() => { if (dataLoaded && !IS_PREVIEW) { const obj = {}; people.forEach(p => obj[p.id] = p); save("birthdays", obj, true); } }, [people, dataLoaded]);
   useEffect(() => { if (dataLoaded && !IS_PREVIEW) save(`wishes/${today}`, wishes, true); }, [wishes, dataLoaded]);
+  useEffect(() => { if (dataLoaded && !IS_PREVIEW) { const obj = {}; places.forEach(p => obj[p.id] = p); save("places", obj, true); } }, [places, dataLoaded]);
 
   const handleSignIn = async () => { setSignInLoading(true); await signInGoogle(); setSignInLoading(false); };
 
@@ -218,8 +238,8 @@ export default function App() {
           </div>
         </div>
         <div style={{ display: "flex", gap: 5, padding: "4px 20px 12px" }}>
-          {[{ id: "people", l: "People", ico: "◉" }, { id: "touchpoints", l: "Touchpoints", ico: "↻" }, { id: "birthdays", l: "Birthdays", ico: "♡" }].map(t => (
-            <button key={t.id} onClick={() => setTab(t.id)} style={{ flex: 1, padding: "10px 0", borderRadius: 10, border: tab === t.id ? `1px solid ${accent}44` : "1px solid rgba(90,74,62,0.1)", cursor: "pointer", fontWeight: 700, fontSize: 11, background: tab === t.id ? `${accent}18` : "rgba(90,74,62,0.04)", color: tab === t.id ? accent : "#6b5c4d", letterSpacing: 0.3 }}>{t.ico} {t.l}</button>
+          {[{ id: "people", l: "People", ico: "◉" }, { id: "touchpoints", l: "Touch", ico: "↻" }, { id: "birthdays", l: "Birthdays", ico: "♡" }, { id: "places", l: "Places", ico: "◎" }].map(t => (
+            <button key={t.id} onClick={() => setTab(t.id)} style={{ flex: 1, padding: "10px 0", borderRadius: 10, border: tab === t.id ? `1px solid ${accent}44` : "1px solid rgba(90,74,62,0.1)", cursor: "pointer", fontWeight: 700, fontSize: 10, background: tab === t.id ? `${accent}18` : "rgba(90,74,62,0.04)", color: tab === t.id ? accent : "#6b5c4d", letterSpacing: 0.3 }}>{t.ico} {t.l}</button>
           ))}
         </div>
         <div style={{ height: 1, background: "rgba(90,74,62,0.04)", margin: "0 20px" }} />
@@ -404,6 +424,42 @@ export default function App() {
         </div>);
       })()}
 
+      {/* ═══ PLACES TAB ═══ */}
+      {tab === "places" && (() => {
+        const filteredPlaces = places.filter(p => !placeSearch || p.name.toLowerCase().includes(placeSearch.toLowerCase())).sort((a, b) => a.name.localeCompare(b.name));
+        const stars = (n) => "★".repeat(n) + "☆".repeat(5 - n);
+        return (<div style={{ padding: "0 20px 80px", animation: "fi 0.25s ease" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12, marginTop: 8 }}>
+            <span style={{ fontWeight: 700, fontSize: 14, color: "#3a2e24" }}>Places</span>
+            <button onClick={() => { setNewPlace({ name: "", notes: "", rating: 0, mapsUrl: "" }); setModal("addPlace"); }} style={{ fontWeight: 700, fontSize: 11, border: "none", borderRadius: 8, padding: "6px 14px", cursor: "pointer", background: accent, color: "white" }}>+ Add</button>
+          </div>
+          <div style={{ position: "relative", marginBottom: 14 }}>
+            <input placeholder="Search places..." value={placeSearch} onChange={e => setPlaceSearch(e.target.value)} style={{ width: "100%", padding: "10px 36px 10px 14px", borderRadius: 10, border: "1px solid rgba(90,74,62,0.1)", background: "rgba(90,74,62,0.04)", fontSize: 13, color: "#3a2e24", outline: "none" }} />
+            {placeSearch && <button onClick={() => setPlaceSearch("")} style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", background: "rgba(90,74,62,0.12)", border: "none", borderRadius: "50%", width: 22, height: 22, cursor: "pointer", fontSize: 11, color: "#8a7a6a", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700 }}>×</button>}
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+            {filteredPlaces.map(p => (
+              <div key={p.id} onClick={() => { setViewingPlace(p); setVisitNote(""); setVisitDate(TODAY()); setVisitPeopleSearch(""); setVisitPeopleSelected([]); setModal("viewPlace"); }} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderRadius: 10, background: "rgba(90,74,62,0.03)", border: "1px solid rgba(90,74,62,0.06)", cursor: "pointer" }}>
+                <div style={{ width: 34, height: 34, borderRadius: 9, background: `${accent}12`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  <span style={{ fontSize: 15, color: accent }}>◎</span>
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontWeight: 600, fontSize: 13, color: "#3a2e24" }}>{p.name}</div>
+                  <div style={{ fontSize: 10, color: "#b4a494" }}>{p.rating > 0 ? stars(p.rating) + " · " : ""}{(p.visits || []).length} visit{(p.visits || []).length !== 1 ? "s" : ""}</div>
+                </div>
+                {p.mapsUrl && <span style={{ fontSize: 12, color: accent, flexShrink: 0 }}>📍</span>}
+              </div>
+            ))}
+            {filteredPlaces.length === 0 && (<div style={{ textAlign: "center", padding: 32, color: "#c4b4a4", fontSize: 12 }}>
+              {placeSearch ? "No places match your search" : "No places added yet"}
+              <div style={{ marginTop: 12 }}><button onClick={() => { setNewPlace({ name: "", notes: "", rating: 0, mapsUrl: "" }); setModal("addPlace"); }} style={{ fontSize: 12, fontWeight: 700, border: "none", borderRadius: 8, padding: "8px 18px", cursor: "pointer", background: accent, color: "white" }}>+ Add a place</button></div>
+            </div>)}
+          </div>
+        </div>);
+      })()}
+
+      {/* ═══ MODALS ═══ */}
+
       {modal === "addPerson" && (<Modal onClose={() => setModal(null)}>
         <div style={{ fontFamily: "'Space Grotesk'", fontSize: 16, fontWeight: 700, color: "#3a2e24", marginBottom: 16 }}>Add Person</div>
         <input placeholder="Name..." value={nb.name} onChange={e => setNb(p => ({ ...p, name: e.target.value }))} autoFocus style={{ width: "100%", padding: "10px 14px", borderRadius: 8, border: "1px solid rgba(90,74,62,0.12)", background: "rgba(90,74,62,0.04)", fontSize: 13, fontWeight: 600, color: "#3a2e24", marginBottom: 10, outline: "none" }} />
@@ -465,7 +521,7 @@ export default function App() {
             const tps = viewingPerson.touchpoints || [];
             const cadence = viewingPerson.cadence || "monthly";
             const info = getOverdueInfo(viewingPerson, today);
-            const TP_TYPES = ["Text","Call","Coffee","Postcard","Gift","Other"];
+            const TP_TYPES = ["Text","Call","In Person","Postcard","Gift","Other"];
             return <div>
               {sH("CADENCE")}
               <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginBottom: 12 }}>
@@ -506,6 +562,7 @@ export default function App() {
                     <span onClick={() => setEditingTp({ ...tp })} style={{ fontSize: 10, fontWeight: 700, color: z.color, background: `${z.color}12`, padding: "2px 6px", borderRadius: 4, cursor: "pointer" }}>{tp.type}</span>
                     <div onClick={() => setEditingTp({ ...tp })} style={{ flex: 1, minWidth: 0, cursor: "pointer" }}>
                       {tp.note && <div style={{ fontSize: 11, color: "#3a2e24" }}>{tp.note}</div>}
+                      {tp.placeId && (() => { const pl = places.find(x => x.id === tp.placeId); return pl ? <div style={{ fontSize: 9, color: accent, fontWeight: 600 }}>📍 {pl.name}</div> : null; })()}
                       <div style={{ fontSize: 9, color: "#b4a494" }}>{tp.date}</div>
                     </div>
                     <button onClick={() => upd({ touchpoints: tps.filter(x => (x.id || x.date + x.type) !== (tp.id || tp.date + tp.type)) })} style={{ background: "none", border: "none", fontSize: 13, color: "#c4b4a4", cursor: "pointer", padding: "0 4px" }}>×</button>
@@ -554,6 +611,120 @@ export default function App() {
         <div style={{ fontSize: 10, color: "#c4b4a4", textAlign: "center", marginBottom: 12 }}>{people.filter(b => { const s = getZodiacSign(b.date); return s && s.sign === viewingZodiac.sign; }).length} {people.filter(b => { const s = getZodiacSign(b.date); return s && s.sign === viewingZodiac.sign; }).length !== 1 ? "people" : "person"} in your circle</div>
         <button onClick={() => setViewingZodiac(null)} style={{ width: "100%", padding: "11px 0", borderRadius: 10, border: "none", background: viewingZodiac.color, cursor: "pointer", fontWeight: 700, fontSize: 12, color: "white" }}>Close</button>
       </Modal>)}
+
+      {/* Add Place Modal */}
+      {modal === "addPlace" && (<Modal onClose={() => setModal(null)}>
+        <div style={{ fontFamily: "'Space Grotesk'", fontSize: 16, fontWeight: 700, color: "#3a2e24", marginBottom: 16 }}>Add Place</div>
+        <input placeholder="Name..." value={newPlace.name} onChange={e => setNewPlace(p => ({ ...p, name: e.target.value }))} autoFocus style={{ width: "100%", padding: "10px 14px", borderRadius: 8, border: "1px solid rgba(90,74,62,0.12)", background: "rgba(90,74,62,0.04)", fontSize: 13, fontWeight: 600, color: "#3a2e24", marginBottom: 10, outline: "none" }} />
+        <div style={{ fontSize: 9, fontWeight: 700, color: "#b4a494", marginBottom: 5, letterSpacing: 1 }}>RATING</div>
+        <div style={{ display: "flex", gap: 4, marginBottom: 12 }}>
+          {[1,2,3,4,5].map(n => (<button key={n} onClick={() => setNewPlace(p => ({ ...p, rating: p.rating === n ? 0 : n }))} style={{ fontSize: 20, background: "none", border: "none", cursor: "pointer", padding: "2px 4px", color: n <= newPlace.rating ? "#e8a84c" : "rgba(90,74,62,0.15)" }}>★</button>))}
+        </div>
+        <input placeholder="Google Maps link (optional)..." value={newPlace.mapsUrl} onChange={e => setNewPlace(p => ({ ...p, mapsUrl: e.target.value }))} style={{ width: "100%", padding: "10px 14px", borderRadius: 8, border: "1px solid rgba(90,74,62,0.12)", background: "rgba(90,74,62,0.04)", fontSize: 12, color: "#3a2e24", marginBottom: 10, outline: "none" }} />
+        <textarea placeholder="Notes..." value={newPlace.notes} onChange={e => setNewPlace(p => ({ ...p, notes: e.target.value }))} rows={3} style={{ width: "100%", padding: "10px 14px", borderRadius: 8, border: "1px solid rgba(90,74,62,0.12)", background: "rgba(90,74,62,0.04)", fontSize: 12.5, color: "#3a2e24", marginBottom: 16, outline: "none", lineHeight: 1.5 }} />
+        <div style={{ display: "flex", gap: 8 }}>
+          <button onClick={() => setModal(null)} style={{ flex: 1, padding: "11px 0", borderRadius: 10, border: "1px solid rgba(90,74,62,0.1)", background: "transparent", cursor: "pointer", fontWeight: 700, fontSize: 12, color: "#8a7a6a" }}>Cancel</button>
+          <button onClick={() => { if (!newPlace.name.trim()) return; setPlaces(p => [...p, { ...newPlace, id: Date.now().toString(), visits: [] }]); setNewPlace({ name: "", notes: "", rating: 0, mapsUrl: "" }); setModal(null); }} style={{ flex: 2, padding: "11px 0", borderRadius: 10, border: "none", background: accent, cursor: "pointer", fontWeight: 700, fontSize: 12, color: "white" }}>Save</button>
+        </div>
+      </Modal>)}
+
+      {/* View Place Modal */}
+      {modal === "viewPlace" && viewingPlace && (() => {
+        const visits = viewingPlace.visits || [];
+        const updP = (changes) => setViewingPlace(p => ({ ...p, ...changes }));
+        const stars = (n, setter) => <div style={{ display: "flex", gap: 2 }}>{[1,2,3,4,5].map(i => (<button key={i} onClick={() => setter(i)} style={{ fontSize: 18, background: "none", border: "none", cursor: "pointer", padding: "0 2px", color: i <= n ? "#e8a84c" : "rgba(90,74,62,0.15)" }}>★</button>))}</div>;
+        const addVisit = () => {
+          const eventId = "evt_" + Date.now();
+          const newVisit = { id: eventId, date: visitDate || TODAY(), note: visitNote.trim(), people: visitPeopleSelected.map(p => p.id) };
+          updP({ visits: [...visits, newVisit] });
+          // Create In Person touchpoints on all tagged people
+          if (visitPeopleSelected.length > 0) {
+            setPeople(prev => prev.map(person => {
+              if (visitPeopleSelected.find(vp => vp.id === person.id)) {
+                return { ...person, touchpoints: [...(person.touchpoints || []), { id: "tp_" + Date.now() + "_" + person.id, type: "In Person", date: visitDate || TODAY(), note: (visitNote.trim() ? visitNote.trim() + " @ " : "") + viewingPlace.name, eventId, placeId: viewingPlace.id }] };
+              }
+              return person;
+            }));
+          }
+          setVisitNote(""); setVisitDate(TODAY()); setVisitPeopleSearch(""); setVisitPeopleSelected([]);
+        };
+        const deleteVisit = (v) => {
+          updP({ visits: visits.filter(x => x.id !== v.id) });
+          // Remove linked touchpoints from people
+          if (v.people && v.people.length > 0) {
+            setPeople(prev => prev.map(person => ({
+              ...person, touchpoints: (person.touchpoints || []).filter(tp => tp.eventId !== v.id)
+            })));
+          }
+        };
+        const vpSearchResults = visitPeopleSearch.length > 0 ? people.filter(p => p.name.toLowerCase().includes(visitPeopleSearch.toLowerCase()) && !visitPeopleSelected.find(s => s.id === p.id)).slice(0, 5) : [];
+        return (<Modal onClose={() => { setPlaces(p => p.map(x => x.id === viewingPlace.id ? viewingPlace : x)); setModal(null); setViewingPlace(null); }}>
+          {/* Header */}
+          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8 }}>
+            <div style={{ width: 44, height: 44, borderRadius: 12, background: `${accent}15`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              <span style={{ fontSize: 20, color: accent }}>◎</span>
+            </div>
+            <div style={{ flex: 1 }}>
+              <input value={viewingPlace.name} onChange={e => updP({ name: e.target.value })} style={{ width: "100%", fontSize: 16, fontWeight: 700, color: "#3a2e24", border: "none", background: "transparent", outline: "none", padding: 0, fontFamily: "'Space Grotesk', sans-serif" }} />
+              <div style={{ fontSize: 10, color: "#8a7a6a" }}>{visits.length} visit{visits.length !== 1 ? "s" : ""}</div>
+            </div>
+          </div>
+          {/* Rating */}
+          <div style={{ marginBottom: 8 }}>{stars(viewingPlace.rating, (n) => updP({ rating: viewingPlace.rating === n ? 0 : n }))}</div>
+          {/* Maps link */}
+          <input placeholder="Google Maps link..." value={viewingPlace.mapsUrl || ""} onChange={e => updP({ mapsUrl: e.target.value })} style={{ width: "100%", padding: "6px 10px", borderRadius: 6, border: "1px solid rgba(90,74,62,0.1)", background: "rgba(90,74,62,0.03)", fontSize: 11, color: "#3a2e24", marginBottom: 4, outline: "none" }} />
+          {viewingPlace.mapsUrl && <a href={viewingPlace.mapsUrl} target="_blank" rel="noopener noreferrer" style={{ fontSize: 10, color: accent, fontWeight: 600, display: "inline-block", marginBottom: 8 }}>Open in Maps →</a>}
+          {!viewingPlace.mapsUrl && <div style={{ marginBottom: 8 }} />}
+          {/* Notes */}
+          <textarea value={viewingPlace.notes || ""} onChange={e => updP({ notes: e.target.value })} rows={2} placeholder="Notes about this place..." style={{ width: "100%", padding: "8px 10px", borderRadius: 6, border: "1px solid rgba(90,74,62,0.1)", background: "rgba(90,74,62,0.03)", fontSize: 11, color: "#3a2e24", marginBottom: 12, outline: "none", lineHeight: 1.5 }} />
+          {/* Log Visit */}
+          <div style={{ fontSize: 9, fontWeight: 700, color: "#b4a494", marginBottom: 5, letterSpacing: 1 }}>LOG A VISIT</div>
+          <div style={{ display: "flex", gap: 4, marginBottom: 6 }}>
+            <input placeholder="What happened..." value={visitNote} onChange={e => setVisitNote(e.target.value)} style={{ flex: 1, padding: "6px 10px", borderRadius: 6, border: "1px solid rgba(90,74,62,0.1)", background: "rgba(90,74,62,0.03)", fontSize: 11, color: "#3a2e24", outline: "none" }} />
+            <div style={{ overflow: "hidden", width: 90, flexShrink: 0 }}><input type="date" value={visitDate} onChange={e => setVisitDate(e.target.value)} style={{ display: "block", width: "100%", padding: "6px 4px", borderRadius: 6, border: "1px solid rgba(90,74,62,0.1)", background: "rgba(90,74,62,0.03)", fontSize: 9, color: "#6b5c4d", outline: "none", colorScheme: "light", boxSizing: "border-box", WebkitAppearance: "none", appearance: "none" }} /></div>
+          </div>
+          {/* Tag people */}
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginBottom: visitPeopleSelected.length > 0 ? 6 : 0 }}>
+            {visitPeopleSelected.map(p => (
+              <span key={p.id} style={{ fontSize: 10, padding: "2px 8px", borderRadius: 6, background: `${accent}12`, color: accent, fontWeight: 600, display: "flex", alignItems: "center", gap: 3 }}>
+                {p.name}<button onClick={() => setVisitPeopleSelected(s => s.filter(x => x.id !== p.id))} style={{ background: "none", border: "none", fontSize: 10, color: accent, cursor: "pointer", padding: 0, opacity: 0.5 }}>×</button>
+              </span>
+            ))}
+          </div>
+          <div style={{ display: "flex", gap: 4, marginBottom: 4 }}>
+            <input placeholder="Tag people..." value={visitPeopleSearch} onChange={e => setVisitPeopleSearch(e.target.value)} style={{ flex: 1, padding: "6px 10px", borderRadius: 6, border: "1px solid rgba(90,74,62,0.1)", background: "rgba(90,74,62,0.03)", fontSize: 11, color: "#3a2e24", outline: "none" }} />
+            <button onClick={addVisit} style={{ padding: "6px 14px", borderRadius: 6, border: "none", background: accent, color: "white", fontWeight: 700, fontSize: 10, cursor: "pointer" }}>Log</button>
+          </div>
+          {vpSearchResults.length > 0 && <div style={{ border: "1px solid rgba(90,74,62,0.08)", borderRadius: 8, overflow: "hidden", marginBottom: 8 }}>
+            {vpSearchResults.map(p => (<div key={p.id} onClick={() => { setVisitPeopleSelected(s => [...s, p]); setVisitPeopleSearch(""); }} style={{ padding: "7px 10px", fontSize: 11, color: "#3a2e24", cursor: "pointer", borderBottom: "1px solid rgba(90,74,62,0.04)", background: "rgba(90,74,62,0.02)" }}>{p.name}</div>))}
+          </div>}
+          {/* Visit History */}
+          <div style={{ fontSize: 9, fontWeight: 700, color: "#b4a494", marginBottom: 5, marginTop: 8, letterSpacing: 1 }}>VISIT HISTORY</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+            {[...visits].reverse().map((v, i) => (
+              <div key={v.id || i} style={{ padding: "8px 10px", borderRadius: 8, background: "rgba(90,74,62,0.03)", border: "1px solid rgba(90,74,62,0.06)" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                  <div style={{ flex: 1 }}>
+                    {v.note && <div style={{ fontSize: 12, color: "#3a2e24", marginBottom: 2 }}>{v.note}</div>}
+                    <div style={{ fontSize: 9, color: "#b4a494" }}>{v.date}</div>
+                    {v.people && v.people.length > 0 && <div style={{ display: "flex", flexWrap: "wrap", gap: 3, marginTop: 4 }}>
+                      {v.people.map(pid => { const person = people.find(x => x.id === pid); return person ? <span key={pid} style={{ fontSize: 9, padding: "1px 6px", borderRadius: 4, background: `${accent}10`, color: accent, fontWeight: 600 }}>{person.name}</span> : null; })}
+                    </div>}
+                  </div>
+                  <button onClick={() => deleteVisit(v)} style={{ background: "none", border: "none", fontSize: 13, color: "#c4b4a4", cursor: "pointer", padding: "0 4px" }}>×</button>
+                </div>
+              </div>
+            ))}
+            {visits.length === 0 && <div style={{ fontSize: 11, color: "#c4b4a4", textAlign: "center", padding: 8 }}>No visits logged yet</div>}
+          </div>
+          {/* Footer */}
+          <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
+            <button onClick={() => { setPlaces(p => p.filter(x => x.id !== viewingPlace.id)); setModal(null); setViewingPlace(null); }} style={{ padding: "10px 14px", borderRadius: 10, border: "1px solid rgba(232,106,106,0.3)", background: "transparent", cursor: "pointer", fontWeight: 700, fontSize: 11, color: "#e86a6a" }}>Delete</button>
+            <button onClick={() => { setModal(null); setViewingPlace(null); }} style={{ flex: 1, padding: "10px 0", borderRadius: 10, border: "1px solid rgba(90,74,62,0.1)", background: "transparent", cursor: "pointer", fontWeight: 700, fontSize: 11, color: "#8a7a6a" }}>Cancel</button>
+            <button onClick={() => { setPlaces(p => p.map(x => x.id === viewingPlace.id ? viewingPlace : x)); setModal(null); setViewingPlace(null); }} style={{ flex: 2, padding: "10px 0", borderRadius: 10, border: "none", background: accent, cursor: "pointer", fontWeight: 700, fontSize: 11, color: "white" }}>Save</button>
+          </div>
+        </Modal>);
+      })()}
     </div>
   );
 }
