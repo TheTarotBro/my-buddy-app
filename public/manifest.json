@@ -1,7 +1,7 @@
 {
-  "name": "My Buddy",
-  "short_name": "Buddy",
-  "description": "Track habits, chores, and grow your Buddy",
+  "name": "My Circle",
+  "short_name": "Circle",
+  "description": "Your personal CRM — remember everyone who matters",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#f5f0ea",
