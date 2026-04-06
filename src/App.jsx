@@ -41,13 +41,32 @@ function getZodiacDaysUntilStart(z) {
 
 const REL_LABELS = ["Spouse","Partner","Parent","Child","Sibling","Friend","Coworker","Cousin","Other"];
 const REL_REVERSE = { Spouse:"Spouse", Partner:"Partner", Parent:"Child", Child:"Parent", Sibling:"Sibling", Friend:"Friend", Coworker:"Coworker", Cousin:"Cousin", Other:"Other" };
+const CADENCES = [
+  { id: "2weeks", label: "Every 2 weeks", days: 14 },
+  { id: "monthly", label: "Monthly", days: 30 },
+  { id: "quarterly", label: "Quarterly", days: 90 },
+  { id: "annually", label: "Annually", days: 365 },
+  { id: "na", label: "N/A", days: Infinity },
+];
+function getCadenceDays(c) { return (CADENCES.find(x => x.id === c) || CADENCES[1]).days; }
+function getOverdueInfo(person, today) {
+  const cadence = person.cadence || "monthly";
+  if (cadence === "na") return null;
+  const cDays = getCadenceDays(cadence);
+  const tps = person.touchpoints || [];
+  const lastDate = tps.length > 0 ? tps[tps.length - 1].date : (person.cadenceBaseline || today);
+  const now = new Date(today + "T00:00:00"), last = new Date(lastDate + "T00:00:00");
+  const daysSince = Math.round((now - last) / 86400000);
+  const daysUntilDue = cDays - daysSince;
+  return { cadence, cDays, daysSince, daysUntilDue, ratio: daysSince / cDays, lastDate };
+}
 
 function getBdToday(ppl) { const t = new Date(), m = t.getMonth(), d = t.getDate(); return ppl.filter(b => { if (!b.date) return false; const x = new Date(b.date + "T00:00:00"); return !isNaN(x) && x.getMonth() === m && x.getDate() === d; }); }
 function daysUntil(ds) { if (!ds) return Infinity; const now = new Date(), bd = new Date(ds + "T00:00:00"); if (isNaN(bd)) return Infinity; bd.setFullYear(now.getFullYear()); const td = new Date(now.getFullYear(), now.getMonth(), now.getDate()); if (bd < td) bd.setFullYear(now.getFullYear() + 1); return Math.round((bd - td) / 86400000); }
 
 function Modal({children,onClose}){
   return(<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.6)",backdropFilter:"blur(8px)",display:"flex",alignItems:"flex-start",justifyContent:"center",zIndex:200,paddingTop:"env(safe-area-inset-top, 20px)"}} onClick={e=>{if(e.target===e.currentTarget)onClose()}}>
-    <div style={{background:"#f5f0ea",borderRadius:16,padding:"20px 18px",width:"92%",maxWidth:400,maxHeight:"85vh",overflow:"auto",animation:"sd 0.25s ease",marginTop:16,WebkitOverflowScrolling:"touch"}}>{children}</div>
+    <div style={{background:"#f5f0ea",borderRadius:16,padding:"20px 18px",width:"92%",maxWidth:400,maxHeight:"85vh",overflow:"auto",animation:"sd 0.25s ease",marginTop:16,WebkitOverflowScrolling:"touch",overflowX:"hidden"}}>{children}</div>
   </div>);
 }
 
@@ -85,15 +104,15 @@ export default function App() {
   }, [today]);
 
   const [people, setPeople] = useState(IS_PREVIEW ? [
-    { id: "1", name: "Sarah Connor", date: "1995-04-15", notes: "Loves hiking", interests: ["outdoors","sci-fi"], gifts: [], events: [], relationships: [] },
-    { id: "2", name: "John Doe", date: "1990-07-22", notes: "", interests: [], gifts: [], events: [], relationships: [] },
-    { id: "3", name: "Jane Smith", date: "", notes: "Met at conference", interests: ["design"], gifts: [], events: [], relationships: [] },
+    { id: "1", name: "Sarah Connor", date: "1995-04-15", notes: "Loves hiking", interests: ["outdoors","sci-fi"], gifts: [], events: [], relationships: [], cadence: "monthly", touchpoints: [], cadenceBaseline: "2026-04-01" },
+    { id: "2", name: "John Doe", date: "1990-07-22", notes: "", interests: [], gifts: [], events: [], relationships: [], cadence: "quarterly", touchpoints: [], cadenceBaseline: "2026-03-01" },
+    { id: "3", name: "Jane Smith", date: "", notes: "Met at conference", interests: ["design"], gifts: [], events: [], relationships: [], cadence: "2weeks", touchpoints: [{ id: "t1", type: "Text", date: "2026-03-28", note: "" }], cadenceBaseline: "2026-03-15" },
   ] : []);
   const [wishes, setWishes] = useState({});
   const [tab, setTab] = useState("people");
   const [modal, setModal] = useState(null);
   const [search, setSearch] = useState("");
-  const [nb, setNb] = useState({ name: "", date: "", notes: "" });
+  const [nb, setNb] = useState({ name: "", date: "", notes: "", cadence: "monthly" });
   const [settings, setSettings] = useState(false);
   const [bdFilter, setBdFilter] = useState("all");
   const [bdSearch, setBdSearch] = useState("");
@@ -106,6 +125,8 @@ export default function App() {
   const [newEvent, setNewEvent] = useState("");
   const [newEventDate, setNewEventDate] = useState("");
   const [newInterest, setNewInterest] = useState("");
+  const [tpType, setTpType] = useState("Text");
+  const [tpNote, setTpNote] = useState("");
   const [viewingZodiac, setViewingZodiac] = useState(null);
 
   const saveTimers = useRef({});
@@ -123,7 +144,15 @@ export default function App() {
     if (!user) { setDataLoaded(false); return; }
     (async () => {
       const [b, w] = await Promise.all([loadData(user.uid, "birthdays"), loadData(user.uid, `wishes/${today}`)]);
-      if (b) setPeople(Object.values(b));
+      if (b) {
+        const loaded = Object.values(b).map(p => ({
+          ...p,
+          cadence: p.cadence || "monthly",
+          touchpoints: p.touchpoints || [],
+          cadenceBaseline: p.cadenceBaseline || TODAY(),
+        }));
+        setPeople(loaded);
+      }
       if (w) setWishes(w);
       setDataLoaded(true);
     })();
@@ -141,10 +170,15 @@ export default function App() {
   const todayBd = getBdToday(people);
   const sortedTodayBd = [...todayBd].sort((a, b) => (wishes[a.name] ? 1 : 0) - (wishes[b.name] ? 1 : 0));
   const toggleWish = (name) => setWishes(p => ({ ...p, [name]: !p[name] }));
-  const savePerson = () => { if (!nb.name.trim()) return; setPeople(p => [...p, { ...nb, id: Date.now().toString(), interests: [], gifts: [], events: [], relationships: [] }]); setNb({ name: "", date: "", notes: "" }); setModal(null); };
-  const openPerson = (p) => { setViewingPerson(p); setEditNotes(p.notes || ""); setProfileTab("info"); setNewGift(""); setNewEvent(""); setNewEventDate(TODAY()); setNewInterest(""); setLinkSearch(""); setModal("viewPerson"); };
+  const savePerson = () => { if (!nb.name.trim()) return; setPeople(p => [...p, { ...nb, id: Date.now().toString(), interests: [], gifts: [], events: [], relationships: [], touchpoints: [], cadenceBaseline: TODAY() }]); setNb({ name: "", date: "", notes: "", cadence: "monthly" }); setModal(null); };
+  const openPerson = (p) => { setViewingPerson(p); setEditNotes(p.notes || ""); setProfileTab("info"); setNewGift(""); setNewEvent(""); setNewEventDate(TODAY()); setNewInterest(""); setLinkSearch(""); setTpType("Text"); setTpNote(""); setModal("viewPerson"); };
 
   const upcoming = people.filter(p => p.date && daysUntil(p.date) > 0 && daysUntil(p.date) < Infinity).sort((a, b) => daysUntil(a.date) - daysUntil(b.date)).slice(0, 3);
+
+  // Reconnect suggestions — sorted by overdue ratio (most overdue first)
+  const reconnectAll = people.map(p => ({ person: p, info: getOverdueInfo(p, today) })).filter(x => x.info && x.info.daysUntilDue <= 0).sort((a, b) => b.info.ratio - a.info.ratio);
+  const reconnectTop = reconnectAll.slice(0, 5);
+  const [showAllReconnect, setShowAllReconnect] = useState(false);
   const filteredPeople = people.filter(p => !search || p.name.toLowerCase().includes(search.toLowerCase())).sort((a, b) => a.name.localeCompare(b.name));
   const filteredBdays = people.filter(b => { if (bdSearch && !b.name.toLowerCase().includes(bdSearch.toLowerCase())) return false; const d = daysUntil(b.date); if (bdFilter === "week") return d <= 7; if (bdFilter === "month") return d <= 30; return true; }).sort((a, b) => daysUntil(a.date) - daysUntil(b.date));
 
@@ -175,7 +209,7 @@ export default function App() {
             </div>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <button onClick={() => { setNb({ name: "", date: "", notes: "" }); setModal("addPerson"); }} style={{ background: accent, border: "none", borderRadius: 10, width: 36, height: 36, cursor: "pointer", fontSize: 18, color: "white", display: "flex", alignItems: "center", justifyContent: "center" }}>+</button>
+            <button onClick={() => { setNb({ name: "", date: "", notes: "", cadence: "monthly" }); setModal("addPerson"); }} style={{ background: accent, border: "none", borderRadius: 10, width: 36, height: 36, cursor: "pointer", fontSize: 18, color: "white", display: "flex", alignItems: "center", justifyContent: "center" }}>+</button>
             <button onClick={() => setSettings(!settings)} style={{ background: "rgba(90,74,62,0.06)", border: "1px solid rgba(90,74,62,0.1)", borderRadius: 10, width: 36, height: 36, cursor: "pointer", fontSize: 15, color: "#8a7a6a", display: "flex", alignItems: "center", justifyContent: "center" }}>⚙</button>
           </div>
         </div>
@@ -221,6 +255,26 @@ export default function App() {
           ); })}
         </div>)}
 
+        {/* Reconnect Card */}
+        {!search && reconnectTop.length > 0 && (<div style={{ marginBottom: 16, padding: "14px 16px", borderRadius: 12, background: "rgba(90,74,62,0.03)", border: "1px solid rgba(90,74,62,0.06)" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+            <span style={{ fontSize: 10, fontWeight: 700, color: "#b4a494", letterSpacing: 1.2 }}>RECONNECT</span>
+            {reconnectAll.length > 5 && <button onClick={() => setShowAllReconnect(true)} style={{ fontSize: 10, fontWeight: 700, color: accent, background: "none", border: "none", cursor: "pointer" }}>View all ({reconnectAll.length}) →</button>}
+          </div>
+          {reconnectTop.map(({ person: p, info }) => { const cadLabel = CADENCES.find(c => c.id === info.cadence)?.label || info.cadence; const overdueDays = Math.abs(info.daysUntilDue); return (
+            <div key={p.id} onClick={() => openPerson(p)} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 0", cursor: "pointer", borderTop: "1px solid rgba(90,74,62,0.04)" }}>
+              <div style={{ width: 32, height: 32, borderRadius: 8, background: overdueDays > getCadenceDays(info.cadence) ? "rgba(232,106,106,0.1)" : "rgba(232,168,76,0.1)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <span style={{ fontSize: 13, color: overdueDays > getCadenceDays(info.cadence) ? "#e86a6a" : "#e8a84c" }}>↻</span>
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontWeight: 600, fontSize: 13, color: "#3a2e24" }}>{p.name}</div>
+                <div style={{ fontSize: 10, color: "#b4a494" }}>{cadLabel} · last {info.daysSince}d ago</div>
+              </div>
+              <span style={{ fontSize: 10, fontWeight: 600, color: overdueDays > getCadenceDays(info.cadence) ? "#e86a6a" : "#e8a84c", flexShrink: 0 }}>{overdueDays}d overdue</span>
+            </div>
+          ); })}
+        </div>)}
+
         {!search && <div style={{ marginBottom: 8 }}>{sL("ALL PEOPLE")}</div>}
         {search && filteredPeople.length > 0 && <div style={{ marginBottom: 8 }}>{sL(`${filteredPeople.length} RESULT${filteredPeople.length !== 1 ? "S" : ""}`)}</div>}
         <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
@@ -244,7 +298,7 @@ export default function App() {
         </div>
         {filteredPeople.length === 0 && (<div style={{ textAlign: "center", padding: 32, color: "#c4b4a4", fontSize: 12 }}>
           {search ? "No people match your search" : "No people added yet"}
-          <div style={{ marginTop: 12 }}><button onClick={() => { setNb({ name: "", date: "", notes: "" }); setModal("addPerson"); }} style={{ fontSize: 12, fontWeight: 700, border: "none", borderRadius: 8, padding: "8px 18px", cursor: "pointer", background: accent, color: "white" }}>+ Add someone</button></div>
+          <div style={{ marginTop: 12 }}><button onClick={() => { setNb({ name: "", date: "", notes: "", cadence: "monthly" }); setModal("addPerson"); }} style={{ fontSize: 12, fontWeight: 700, border: "none", borderRadius: 8, padding: "8px 18px", cursor: "pointer", background: accent, color: "white" }}>+ Add someone</button></div>
         </div>)}
       </div>)}
 
@@ -262,7 +316,7 @@ export default function App() {
         return (<div style={{ padding: "0 20px 80px", animation: "fi 0.25s ease" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12, marginTop: 8 }}>
             <span style={{ fontWeight: 700, fontSize: 14, color: "#3a2e24" }}>Birthdays</span>
-            <button onClick={() => { setNb({ name: "", date: "", notes: "" }); setModal("addPerson"); }} style={{ fontWeight: 700, fontSize: 11, border: "none", borderRadius: 8, padding: "6px 14px", cursor: "pointer", background: "#e86a8a", color: "white" }}>+ Add</button>
+            <button onClick={() => { setNb({ name: "", date: "", notes: "", cadence: "monthly" }); setModal("addPerson"); }} style={{ fontWeight: 700, fontSize: 11, border: "none", borderRadius: 8, padding: "6px 14px", cursor: "pointer", background: "#e86a8a", color: "white" }}>+ Add</button>
           </div>
           <input placeholder="Search names..." value={bdSearch} onChange={e => setBdSearch(e.target.value)} style={{ width: "100%", padding: "8px 12px", borderRadius: 8, border: "1px solid rgba(90,74,62,0.1)", background: "rgba(90,74,62,0.04)", fontSize: 12.5, color: "#3a2e24", marginBottom: 10, outline: "none" }} />
           <div style={{ display: "flex", gap: 4, marginBottom: 14 }}>
@@ -309,8 +363,12 @@ export default function App() {
       {modal === "addPerson" && (<Modal onClose={() => setModal(null)}>
         <div style={{ fontFamily: "'Space Grotesk'", fontSize: 16, fontWeight: 700, color: "#3a2e24", marginBottom: 16 }}>Add Person</div>
         <input placeholder="Name..." value={nb.name} onChange={e => setNb(p => ({ ...p, name: e.target.value }))} autoFocus style={{ width: "100%", padding: "10px 14px", borderRadius: 8, border: "1px solid rgba(90,74,62,0.12)", background: "rgba(90,74,62,0.04)", fontSize: 13, fontWeight: 600, color: "#3a2e24", marginBottom: 10, outline: "none" }} />
-        <input type="date" value={nb.date} onChange={e => setNb(p => ({ ...p, date: e.target.value }))} style={{ width: "100%", padding: "10px 14px", borderRadius: 8, border: "1px solid rgba(90,74,62,0.12)", background: "rgba(90,74,62,0.04)", fontSize: 13, fontWeight: 600, color: "#3a2e24", marginBottom: 2, outline: "none", colorScheme: "light" }} />
+        <input type="date" value={nb.date} onChange={e => setNb(p => ({ ...p, date: e.target.value }))} style={{ width: "100%", maxWidth: "100%", minWidth: 0, padding: "10px 14px", borderRadius: 8, border: "1px solid rgba(90,74,62,0.12)", background: "rgba(90,74,62,0.04)", fontSize: 13, fontWeight: 600, color: "#3a2e24", marginBottom: 2, outline: "none", colorScheme: "light", boxSizing: "border-box" }} />
         <div style={{ fontSize: 9, color: "#b4a494", marginBottom: 8, paddingLeft: 2 }}>Birthday — optional, leave blank if unknown</div>
+        <div style={{ fontSize: 9, fontWeight: 700, color: "#b4a494", marginBottom: 5, letterSpacing: 1 }}>KEEP IN TOUCH</div>
+        <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginBottom: 12 }}>
+          {CADENCES.map(c => (<button key={c.id} onClick={() => setNb(p => ({ ...p, cadence: c.id }))} style={{ padding: "5px 10px", borderRadius: 6, border: `1px solid ${nb.cadence === c.id ? accent + "44" : "rgba(90,74,62,0.08)"}`, cursor: "pointer", fontWeight: 600, fontSize: 10, background: nb.cadence === c.id ? `${accent}12` : "transparent", color: nb.cadence === c.id ? accent : "#8a7a6a" }}>{c.label}</button>))}
+        </div>
         <textarea placeholder="Notes..." value={nb.notes} onChange={e => setNb(p => ({ ...p, notes: e.target.value }))} rows={3} style={{ width: "100%", padding: "10px 14px", borderRadius: 8, border: "1px solid rgba(90,74,62,0.12)", background: "rgba(90,74,62,0.04)", fontSize: 12.5, color: "#3a2e24", marginBottom: 16, outline: "none", lineHeight: 1.5 }} />
         <div style={{ display: "flex", gap: 8 }}><button onClick={() => setModal(null)} style={{ flex: 1, padding: "11px 0", borderRadius: 10, border: "1px solid rgba(90,74,62,0.1)", background: "transparent", cursor: "pointer", fontWeight: 700, fontSize: 12, color: "#8a7a6a" }}>Cancel</button><button onClick={savePerson} style={{ flex: 2, padding: "11px 0", borderRadius: 10, border: "none", background: accent, cursor: "pointer", fontWeight: 700, fontSize: 12, color: "white" }}>Save</button></div>
       </Modal>)}
@@ -332,8 +390,8 @@ export default function App() {
               <div style={{ fontSize: 11, color: "#8a7a6a" }}>{z.sign}{hasDate ? ` · ${months[bd.getMonth()]} ${bd.getDate()} · ${daysUntil(viewingPerson.date) === 0 ? "Today!" : `${daysUntil(viewingPerson.date)}d away`}` : ""}</div>
             </div>
           </div>
-          <input type="date" value={viewingPerson.date || ""} onChange={e => upd({ date: e.target.value })} style={{ width: "100%", padding: "6px 10px", borderRadius: 6, border: "1px solid rgba(90,74,62,0.1)", background: "rgba(90,74,62,0.03)", fontSize: 11, color: "#6b5c4d", marginBottom: 10, outline: "none", colorScheme: "light" }} />
-          <div style={{ display: "flex", gap: 4, marginBottom: 12 }}>{pTab("info", "Info")}{pTab("gifts", "Gifts")}{pTab("events", "Events")}{pTab("notes", "Notes")}</div>
+          <input type="date" value={viewingPerson.date || ""} onChange={e => upd({ date: e.target.value })} style={{ width: "100%", maxWidth: "100%", minWidth: 0, padding: "6px 10px", borderRadius: 6, border: "1px solid rgba(90,74,62,0.1)", background: "rgba(90,74,62,0.03)", fontSize: 11, color: "#6b5c4d", marginBottom: 10, outline: "none", colorScheme: "light", boxSizing: "border-box" }} />
+          <div style={{ display: "flex", gap: 4, marginBottom: 12 }}>{pTab("info", "Info")}{pTab("touch", "Touch")}{pTab("gifts", "Gifts")}{pTab("events", "Events")}{pTab("notes", "Notes")}</div>
 
           {profileTab === "info" && <div>
             {sH("RELATIONSHIPS")}
@@ -344,6 +402,45 @@ export default function App() {
             <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginBottom: 6 }}>{interests.map((int, i) => (<span key={i} style={{ fontSize: 11, padding: "3px 8px", borderRadius: 6, background: `${z.color}10`, color: z.color, fontWeight: 600, display: "flex", alignItems: "center", gap: 4 }}>{int}<button onClick={() => upd({ interests: interests.filter((_, j) => j !== i) })} style={{ background: "none", border: "none", fontSize: 11, color: z.color, cursor: "pointer", padding: 0, opacity: 0.5 }}>×</button></span>))}</div>
             <div style={{ display: "flex", gap: 4 }}><input placeholder="Add interest..." value={newInterest} onChange={e => setNewInterest(e.target.value)} onKeyDown={e => { if (e.key === "Enter" && newInterest.trim()) { upd({ interests: [...interests, newInterest.trim()] }); setNewInterest(""); } }} style={{ flex: 1, padding: "6px 10px", borderRadius: 6, border: "1px solid rgba(90,74,62,0.1)", background: "rgba(90,74,62,0.03)", fontSize: 11, color: "#3a2e24", outline: "none" }} /><button onClick={() => { if (newInterest.trim()) { upd({ interests: [...interests, newInterest.trim()] }); setNewInterest(""); } }} style={{ padding: "6px 12px", borderRadius: 6, border: "none", background: z.color, color: "white", fontWeight: 700, fontSize: 10, cursor: "pointer" }}>+</button></div>
           </div>}
+
+          {/* TAB: Touch */}
+          {profileTab === "touch" && (() => {
+            const tps = viewingPerson.touchpoints || [];
+            const cadence = viewingPerson.cadence || "monthly";
+            const info = getOverdueInfo(viewingPerson, today);
+            const TP_TYPES = ["Text","Call","Coffee","Postcard","Gift","Other"];
+            return <div>
+              {sH("CADENCE")}
+              <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginBottom: 12 }}>
+                {CADENCES.map(c => (<button key={c.id} onClick={() => upd({ cadence: c.id })} style={{ padding: "5px 10px", borderRadius: 6, border: `1px solid ${cadence === c.id ? z.color + "44" : "rgba(90,74,62,0.08)"}`, cursor: "pointer", fontWeight: 600, fontSize: 10, background: cadence === c.id ? `${z.color}12` : "transparent", color: cadence === c.id ? z.color : "#8a7a6a" }}>{c.label}</button>))}
+              </div>
+              {info && <div style={{ fontSize: 11, color: info.daysUntilDue <= 0 ? "#e86a6a" : "#8a7a6a", marginBottom: 12, padding: "8px 12px", borderRadius: 8, background: info.daysUntilDue <= 0 ? "rgba(232,106,106,0.06)" : "rgba(90,74,62,0.03)", border: `1px solid ${info.daysUntilDue <= 0 ? "rgba(232,106,106,0.15)" : "rgba(90,74,62,0.06)"}` }}>
+                {info.daysUntilDue <= 0 ? `${Math.abs(info.daysUntilDue)}d overdue` : `Due in ${info.daysUntilDue}d`} · Last reached out {info.daysSince}d ago
+              </div>}
+              {sH("LOG TOUCHPOINT")}
+              <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginBottom: 6 }}>
+                {TP_TYPES.map(t => (<button key={t} onClick={() => setTpType(t)} style={{ padding: "5px 10px", borderRadius: 6, border: `1px solid ${tpType === t ? z.color + "44" : "rgba(90,74,62,0.08)"}`, cursor: "pointer", fontWeight: 600, fontSize: 10, background: tpType === t ? `${z.color}12` : "transparent", color: tpType === t ? z.color : "#8a7a6a" }}>{t}</button>))}
+              </div>
+              <div style={{ display: "flex", gap: 4, marginBottom: 12 }}>
+                <input placeholder="Note (optional)..." value={tpNote} onChange={e => setTpNote(e.target.value)} onKeyDown={e => { if (e.key === "Enter") { upd({ touchpoints: [...tps, { id: Date.now().toString(), type: tpType, date: TODAY(), note: tpNote.trim() }] }); setTpNote(""); } }} style={{ flex: 1, padding: "6px 10px", borderRadius: 6, border: "1px solid rgba(90,74,62,0.1)", background: "rgba(90,74,62,0.03)", fontSize: 11, color: "#3a2e24", outline: "none" }} />
+                <button onClick={() => { upd({ touchpoints: [...tps, { id: Date.now().toString(), type: tpType, date: TODAY(), note: tpNote.trim() }] }); setTpNote(""); }} style={{ padding: "6px 14px", borderRadius: 6, border: "none", background: z.color, color: "white", fontWeight: 700, fontSize: 10, cursor: "pointer" }}>Log</button>
+              </div>
+              {sH("HISTORY")}
+              <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                {[...tps].reverse().map((tp, i) => (
+                  <div key={tp.id || i} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 10px", borderRadius: 8, background: "rgba(90,74,62,0.03)", border: "1px solid rgba(90,74,62,0.06)" }}>
+                    <span style={{ fontSize: 10, fontWeight: 700, color: z.color, background: `${z.color}12`, padding: "2px 6px", borderRadius: 4 }}>{tp.type}</span>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      {tp.note && <div style={{ fontSize: 11, color: "#3a2e24" }}>{tp.note}</div>}
+                      <div style={{ fontSize: 9, color: "#b4a494" }}>{tp.date}</div>
+                    </div>
+                    <button onClick={() => upd({ touchpoints: tps.filter(x => (x.id || x.date + x.type) !== (tp.id || tp.date + tp.type)) })} style={{ background: "none", border: "none", fontSize: 13, color: "#c4b4a4", cursor: "pointer", padding: "0 4px" }}>×</button>
+                  </div>
+                ))}
+                {tps.length === 0 && <div style={{ fontSize: 11, color: "#c4b4a4", textAlign: "center", padding: 8 }}>No touchpoints logged yet</div>}
+              </div>
+            </div>;
+          })()}
 
           {profileTab === "gifts" && <div>
             {sH("GIFT IDEAS")}
@@ -369,6 +466,25 @@ export default function App() {
           </div>
         </Modal>);
       })()}
+
+      {showAllReconnect && (<Modal onClose={() => setShowAllReconnect(false)}>
+        <div style={{ fontFamily: "'Space Grotesk'", fontSize: 16, fontWeight: 700, color: "#3a2e24", marginBottom: 14 }}>Reconnect</div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+          {reconnectAll.map(({ person: p, info }) => { const overdueDays = Math.abs(info.daysUntilDue); const cadLabel = CADENCES.find(c => c.id === info.cadence)?.label || info.cadence; return (
+            <div key={p.id} onClick={() => { setShowAllReconnect(false); openPerson(p); }} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 12px", borderRadius: 10, background: "rgba(90,74,62,0.03)", border: "1px solid rgba(90,74,62,0.06)", cursor: "pointer" }}>
+              <div style={{ width: 30, height: 30, borderRadius: 7, background: overdueDays > getCadenceDays(info.cadence) ? "rgba(232,106,106,0.1)" : "rgba(232,168,76,0.1)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <span style={{ fontSize: 12, color: overdueDays > getCadenceDays(info.cadence) ? "#e86a6a" : "#e8a84c" }}>↻</span>
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontWeight: 600, fontSize: 13, color: "#3a2e24" }}>{p.name}</div>
+                <div style={{ fontSize: 10, color: "#b4a494" }}>{cadLabel} · last {info.daysSince}d ago</div>
+              </div>
+              <span style={{ fontSize: 10, fontWeight: 600, color: overdueDays > getCadenceDays(info.cadence) ? "#e86a6a" : "#e8a84c" }}>{overdueDays}d</span>
+            </div>
+          ); })}
+        </div>
+        <button onClick={() => setShowAllReconnect(false)} style={{ width: "100%", padding: "11px 0", borderRadius: 10, border: "none", background: accent, cursor: "pointer", fontWeight: 700, fontSize: 12, color: "white", marginTop: 14 }}>Close</button>
+      </Modal>)}
 
       {viewingZodiac && (<Modal onClose={() => setViewingZodiac(null)}>
         <div style={{ textAlign: "center", marginBottom: 16 }}>
