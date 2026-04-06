@@ -128,6 +128,7 @@ export default function App() {
   const [tpType, setTpType] = useState("Text");
   const [tpNote, setTpNote] = useState("");
   const [viewingZodiac, setViewingZodiac] = useState(null);
+  const [showAllReconnect, setShowAllReconnect] = useState(false);
 
   const saveTimers = useRef({});
   const save = useCallback((path, data, immediate) => {
@@ -178,7 +179,6 @@ export default function App() {
   // Reconnect suggestions — sorted by overdue ratio (most overdue first)
   const reconnectAll = people.map(p => ({ person: p, info: getOverdueInfo(p, today) })).filter(x => x.info && x.info.daysUntilDue <= 0).sort((a, b) => b.info.ratio - a.info.ratio);
   const reconnectTop = reconnectAll.slice(0, 5);
-  const [showAllReconnect, setShowAllReconnect] = useState(false);
   const filteredPeople = people.filter(p => !search || p.name.toLowerCase().includes(search.toLowerCase())).sort((a, b) => a.name.localeCompare(b.name));
   const filteredBdays = people.filter(b => { if (bdSearch && !b.name.toLowerCase().includes(bdSearch.toLowerCase())) return false; const d = daysUntil(b.date); if (bdFilter === "week") return d <= 7; if (bdFilter === "month") return d <= 30; return true; }).sort((a, b) => daysUntil(a.date) - daysUntil(b.date));
 
