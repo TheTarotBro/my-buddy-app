@@ -257,9 +257,22 @@ export default function App() {
       </div>
 
       {settings && (<div style={{ margin: "4px 20px 8px", padding: 14, background: "rgba(90,74,62,0.03)", borderRadius: 12, border: "1px solid rgba(90,74,62,0.08)", animation: "fi 0.2s ease" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
           <span style={{ fontSize: 11, color: "#8a7a6a" }}>Signed in as {user.displayName || user.email}</span>
           <button onClick={signOutUser} style={{ fontSize: 10, fontWeight: 700, border: "1px solid rgba(232,106,106,0.3)", borderRadius: 6, padding: "4px 10px", cursor: "pointer", background: "transparent", color: "#e86a6a" }}>Sign Out</button>
+        </div>
+        <div style={{ paddingTop: 10, borderTop: "1px solid rgba(90,74,62,0.08)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div>
+            <div style={{ fontSize: 11, fontWeight: 600, color: "#3a2e24" }}>Export Data</div>
+            <div style={{ fontSize: 9, color: "#b4a494" }}>{people.length} people · {places.length} places</div>
+          </div>
+          <button onClick={() => {
+            const data = { exportDate: TODAY(), version: "2.2", people, places, placeCategories };
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a"); a.href = url; a.download = `my-circle-backup-${TODAY()}.json`; a.click();
+            URL.revokeObjectURL(url);
+          }} style={{ fontSize: 10, fontWeight: 700, border: `1px solid ${accent}44`, borderRadius: 6, padding: "6px 12px", cursor: "pointer", background: `${accent}12`, color: accent }}>Download</button>
         </div>
       </div>)}
 
