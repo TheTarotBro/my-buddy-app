@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { signInGoogle, signOutUser, onAuthChange, saveData, loadData } from "./firebase.js";
 
-const TODAY = () => new Date().toISOString().slice(0, 10);
+const TODAY = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; };
 const DIFF_PTS = { Easy: 10, Medium: 25, Hard: 50 };
 const CORE_BONUS = 10;
 const LVL_XP = [0, 500, 1250, 2250, 3750, 6000];
@@ -94,6 +94,9 @@ function getZodiacDaysUntilStart(z) {
   if (target < now) target = new Date(year + 1, sm - 1, sd);
   return Math.round((target - now) / 86400000);
 }
+
+const REL_LABELS = ["Spouse","Partner","Parent","Child","Sibling","Friend","Coworker","Cousin","Other"];
+const REL_REVERSE = { Spouse:"Spouse", Partner:"Partner", Parent:"Child", Child:"Parent", Sibling:"Sibling", Friend:"Friend", Coworker:"Coworker", Cousin:"Cousin", Other:"Other" };
 
 function isDueToday(ch, td) {
   if (ch.type === "one-off") return !ch.completedDate;
@@ -595,6 +598,13 @@ export default function App() {
   const [viewingTask, setViewingTask] = useState(null);
   const [editTask, setEditTask] = useState(null);
   const [viewingZodiac, setViewingZodiac] = useState(null);
+  const [profileTab, setProfileTab] = useState("info");
+  const [linkSearch, setLinkSearch] = useState("");
+  const [linkLabel, setLinkLabel] = useState("Friend");
+  const [newGift, setNewGift] = useState("");
+  const [newEvent, setNewEvent] = useState("");
+  const [newEventDate, setNewEventDate] = useState("");
+  const [newInterest, setNewInterest] = useState("");
 
   // Save to Firebase — immediate for critical data, debounced for frequent updates
   const saveTimers = useRef({});
@@ -1006,7 +1016,7 @@ export default function App() {
                       const bd = new Date(b.date + "T00:00:00"), d = daysUntil(b.date), isTd = d === 0;
                       const isPassed = sec.sublabel === "passed";
                       return (
-                        <div key={b.id} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 12px",borderRadius:10,background:isTd?`${accent}08`:"rgba(90,74,62,0.03)",border:`1px solid ${isTd?accent+"20":"rgba(90,74,62,0.06)"}`,cursor:"pointer",opacity:isPassed?0.5:1}} onClick={()=>{setViewingBd(b);setEditNotes(b.notes||"");setModal("viewBd")}}>
+                        <div key={b.id} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 12px",borderRadius:10,background:isTd?`${accent}08`:"rgba(90,74,62,0.03)",border:`1px solid ${isTd?accent+"20":"rgba(90,74,62,0.06)"}`,cursor:"pointer",opacity:isPassed?0.5:1}} onClick={()=>{setViewingBd(b);setEditNotes(b.notes||"");setProfileTab("info");setNewGift("");setNewEvent("");setNewEventDate(TODAY());setNewInterest("");setLinkSearch("");setModal("viewBd")}}>
                           <div style={{width:30,height:30,borderRadius:7,background:isTd?`${accent}20`:`${z.color}12`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
                             <span style={{fontSize:11,color:z.color,fontWeight:700}}>{z.symbol}</span>
                           </div>
@@ -1036,7 +1046,143 @@ export default function App() {
 
       {modal === "birthday" && (<Modal onClose={() => setModal(null)}><div style={{fontFamily:"'Space Grotesk'",fontSize:16,fontWeight:700,color:"#3a2e24",marginBottom:16}}>Add Birthday</div><input placeholder="Name..." value={nb.name} onChange={e=>setNb(p=>({...p,name:e.target.value}))} autoFocus style={{width:"100%",padding:"10px 14px",borderRadius:8,border:"1px solid rgba(90,74,62,0.12)",background:"rgba(90,74,62,0.04)",fontSize:13,fontWeight:600,color:"#3a2e24",marginBottom:10,outline:"none"}}/><input type="date" value={nb.date} onChange={e=>setNb(p=>({...p,date:e.target.value}))} style={{width:"100%",padding:"10px 14px",borderRadius:8,border:"1px solid rgba(90,74,62,0.12)",background:"rgba(90,74,62,0.04)",fontSize:13,fontWeight:600,color:"#3a2e24",marginBottom:10,outline:"none",colorScheme:"light"}}/><textarea placeholder="Notes (gift ideas, interests...)..." value={nb.notes} onChange={e=>setNb(p=>({...p,notes:e.target.value}))} rows={3} style={{width:"100%",padding:"10px 14px",borderRadius:8,border:"1px solid rgba(90,74,62,0.12)",background:"rgba(90,74,62,0.04)",fontSize:12.5,color:"#3a2e24",marginBottom:16,outline:"none",lineHeight:1.5}}/><div style={{display:"flex",gap:8}}><button onClick={()=>setModal(null)} style={{flex:1,padding:"11px 0",borderRadius:10,border:"1px solid rgba(90,74,62,0.1)",background:"transparent",cursor:"pointer",fontWeight:700,fontSize:12,color:"#8a7a6a"}}>Cancel</button><button onClick={saveBd} style={{flex:2,padding:"11px 0",borderRadius:10,border:"none",background:"#e86a8a",cursor:"pointer",fontWeight:700,fontSize:12,color:"#3a2e24"}}>Save</button></div></Modal>)}
 
-      {modal === "viewBd" && viewingBd && (<Modal onClose={() => {setModal(null);setViewingBd(null)}}><div style={{fontFamily:"'Space Grotesk'",fontSize:16,fontWeight:700,color:"#3a2e24",marginBottom:16}}>Edit Birthday</div><div style={{fontSize:10,fontWeight:700,color:"#b4a494",marginBottom:4,letterSpacing:1}}>NAME</div><input value={viewingBd.name} onChange={e=>{const n=e.target.value;setViewingBd(p=>({...p,name:n}))}} style={{width:"100%",padding:"10px 14px",borderRadius:8,border:"1px solid rgba(90,74,62,0.12)",background:"rgba(90,74,62,0.04)",fontSize:13,fontWeight:600,color:"#3a2e24",marginBottom:12,outline:"none"}}/><div style={{fontSize:10,fontWeight:700,color:"#b4a494",marginBottom:4,letterSpacing:1}}>DATE</div><input type="date" value={viewingBd.date} onChange={e=>{const d=e.target.value;setViewingBd(p=>({...p,date:d}))}} style={{width:"100%",padding:"10px 14px",borderRadius:8,border:"1px solid rgba(90,74,62,0.12)",background:"rgba(90,74,62,0.04)",fontSize:13,fontWeight:600,color:"#3a2e24",marginBottom:12,outline:"none",colorScheme:"light"}}/><div style={{fontSize:10,fontWeight:700,color:"#b4a494",marginBottom:4,letterSpacing:1}}>NOTES</div><textarea value={editNotes} onChange={e=>setEditNotes(e.target.value)} rows={4} placeholder="Gift ideas, relationship notes..." style={{width:"100%",padding:"10px 14px",borderRadius:8,border:"1px solid rgba(90,74,62,0.12)",background:"rgba(90,74,62,0.04)",fontSize:12.5,color:"#3a2e24",outline:"none",lineHeight:1.6,marginBottom:14}}/><div style={{display:"flex",gap:8}}><button onClick={()=>{setBdays(p=>p.filter(x=>x.id!==viewingBd.id));setModal(null);setViewingBd(null)}} style={{padding:"11px 14px",borderRadius:10,border:"1px solid rgba(232,106,106,0.3)",background:"transparent",cursor:"pointer",fontWeight:700,fontSize:12,color:"#e86a6a"}}>Delete</button><button onClick={()=>{setModal(null);setViewingBd(null)}} style={{flex:1,padding:"11px 0",borderRadius:10,border:"1px solid rgba(90,74,62,0.1)",background:"transparent",cursor:"pointer",fontWeight:700,fontSize:12,color:"#8a7a6a"}}>Cancel</button><button onClick={()=>{setBdays(p=>p.map(b=>b.id===viewingBd.id?{...b,name:viewingBd.name,date:viewingBd.date,notes:editNotes}:b));setModal(null);setViewingBd(null)}} style={{flex:2,padding:"11px 0",borderRadius:10,border:"none",background:accent,cursor:"pointer",fontWeight:700,fontSize:12,color:"white"}}>Save</button></div></Modal>)}
+      {modal === "viewBd" && viewingBd && (()=>{
+        const z = getZodiacSign(viewingBd.date);
+        const bd = new Date(viewingBd.date+"T00:00:00");
+        const gifts = viewingBd.gifts || [];
+        const events = viewingBd.events || [];
+        const interests = viewingBd.interests || [];
+        const rels = viewingBd.relationships || [];
+        const upd = (changes) => setViewingBd(p=>({...p,...changes}));
+        const pTab = (id,l) => <button key={id} onClick={()=>setProfileTab(id)} style={{flex:1,padding:"7px 0",borderRadius:7,border:profileTab===id?`1px solid ${z.color}44`:"1px solid rgba(90,74,62,0.08)",cursor:"pointer",fontWeight:700,fontSize:10,background:profileTab===id?`${z.color}12`:"transparent",color:profileTab===id?z.color:"#8a7a6a"}}>{l}</button>;
+        const sH = (t) => <div style={{fontSize:9,fontWeight:700,color:"#b4a494",marginBottom:5,marginTop:10,letterSpacing:1}}>{t}</div>;
+        const searchResults = linkSearch.length > 0 ? bdays.filter(b => b.id !== viewingBd.id && b.name.toLowerCase().includes(linkSearch.toLowerCase()) && !rels.find(r=>r.personId===b.id)) : [];
+        return (<Modal onClose={()=>{
+          // Save on close
+          setBdays(p=>p.map(b=>b.id===viewingBd.id?{...viewingBd,notes:editNotes}:b));
+          setModal(null);setViewingBd(null);setProfileTab("info");setLinkSearch("");
+        }}>
+          {/* Header */}
+          <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:12}}>
+            <div style={{width:44,height:44,borderRadius:12,background:`${z.color}15`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+              <span style={{fontSize:22,color:z.color}}>{z.symbol}</span>
+            </div>
+            <div style={{flex:1}}>
+              <input value={viewingBd.name} onChange={e=>upd({name:e.target.value})} style={{width:"100%",fontSize:16,fontWeight:700,color:"#3a2e24",border:"none",background:"transparent",outline:"none",padding:0,fontFamily:"'Space Grotesk', sans-serif"}}/>
+              <div style={{fontSize:11,color:"#8a7a6a"}}>{z.sign} · {months[bd.getMonth()]} {bd.getDate()} · {daysUntil(viewingBd.date)===0?"Today!":`${daysUntil(viewingBd.date)}d away`}</div>
+            </div>
+          </div>
+          <input type="date" value={viewingBd.date} onChange={e=>upd({date:e.target.value})} style={{width:"100%",padding:"6px 10px",borderRadius:6,border:"1px solid rgba(90,74,62,0.1)",background:"rgba(90,74,62,0.03)",fontSize:11,color:"#6b5c4d",marginBottom:10,outline:"none",colorScheme:"light"}}/>
+          {/* Tabs */}
+          <div style={{display:"flex",gap:4,marginBottom:12}}>{pTab("info","Info")}{pTab("gifts","Gifts")}{pTab("events","Events")}{pTab("notes","Notes")}</div>
+
+          {/* TAB: Info — Relationships + Interests */}
+          {profileTab==="info"&&<div>
+            {sH("RELATIONSHIPS")}
+            {rels.length>0&&<div style={{display:"flex",flexDirection:"column",gap:4,marginBottom:8}}>
+              {rels.map((r,i)=>{
+                const linked = bdays.find(b=>b.id===r.personId);
+                return (<div key={i} style={{display:"flex",alignItems:"center",gap:8,padding:"6px 10px",borderRadius:8,background:"rgba(90,74,62,0.03)",border:"1px solid rgba(90,74,62,0.06)"}}>
+                  <span style={{fontSize:10,fontWeight:700,color:z.color,background:`${z.color}12`,padding:"2px 6px",borderRadius:4}}>{r.label}</span>
+                  <span style={{flex:1,fontSize:12,fontWeight:600,color:"#3a2e24",cursor:linked?"pointer":"default"}} onClick={()=>{
+                    if(linked){upd({gifts,events,interests,rels,notes:editNotes});setBdays(p=>p.map(b=>b.id===viewingBd.id?{...viewingBd,notes:editNotes}:b));setViewingBd(linked);setEditNotes(linked.notes||"");setProfileTab("info");setLinkSearch("");}
+                  }}>{linked?linked.name:"(removed)"}</span>
+                  <button onClick={()=>{
+                    const newRels=rels.filter((_,j)=>j!==i); upd({relationships:newRels});
+                    if(linked){setBdays(p=>p.map(b=>b.id===r.personId?{...b,relationships:(b.relationships||[]).filter(lr=>lr.personId!==viewingBd.id)}:b));}
+                  }} style={{background:"none",border:"none",fontSize:13,color:"#c4b4a4",cursor:"pointer",padding:"0 4px"}}>×</button>
+                </div>);
+              })}
+            </div>}
+            <div style={{display:"flex",gap:4,marginBottom:4}}>
+              <input placeholder="Search to link..." value={linkSearch} onChange={e=>setLinkSearch(e.target.value)} style={{flex:1,padding:"6px 10px",borderRadius:6,border:"1px solid rgba(90,74,62,0.1)",background:"rgba(90,74,62,0.03)",fontSize:11,color:"#3a2e24",outline:"none"}}/>
+              <select value={linkLabel} onChange={e=>setLinkLabel(e.target.value)} style={{padding:"6px 8px",borderRadius:6,border:"1px solid rgba(90,74,62,0.1)",background:"rgba(90,74,62,0.03)",fontSize:10,color:"#3a2e24",outline:"none"}}>
+                {REL_LABELS.map(l=><option key={l} value={l}>{l}</option>)}
+              </select>
+            </div>
+            {searchResults.length>0&&<div style={{border:"1px solid rgba(90,74,62,0.08)",borderRadius:8,overflow:"hidden",marginBottom:8}}>
+              {searchResults.slice(0,5).map(b=>(
+                <div key={b.id} onClick={()=>{
+                  const newRel={personId:b.id,label:linkLabel};
+                  const reverseRel={personId:viewingBd.id,label:REL_REVERSE[linkLabel]||linkLabel};
+                  upd({relationships:[...rels,newRel]});
+                  setBdays(p=>p.map(x=>x.id===b.id?{...x,relationships:[...(x.relationships||[]),reverseRel]}:x));
+                  setLinkSearch("");
+                }} style={{padding:"8px 10px",fontSize:12,color:"#3a2e24",cursor:"pointer",borderBottom:"1px solid rgba(90,74,62,0.04)",background:"rgba(90,74,62,0.02)"}}>{b.name} <span style={{fontSize:10,color:"#b4a494"}}>· {getZodiacSign(b.date).symbol}</span></div>
+              ))}
+            </div>}
+            {sH("INTERESTS")}
+            <div style={{display:"flex",flexWrap:"wrap",gap:4,marginBottom:6}}>
+              {interests.map((int,i)=>(
+                <span key={i} style={{fontSize:11,padding:"3px 8px",borderRadius:6,background:`${z.color}10`,color:z.color,fontWeight:600,display:"flex",alignItems:"center",gap:4}}>
+                  {int}<button onClick={()=>upd({interests:interests.filter((_,j)=>j!==i)})} style={{background:"none",border:"none",fontSize:11,color:z.color,cursor:"pointer",padding:0,opacity:0.5}}>×</button>
+                </span>
+              ))}
+            </div>
+            <div style={{display:"flex",gap:4}}>
+              <input placeholder="Add interest..." value={newInterest} onChange={e=>setNewInterest(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"&&newInterest.trim()){upd({interests:[...interests,newInterest.trim()]});setNewInterest("");}}} style={{flex:1,padding:"6px 10px",borderRadius:6,border:"1px solid rgba(90,74,62,0.1)",background:"rgba(90,74,62,0.03)",fontSize:11,color:"#3a2e24",outline:"none"}}/>
+              <button onClick={()=>{if(newInterest.trim()){upd({interests:[...interests,newInterest.trim()]});setNewInterest("");}}} style={{padding:"6px 12px",borderRadius:6,border:"none",background:z.color,color:"white",fontWeight:700,fontSize:10,cursor:"pointer"}}>+</button>
+            </div>
+          </div>}
+
+          {/* TAB: Gifts */}
+          {profileTab==="gifts"&&<div>
+            {sH("GIFT IDEAS")}
+            <div style={{display:"flex",flexDirection:"column",gap:4,marginBottom:8}}>
+              {[...gifts].sort((a,b)=>(a.given?1:0)-(b.given?1:0)).map((g,i)=>(
+                <div key={g.id||i} style={{display:"flex",alignItems:"center",gap:8,padding:"6px 10px",borderRadius:8,background:"rgba(90,74,62,0.03)",border:"1px solid rgba(90,74,62,0.06)",opacity:g.given?0.5:1}}>
+                  <div onClick={()=>{const ng=[...gifts];const fi=gifts.findIndex(x=>(x.id||x.text)===((g.id||g.text)));ng[fi]={...ng[fi],given:!ng[fi].given};upd({gifts:ng});}} style={{width:18,height:18,borderRadius:4,border:g.given?`2px solid ${z.color}`:"2px solid rgba(90,74,62,0.15)",background:g.given?z.color:"transparent",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0}}>
+                    {g.given&&<span style={{fontSize:10,color:"white",fontWeight:800}}>✓</span>}
+                  </div>
+                  <span style={{flex:1,fontSize:12,color:"#3a2e24",textDecoration:g.given?"line-through":"none"}}>{g.text}</span>
+                  <button onClick={()=>upd({gifts:gifts.filter((_,j)=>j!==gifts.indexOf(g))})} style={{background:"none",border:"none",fontSize:13,color:"#c4b4a4",cursor:"pointer",padding:"0 4px"}}>×</button>
+                </div>
+              ))}
+              {gifts.length===0&&<div style={{fontSize:11,color:"#c4b4a4",textAlign:"center",padding:8}}>No gift ideas yet</div>}
+            </div>
+            <div style={{display:"flex",gap:4}}>
+              <input placeholder="Add gift idea..." value={newGift} onChange={e=>setNewGift(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"&&newGift.trim()){upd({gifts:[...gifts,{id:Date.now().toString(),text:newGift.trim(),given:false}]});setNewGift("");}}} style={{flex:1,padding:"6px 10px",borderRadius:6,border:"1px solid rgba(90,74,62,0.1)",background:"rgba(90,74,62,0.03)",fontSize:11,color:"#3a2e24",outline:"none"}}/>
+              <button onClick={()=>{if(newGift.trim()){upd({gifts:[...gifts,{id:Date.now().toString(),text:newGift.trim(),given:false}]});setNewGift("");}}} style={{padding:"6px 12px",borderRadius:6,border:"none",background:z.color,color:"white",fontWeight:700,fontSize:10,cursor:"pointer"}}>+</button>
+            </div>
+          </div>}
+
+          {/* TAB: Events */}
+          {profileTab==="events"&&<div>
+            {sH("LIFE EVENTS")}
+            <div style={{display:"flex",flexDirection:"column",gap:4,marginBottom:8}}>
+              {[...events].sort((a,b)=>b.date.localeCompare(a.date)).map((ev,i)=>(
+                <div key={ev.id||i} style={{display:"flex",alignItems:"flex-start",gap:8,padding:"6px 10px",borderRadius:8,background:"rgba(90,74,62,0.03)",border:"1px solid rgba(90,74,62,0.06)"}}>
+                  <div style={{flexShrink:0,width:6,height:6,borderRadius:"50%",background:z.color,marginTop:5,opacity:0.5}}/>
+                  <div style={{flex:1}}>
+                    <div style={{fontSize:12,color:"#3a2e24"}}>{ev.text}</div>
+                    <div style={{fontSize:9,color:"#b4a494",marginTop:1}}>{ev.date}</div>
+                  </div>
+                  <button onClick={()=>upd({events:events.filter(x=>(x.id||x.text)!==(ev.id||ev.text))})} style={{background:"none",border:"none",fontSize:13,color:"#c4b4a4",cursor:"pointer",padding:"0 4px"}}>×</button>
+                </div>
+              ))}
+              {events.length===0&&<div style={{fontSize:11,color:"#c4b4a4",textAlign:"center",padding:8}}>No events recorded</div>}
+            </div>
+            <div style={{display:"flex",gap:4,marginBottom:4}}>
+              <input placeholder="What happened..." value={newEvent} onChange={e=>setNewEvent(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"&&newEvent.trim()){upd({events:[...events,{id:Date.now().toString(),text:newEvent.trim(),date:newEventDate}]});setNewEvent("");}}} style={{flex:1,padding:"6px 10px",borderRadius:6,border:"1px solid rgba(90,74,62,0.1)",background:"rgba(90,74,62,0.03)",fontSize:11,color:"#3a2e24",outline:"none"}}/>
+              <input type="date" value={newEventDate} onChange={e=>setNewEventDate(e.target.value)} style={{width:100,padding:"6px 8px",borderRadius:6,border:"1px solid rgba(90,74,62,0.1)",background:"rgba(90,74,62,0.03)",fontSize:10,color:"#6b5c4d",outline:"none",colorScheme:"light"}}/>
+              <button onClick={()=>{if(newEvent.trim()){upd({events:[...events,{id:Date.now().toString(),text:newEvent.trim(),date:newEventDate}]});setNewEvent("");}}} style={{padding:"6px 12px",borderRadius:6,border:"none",background:z.color,color:"white",fontWeight:700,fontSize:10,cursor:"pointer"}}>+</button>
+            </div>
+          </div>}
+
+          {/* TAB: Notes */}
+          {profileTab==="notes"&&<div>
+            {sH("GENERAL NOTES")}
+            <textarea value={editNotes} onChange={e=>setEditNotes(e.target.value)} rows={6} placeholder="Anything you want to remember about this person..." style={{width:"100%",padding:"10px 14px",borderRadius:8,border:"1px solid rgba(90,74,62,0.12)",background:"rgba(90,74,62,0.04)",fontSize:12.5,color:"#3a2e24",outline:"none",lineHeight:1.6}}/>
+          </div>}
+
+          {/* Footer buttons */}
+          <div style={{display:"flex",gap:8,marginTop:14}}>
+            <button onClick={()=>{setBdays(p=>p.filter(x=>x.id!==viewingBd.id));setModal(null);setViewingBd(null);setProfileTab("info")}} style={{padding:"10px 14px",borderRadius:10,border:"1px solid rgba(232,106,106,0.3)",background:"transparent",cursor:"pointer",fontWeight:700,fontSize:11,color:"#e86a6a"}}>Delete</button>
+            <button onClick={()=>{setModal(null);setViewingBd(null);setProfileTab("info");setLinkSearch("")}} style={{flex:1,padding:"10px 0",borderRadius:10,border:"1px solid rgba(90,74,62,0.1)",background:"transparent",cursor:"pointer",fontWeight:700,fontSize:11,color:"#8a7a6a"}}>Cancel</button>
+            <button onClick={()=>{setBdays(p=>p.map(b=>b.id===viewingBd.id?{...viewingBd,notes:editNotes}:b));setModal(null);setViewingBd(null);setProfileTab("info");setLinkSearch("")}} style={{flex:2,padding:"10px 0",borderRadius:10,border:"none",background:z.color,cursor:"pointer",fontWeight:700,fontSize:11,color:"white"}}>Save</button>
+          </div>
+        </Modal>);
+      })()}
 
       {modal === "editTask" && editTask && (<Modal onClose={() => {setModal(null);setViewingTask(null);setEditTask(null)}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:16}}>
