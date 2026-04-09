@@ -156,6 +156,8 @@ export default function App() {
   const [newGift, setNewGift] = useState("");
   const [newEvent, setNewEvent] = useState("");
   const [newEventDate, setNewEventDate] = useState("");
+  const [newEventSignificant, setNewEventSignificant] = useState(false);
+  const [newEventPrivateNote, setNewEventPrivateNote] = useState("");
   const [newInterest, setNewInterest] = useState("");
   const [tpType, setTpType] = useState("Text");
   const [tpNote, setTpNote] = useState("");
@@ -211,9 +213,37 @@ export default function App() {
   const sortedTodayBd = [...todayBd].sort((a, b) => (wishes[a.name] ? 1 : 0) - (wishes[b.name] ? 1 : 0));
   const toggleWish = (name) => setWishes(p => ({ ...p, [name]: !p[name] }));
   const savePerson = () => { if (!nb.name.trim()) return; setPeople(p => [...p, { ...nb, id: Date.now().toString(), gifts: [], events: [], relationships: [], touchpoints: [], cadenceBaseline: TODAY() }]); setNb({ name: "", date: "", notes: "", cadence: "monthly", interests: [], tags: [] }); setNbInterest(""); setModal(null); };
-  const openPerson = (p) => { setViewingPerson(p); setEditNotes(p.notes || ""); setProfileTab("info"); setNewGift(""); setNewEvent(""); setNewEventDate(TODAY()); setNewInterest(""); setLinkSearch(""); setTpType("Text"); setTpNote(""); setModal("viewPerson"); };
+  const openPerson = (p) => { setViewingPerson(p); setEditNotes(p.notes || ""); setProfileTab("info"); setNewGift(""); setNewEvent(""); setNewEventDate(TODAY()); setNewEventSignificant(false); setNewEventPrivateNote(""); setNewInterest(""); setLinkSearch(""); setTpType("Text"); setTpNote(""); setModal("viewPerson"); };
 
   const upcoming = people.filter(p => p.date && daysUntil(p.date) > 0 && daysUntil(p.date) < Infinity).sort((a, b) => daysUntil(a.date) - daysUntil(b.date)).slice(0, 3);
+
+  // Upcoming milestones — future events + significant event anniversaries
+  const upcomingMilestones = (() => {
+    const ms = [];
+    const todayD = new Date(today + "T00:00:00");
+    people.forEach(p => {
+      (p.events || []).forEach(ev => {
+        if (!ev.date) return;
+        const evDate = new Date(ev.date + "T00:00:00");
+        if (isNaN(evDate)) return;
+        // Future event — not yet happened
+        if (evDate >= todayD) {
+          const d = Math.round((evDate - todayD) / 86400000);
+          if (d <= 90) ms.push({ person: p, event: ev, daysAway: d, isAnniversary: false });
+        }
+        // Significant past event — check annual recurrence
+        else if (ev.significant) {
+          const thisYear = new Date(todayD.getFullYear(), evDate.getMonth(), evDate.getDate());
+          let target = thisYear;
+          if (target < todayD) target = new Date(todayD.getFullYear() + 1, evDate.getMonth(), evDate.getDate());
+          const d = Math.round((target - todayD) / 86400000);
+          const years = target.getFullYear() - evDate.getFullYear();
+          if (d <= 90) ms.push({ person: p, event: ev, daysAway: d, isAnniversary: true, years });
+        }
+      });
+    });
+    return ms.sort((a, b) => a.daysAway - b.daysAway);
+  })();
 
   // Reconnect suggestions — sorted by overdue ratio (most overdue first)
   const reconnectAll = people.map(p => ({ person: p, info: getOverdueInfo(p, today) })).filter(x => x.info && x.info.daysUntilDue <= 0).sort((a, b) => b.info.ratio - a.info.ratio);
@@ -321,6 +351,24 @@ export default function App() {
               <span style={{ fontSize: 11, fontWeight: 600, color: d <= 7 ? "#e86a8a" : "#b4a494" }}>{d === 1 ? "Tomorrow" : `${d}d`}</span>
             </div>
           ); })}
+        </div>)}
+
+        {/* Upcoming Milestones */}
+        {!search && upcomingMilestones.length > 0 && (<div style={{ marginBottom: 16, padding: "14px 16px", borderRadius: 12, background: "rgba(90,74,62,0.03)", border: "1px solid rgba(90,74,62,0.06)" }}>
+          <div style={{ fontSize: 10, fontWeight: 700, color: "#b4a494", letterSpacing: 1.2, marginBottom: 10 }}>UPCOMING MILESTONES</div>
+          {upcomingMilestones.slice(0, 5).map((m, i) => (
+            <div key={m.event.id || i} onClick={() => openPerson(m.person)} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 0", cursor: "pointer", borderTop: i > 0 ? "1px solid rgba(90,74,62,0.04)" : "none" }}>
+              <div style={{ width: 32, height: 32, borderRadius: 8, background: m.daysAway === 0 ? "rgba(232,106,138,0.1)" : m.event.significant ? "rgba(232,168,76,0.1)" : "rgba(90,74,62,0.06)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <span style={{ fontSize: 13, color: m.daysAway === 0 ? "#e86a8a" : m.event.significant ? "#e8a84c" : "#8a7a6a" }}>{m.event.significant ? "✦" : "◆"}</span>
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontWeight: 600, fontSize: 12, color: "#3a2e24" }}>{m.person.name}</div>
+                <div style={{ fontSize: 10, color: "#8a7a6a" }}>{m.event.text}{m.isAnniversary ? ` (${m.years}yr)` : ""}</div>
+                {m.event.privateNote && <div style={{ fontSize: 9, color: "#e8a84c", fontStyle: "italic", marginTop: 1 }}>📌 {m.event.privateNote}</div>}
+              </div>
+              <span style={{ fontSize: 10, fontWeight: 600, color: m.daysAway === 0 ? "#e86a8a" : m.daysAway <= 7 ? "#e8a84c" : "#b4a494", flexShrink: 0 }}>{m.daysAway === 0 ? "Today" : m.daysAway === 1 ? "Tomorrow" : `${m.daysAway}d`}</span>
+            </div>
+          ))}
         </div>)}
 
         {/* Touchpoints summary */}
@@ -680,9 +728,44 @@ export default function App() {
           </div>}
 
           {profileTab === "events" && <div>
-            {sH("LIFE EVENTS")}
-            <div style={{ display: "flex", flexDirection: "column", gap: 4, marginBottom: 8 }}>{[...events].sort((a, b) => b.date.localeCompare(a.date)).map((ev, i) => (<div key={ev.id || i} style={{ display: "flex", alignItems: "flex-start", gap: 8, padding: "6px 10px", borderRadius: 8, background: "rgba(90,74,62,0.03)", border: "1px solid rgba(90,74,62,0.06)" }}><div style={{ flexShrink: 0, width: 6, height: 6, borderRadius: "50%", background: z.color, marginTop: 5, opacity: 0.5 }} /><div style={{ flex: 1 }}><div style={{ fontSize: 12, color: "#3a2e24" }}>{ev.text}</div><div style={{ fontSize: 9, color: "#b4a494", marginTop: 1 }}>{ev.date}</div></div><button onClick={() => upd({ events: events.filter(x => (x.id || x.text) !== (ev.id || ev.text)) })} style={{ background: "none", border: "none", fontSize: 13, color: "#c4b4a4", cursor: "pointer", padding: "0 4px" }}>×</button></div>))}{events.length === 0 && <div style={{ fontSize: 11, color: "#c4b4a4", textAlign: "center", padding: 8 }}>No events recorded</div>}</div>
-            <div style={{ display: "flex", gap: 4, marginBottom: 4 }}><input placeholder="What happened..." value={newEvent} onChange={e => setNewEvent(e.target.value)} onKeyDown={e => { if (e.key === "Enter" && newEvent.trim()) { upd({ events: [...events, { id: Date.now().toString(), text: newEvent.trim(), date: newEventDate }] }); setNewEvent(""); } }} style={{ flex: 1, padding: "6px 10px", borderRadius: 6, border: "1px solid rgba(90,74,62,0.1)", background: "rgba(90,74,62,0.03)", fontSize: 11, color: "#3a2e24", outline: "none" }} /><input type="date" value={newEventDate} onChange={e => setNewEventDate(e.target.value)} style={{ width: 100, padding: "6px 8px", borderRadius: 6, border: "1px solid rgba(90,74,62,0.1)", background: "rgba(90,74,62,0.03)", fontSize: 10, color: "#6b5c4d", outline: "none", colorScheme: "light" }} /><button onClick={() => { if (newEvent.trim()) { upd({ events: [...events, { id: Date.now().toString(), text: newEvent.trim(), date: newEventDate }] }); setNewEvent(""); } }} style={{ padding: "6px 12px", borderRadius: 6, border: "none", background: z.color, color: "white", fontWeight: 700, fontSize: 10, cursor: "pointer" }}>+</button></div>
+            {(() => {
+              const todayD = new Date(today + "T00:00:00");
+              const futureEvents = [...events].filter(ev => ev.date && new Date(ev.date + "T00:00:00") >= todayD).sort((a, b) => a.date.localeCompare(b.date));
+              const pastEvents = [...events].filter(ev => !ev.date || new Date(ev.date + "T00:00:00") < todayD).sort((a, b) => b.date.localeCompare(a.date));
+              const renderEvent = (ev, i) => (
+                <div key={ev.id || i} style={{ padding: "8px 10px", borderRadius: 8, background: "rgba(90,74,62,0.03)", border: "1px solid rgba(90,74,62,0.06)" }}>
+                  <div style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
+                    <div style={{ flexShrink: 0, width: 6, height: 6, borderRadius: "50%", background: ev.significant ? "#e8a84c" : z.color, marginTop: 5, opacity: ev.significant ? 1 : 0.5 }} />
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 12, color: "#3a2e24" }}>{ev.text}{ev.significant ? " ✦" : ""}</div>
+                      <div style={{ fontSize: 9, color: "#b4a494", marginTop: 1 }}>{ev.date}{ev.significant ? " · repeats annually" : ""}</div>
+                      {ev.privateNote && <div style={{ fontSize: 9, color: "#e8a84c", fontStyle: "italic", marginTop: 2 }}>📌 {ev.privateNote}</div>}
+                    </div>
+                    <div style={{ display: "flex", gap: 2, flexShrink: 0 }}>
+                      <button onClick={() => { const updated = events.map(x => x.id === ev.id ? { ...x, significant: !x.significant } : x); upd({ events: updated }); }} style={{ background: "none", border: "none", fontSize: 11, color: ev.significant ? "#e8a84c" : "#c4b4a4", cursor: "pointer", padding: "0 3px" }} title="Toggle significant">✦</button>
+                      <button onClick={() => upd({ events: events.filter(x => (x.id || x.text) !== (ev.id || ev.text)) })} style={{ background: "none", border: "none", fontSize: 13, color: "#c4b4a4", cursor: "pointer", padding: "0 3px" }}>×</button>
+                    </div>
+                  </div>
+                </div>
+              );
+              return <>
+                {futureEvents.length > 0 && <>{sH("UPCOMING")}<div style={{ display: "flex", flexDirection: "column", gap: 4, marginBottom: 10 }}>{futureEvents.map(renderEvent)}</div></>}
+                {pastEvents.length > 0 && <>{sH("PAST")}<div style={{ display: "flex", flexDirection: "column", gap: 4, marginBottom: 8 }}>{pastEvents.map(renderEvent)}</div></>}
+                {events.length === 0 && <div style={{ fontSize: 11, color: "#c4b4a4", textAlign: "center", padding: 8 }}>No events recorded</div>}
+              </>;
+            })()}
+            {sH("ADD EVENT")}
+            <div style={{ display: "flex", gap: 4, marginBottom: 4 }}>
+              <input placeholder="What's happening..." value={newEvent} onChange={e => setNewEvent(e.target.value)} style={{ flex: 1, padding: "6px 10px", borderRadius: 6, border: "1px solid rgba(90,74,62,0.1)", background: "rgba(90,74,62,0.03)", fontSize: 11, color: "#3a2e24", outline: "none" }} />
+              <div style={{ overflow: "hidden", width: 90, flexShrink: 0 }}><input type="date" value={newEventDate} onChange={e => setNewEventDate(e.target.value)} style={{ display: "block", width: "100%", padding: "6px 4px", borderRadius: 6, border: "1px solid rgba(90,74,62,0.1)", background: "rgba(90,74,62,0.03)", fontSize: 9, color: "#6b5c4d", outline: "none", colorScheme: "light", boxSizing: "border-box", WebkitAppearance: "none", appearance: "none" }} /></div>
+            </div>
+            <div style={{ display: "flex", gap: 4, marginBottom: 4, alignItems: "center" }}>
+              <input placeholder="Private note to self (optional)..." value={newEventPrivateNote} onChange={e => setNewEventPrivateNote(e.target.value)} style={{ flex: 1, padding: "6px 10px", borderRadius: 6, border: "1px solid rgba(90,74,62,0.1)", background: "rgba(90,74,62,0.03)", fontSize: 11, color: "#3a2e24", outline: "none" }} />
+            </div>
+            <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 4 }}>
+              <button onClick={() => setNewEventSignificant(p => !p)} style={{ padding: "4px 10px", borderRadius: 6, border: `1px solid ${newEventSignificant ? "#e8a84c44" : "rgba(90,74,62,0.08)"}`, cursor: "pointer", fontWeight: 600, fontSize: 10, background: newEventSignificant ? "#e8a84c12" : "transparent", color: newEventSignificant ? "#e8a84c" : "#8a7a6a" }}>✦ {newEventSignificant ? "Significant" : "Mark significant"}</button>
+              <button onClick={() => { if (newEvent.trim()) { upd({ events: [...events, { id: Date.now().toString(), text: newEvent.trim(), date: newEventDate, significant: newEventSignificant, privateNote: newEventPrivateNote.trim() || null }] }); setNewEvent(""); setNewEventSignificant(false); setNewEventPrivateNote(""); } }} style={{ padding: "6px 14px", borderRadius: 6, border: "none", background: z.color, color: "white", fontWeight: 700, fontSize: 10, cursor: "pointer", marginLeft: "auto" }}>Add</button>
+            </div>
           </div>}
 
           {profileTab === "notes" && <div>
