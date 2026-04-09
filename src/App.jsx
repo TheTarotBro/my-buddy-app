@@ -164,6 +164,7 @@ export default function App() {
   const [viewingZodiac, setViewingZodiac] = useState(null);
   const [showAllReconnect, setShowAllReconnect] = useState(false);
   const [editingTp, setEditingTp] = useState(null);
+  const [editingEvent, setEditingEvent] = useState(null); // { personId, event }
   const [showAllMilestones, setShowAllMilestones] = useState(false);
 
   const saveTimers = useRef({});
@@ -359,7 +360,7 @@ export default function App() {
             <button onClick={() => setShowAllMilestones(true)} style={{ fontSize: 10, fontWeight: 700, color: accent, background: "none", border: "none", cursor: "pointer" }}>{upcomingMilestones.length === 0 ? `${allMilestones.length} upcoming →` : `View all (${allMilestones.length}) →`}</button>
           </div>
           {upcomingMilestones.slice(0, 5).map((m, i) => (
-            <div key={m.event.id || i} onClick={() => openPerson(m.person)} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 0", cursor: "pointer", borderTop: i > 0 ? "1px solid rgba(90,74,62,0.04)" : "none" }}>
+            <div key={m.event.id || i} onClick={() => setEditingEvent({ personId: m.person.id, event: { ...m.event } })} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 0", cursor: "pointer", borderTop: i > 0 ? "1px solid rgba(90,74,62,0.04)" : "none" }}>
               <div style={{ width: 32, height: 32, borderRadius: 8, background: m.daysAway === 0 ? "rgba(232,106,138,0.1)" : m.event.significant ? "rgba(232,168,76,0.1)" : "rgba(90,74,62,0.06)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                 <span style={{ fontSize: 13, color: m.daysAway === 0 ? "#e86a8a" : m.event.significant ? "#e8a84c" : "#8a7a6a" }}>{m.event.significant ? "✦" : "◆"}</span>
               </div>
@@ -740,7 +741,7 @@ export default function App() {
                     <button onClick={() => { const updated = events.map(x => x.id === ev.id ? { ...x, significant: !x.significant } : x); upd({ events: updated }); }} style={{ flexShrink: 0, width: 24, height: 24, borderRadius: 6, border: ev.significant ? "1.5px solid #e8a84c" : "1.5px solid rgba(90,74,62,0.12)", background: ev.significant ? "#e8a84c15" : "transparent", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", marginTop: 1, padding: 0 }}>
                       <span style={{ fontSize: 12, color: ev.significant ? "#e8a84c" : "#c4b4a4" }}>✦</span>
                     </button>
-                    <div style={{ flex: 1 }}>
+                    <div style={{ flex: 1, cursor: "pointer" }} onClick={() => setEditingEvent({ personId: viewingPerson.id, event: { ...ev } })}>
                       <div style={{ fontSize: 12, color: "#3a2e24" }}>{ev.text}</div>
                       <div style={{ fontSize: 9, color: "#b4a494", marginTop: 1 }}>{ev.date}{ev.significant ? " · repeats annually" : ""}</div>
                       {ev.privateNote && <div style={{ fontSize: 9, color: "#e8a84c", fontStyle: "italic", marginTop: 2 }}>📌 {ev.privateNote}</div>}
@@ -789,7 +790,7 @@ export default function App() {
           {allMilestones.map((m, i) => {
             const inRange = m.daysAway <= 90;
             return (
-            <div key={m.event.id + "-" + i} onClick={() => { setShowAllMilestones(false); openPerson(m.person); }} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderRadius: 10, background: inRange ? "rgba(90,74,62,0.04)" : "rgba(90,74,62,0.02)", border: `1px solid ${inRange ? "rgba(90,74,62,0.08)" : "rgba(90,74,62,0.04)"}`, cursor: "pointer", opacity: inRange ? 1 : 0.7 }}>
+            <div key={m.event.id + "-" + i} onClick={() => { setEditingEvent({ personId: m.person.id, event: { ...m.event } }); }} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderRadius: 10, background: inRange ? "rgba(90,74,62,0.04)" : "rgba(90,74,62,0.02)", border: `1px solid ${inRange ? "rgba(90,74,62,0.08)" : "rgba(90,74,62,0.04)"}`, cursor: "pointer", opacity: inRange ? 1 : 0.8 }}>
               <div style={{ width: 30, height: 30, borderRadius: 8, background: m.daysAway === 0 ? "rgba(232,106,138,0.1)" : m.event.significant ? "rgba(232,168,76,0.1)" : "rgba(90,74,62,0.06)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                 <span style={{ fontSize: 13, color: m.daysAway === 0 ? "#e86a8a" : m.event.significant ? "#e8a84c" : "#8a7a6a" }}>{m.event.significant ? "✦" : "◆"}</span>
               </div>
@@ -799,14 +800,34 @@ export default function App() {
                 {m.event.privateNote && <div style={{ fontSize: 9, color: "#e8a84c", fontStyle: "italic", marginTop: 1 }}>📌 {m.event.privateNote}</div>}
               </div>
               <div style={{ textAlign: "right", flexShrink: 0 }}>
-                <div style={{ fontSize: 10, fontWeight: 600, color: m.daysAway === 0 ? "#e86a8a" : m.daysAway <= 7 ? "#e8a84c" : m.daysAway <= 90 ? "#8a7a6a" : "#c4b4a4" }}>{m.daysAway === 0 ? "Today" : m.daysAway === 1 ? "Tomorrow" : `${m.daysAway}d`}</div>
-                <div style={{ fontSize: 8, color: "#c4b4a4" }}>{m.event.date}</div>
+                <div style={{ fontSize: 11, fontWeight: 700, color: m.daysAway === 0 ? "#e86a8a" : m.daysAway <= 7 ? "#e8a84c" : m.daysAway <= 90 ? "#3a2e24" : "#8a7a6a" }}>{m.daysAway === 0 ? "Today" : m.daysAway === 1 ? "Tomorrow" : `${m.daysAway}d`}</div>
+                <div style={{ fontSize: 9, color: "#8a7a6a", fontWeight: 500 }}>{m.event.date}</div>
               </div>
             </div>
           ); })}
           {allMilestones.length === 0 && <div style={{ fontSize: 11, color: "#c4b4a4", textAlign: "center", padding: 16 }}>No upcoming milestones</div>}
         </div>
         <button onClick={() => setShowAllMilestones(false)} style={{ width: "100%", padding: "11px 0", borderRadius: 10, border: "none", background: accent, cursor: "pointer", fontWeight: 700, fontSize: 12, color: "white", marginTop: 14 }}>Close</button>
+      </Modal>)}
+
+      {/* Edit Event Modal */}
+      {editingEvent && (<Modal onClose={() => setEditingEvent(null)}>
+        <div style={{ fontFamily: "'Space Grotesk'", fontSize: 16, fontWeight: 700, color: "#3a2e24", marginBottom: 4 }}>Edit Event</div>
+        <div style={{ fontSize: 10, color: "#8a7a6a", marginBottom: 14 }}>{(() => { const p = people.find(x => x.id === editingEvent.personId); return p ? p.name : ""; })()}</div>
+        <input value={editingEvent.event.text} onChange={e => setEditingEvent(p => ({ ...p, event: { ...p.event, text: e.target.value } }))} placeholder="Event description..." style={{ width: "100%", padding: "10px 14px", borderRadius: 8, border: "1px solid rgba(90,74,62,0.12)", background: "rgba(90,74,62,0.04)", fontSize: 13, fontWeight: 600, color: "#3a2e24", marginBottom: 10, outline: "none" }} />
+        <div style={{ overflow: "hidden", marginBottom: 10, width: "100%" }}><input type="date" value={editingEvent.event.date} onChange={e => setEditingEvent(p => ({ ...p, event: { ...p.event, date: e.target.value } }))} style={{ display: "block", width: "100%", padding: "10px 14px", borderRadius: 8, border: "1px solid rgba(90,74,62,0.12)", background: "rgba(90,74,62,0.04)", fontSize: 13, color: "#3a2e24", outline: "none", colorScheme: "light", boxSizing: "border-box", WebkitAppearance: "none", appearance: "none" }} /></div>
+        <input value={editingEvent.event.privateNote || ""} onChange={e => setEditingEvent(p => ({ ...p, event: { ...p.event, privateNote: e.target.value } }))} placeholder="Private note to self (optional)..." style={{ width: "100%", padding: "10px 14px", borderRadius: 8, border: "1px solid rgba(90,74,62,0.12)", background: "rgba(90,74,62,0.04)", fontSize: 12, color: "#3a2e24", marginBottom: 12, outline: "none" }} />
+        <button onClick={() => setEditingEvent(p => ({ ...p, event: { ...p.event, significant: !p.event.significant } }))} style={{ padding: "8px 14px", borderRadius: 8, border: editingEvent.event.significant ? "1.5px solid #e8a84c" : "1.5px solid rgba(90,74,62,0.12)", cursor: "pointer", fontWeight: 600, fontSize: 11, background: editingEvent.event.significant ? "#e8a84c15" : "transparent", color: editingEvent.event.significant ? "#e8a84c" : "#8a7a6a", marginBottom: 16, display: "block" }}>✦ {editingEvent.event.significant ? "Significant — repeats annually" : "Mark as significant (annual reminder)"}</button>
+        <div style={{ display: "flex", gap: 8 }}>
+          <button onClick={() => setEditingEvent(null)} style={{ flex: 1, padding: "11px 0", borderRadius: 10, border: "1px solid rgba(90,74,62,0.1)", background: "transparent", cursor: "pointer", fontWeight: 700, fontSize: 12, color: "#8a7a6a" }}>Cancel</button>
+          <button onClick={() => {
+            setPeople(p => p.map(person => person.id === editingEvent.personId ? { ...person, events: (person.events || []).map(ev => ev.id === editingEvent.event.id ? { ...editingEvent.event, privateNote: editingEvent.event.privateNote || null } : ev) } : person));
+            if (viewingPerson && viewingPerson.id === editingEvent.personId) {
+              setViewingPerson(p => ({ ...p, events: (p.events || []).map(ev => ev.id === editingEvent.event.id ? { ...editingEvent.event, privateNote: editingEvent.event.privateNote || null } : ev) }));
+            }
+            setEditingEvent(null);
+          }} style={{ flex: 2, padding: "11px 0", borderRadius: 10, border: "none", background: accent, cursor: "pointer", fontWeight: 700, fontSize: 12, color: "white" }}>Save</button>
+        </div>
       </Modal>)}
 
       {viewingZodiac && (<Modal onClose={() => setViewingZodiac(null)}>
