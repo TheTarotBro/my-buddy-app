@@ -112,7 +112,7 @@ export default function App() {
   const [tab, setTab] = useState("people");
   const [modal, setModal] = useState(null);
   const [search, setSearch] = useState("");
-  const [nb, setNb] = useState({ name: "", date: "", notes: "", cadence: "monthly", interests: [] });
+  const [nb, setNb] = useState({ name: "", date: "", notes: "", cadence: "monthly", interests: [], tags: [] });
   const [nbInterest, setNbInterest] = useState("");
 
   // Places state
@@ -121,6 +121,10 @@ export default function App() {
     { id: "p2", name: "Zilker Park", notes: "Nice trails", rating: 5, mapsUrl: "", category: "Outdoors", visits: [] },
   ] : []);
   const [placeCategories, setPlaceCategories] = useState(["Restaurants", "Bars", "Outdoors", "Other"]);
+  const [peopleTags, setPeopleTags] = useState(["Austin friends", "Work", "Family", "College"]);
+  const [peopleTagFilter, setPeopleTagFilter] = useState("all");
+  const [editingPeopleTags, setEditingPeopleTags] = useState(false);
+  const [newPeopleTagName, setNewPeopleTagName] = useState("");
   const [newPlace, setNewPlace] = useState({ name: "", notes: "", rating: 0, mapsUrl: "", category: "" });
   const [viewingPlace, setViewingPlace] = useState(null);
   const [placeSearch, setPlaceSearch] = useState("");
@@ -173,7 +177,7 @@ export default function App() {
     if (IS_PREVIEW) return;
     if (!user) { setDataLoaded(false); return; }
     (async () => {
-      const [b, w, pl, cats] = await Promise.all([loadData(user.uid, "birthdays"), loadData(user.uid, `wishes/${today}`), loadData(user.uid, "places"), loadData(user.uid, "placeCategories")]);
+      const [b, w, pl, cats, ptags] = await Promise.all([loadData(user.uid, "birthdays"), loadData(user.uid, `wishes/${today}`), loadData(user.uid, "places"), loadData(user.uid, "placeCategories"), loadData(user.uid, "peopleTags")]);
       if (b) {
         const loaded = Object.values(b).map(p => ({
           ...p,
@@ -186,6 +190,7 @@ export default function App() {
       if (w) setWishes(w);
       if (pl) setPlaces(Object.values(pl));
       if (cats) setPlaceCategories(cats);
+      if (ptags) setPeopleTags(ptags);
       setDataLoaded(true);
     })();
   }, [user, today]);
@@ -194,6 +199,7 @@ export default function App() {
   useEffect(() => { if (dataLoaded && !IS_PREVIEW) save(`wishes/${today}`, wishes, true); }, [wishes, dataLoaded]);
   useEffect(() => { if (dataLoaded && !IS_PREVIEW) { const obj = {}; places.forEach(p => obj[p.id] = p); save("places", obj, true); } }, [places, dataLoaded]);
   useEffect(() => { if (dataLoaded && !IS_PREVIEW) save("placeCategories", placeCategories, true); }, [placeCategories, dataLoaded]);
+  useEffect(() => { if (dataLoaded && !IS_PREVIEW) save("peopleTags", peopleTags, true); }, [peopleTags, dataLoaded]);
 
   const handleSignIn = async () => { setSignInLoading(true); await signInGoogle(); setSignInLoading(false); };
 
@@ -204,7 +210,7 @@ export default function App() {
   const todayBd = getBdToday(people);
   const sortedTodayBd = [...todayBd].sort((a, b) => (wishes[a.name] ? 1 : 0) - (wishes[b.name] ? 1 : 0));
   const toggleWish = (name) => setWishes(p => ({ ...p, [name]: !p[name] }));
-  const savePerson = () => { if (!nb.name.trim()) return; setPeople(p => [...p, { ...nb, id: Date.now().toString(), gifts: [], events: [], relationships: [], touchpoints: [], cadenceBaseline: TODAY() }]); setNb({ name: "", date: "", notes: "", cadence: "monthly", interests: [] }); setNbInterest(""); setModal(null); };
+  const savePerson = () => { if (!nb.name.trim()) return; setPeople(p => [...p, { ...nb, id: Date.now().toString(), gifts: [], events: [], relationships: [], touchpoints: [], cadenceBaseline: TODAY() }]); setNb({ name: "", date: "", notes: "", cadence: "monthly", interests: [], tags: [] }); setNbInterest(""); setModal(null); };
   const openPerson = (p) => { setViewingPerson(p); setEditNotes(p.notes || ""); setProfileTab("info"); setNewGift(""); setNewEvent(""); setNewEventDate(TODAY()); setNewInterest(""); setLinkSearch(""); setTpType("Text"); setTpNote(""); setModal("viewPerson"); };
 
   const upcoming = people.filter(p => p.date && daysUntil(p.date) > 0 && daysUntil(p.date) < Infinity).sort((a, b) => daysUntil(a.date) - daysUntil(b.date)).slice(0, 3);
@@ -213,7 +219,11 @@ export default function App() {
   const reconnectAll = people.map(p => ({ person: p, info: getOverdueInfo(p, today) })).filter(x => x.info && x.info.daysUntilDue <= 0).sort((a, b) => b.info.ratio - a.info.ratio);
   // Coming up — not yet overdue, sorted by soonest due
   const comingUpAll = people.map(p => ({ person: p, info: getOverdueInfo(p, today) })).filter(x => x.info && x.info.daysUntilDue > 0).sort((a, b) => a.info.daysUntilDue - b.info.daysUntilDue);
-  const filteredPeople = people.filter(p => !search || p.name.toLowerCase().includes(search.toLowerCase())).sort((a, b) => a.name.localeCompare(b.name));
+  const filteredPeople = people.filter(p => {
+    if (search && !p.name.toLowerCase().includes(search.toLowerCase())) return false;
+    if (peopleTagFilter !== "all" && !(p.tags || []).includes(peopleTagFilter)) return false;
+    return true;
+  }).sort((a, b) => a.name.localeCompare(b.name));
   const filteredBdays = people.filter(b => { if (bdSearch && !b.name.toLowerCase().includes(bdSearch.toLowerCase())) return false; const d = daysUntil(b.date); if (bdFilter === "week") return d <= 7; if (bdFilter === "month") return d <= 30; return true; }).sort((a, b) => daysUntil(a.date) - daysUntil(b.date));
 
   const sL = (t) => <div style={{ fontSize: 10, fontWeight: 700, color: "#b4a494", letterSpacing: 1.2, marginBottom: 8, marginTop: 4 }}>{t}</div>;
@@ -244,7 +254,7 @@ export default function App() {
             </div>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <button onClick={() => { setNb({ name: "", date: "", notes: "", cadence: "monthly", interests: [] }); setModal("addPerson"); }} style={{ background: accent, border: "none", borderRadius: 10, width: 36, height: 36, cursor: "pointer", fontSize: 18, color: "white", display: "flex", alignItems: "center", justifyContent: "center" }}>+</button>
+            <button onClick={() => { setNb({ name: "", date: "", notes: "", cadence: "monthly", interests: [], tags: [] }); setModal("addPerson"); }} style={{ background: accent, border: "none", borderRadius: 10, width: 36, height: 36, cursor: "pointer", fontSize: 18, color: "white", display: "flex", alignItems: "center", justifyContent: "center" }}>+</button>
             <button onClick={() => setSettings(!settings)} style={{ background: "rgba(90,74,62,0.06)", border: "1px solid rgba(90,74,62,0.1)", borderRadius: 10, width: 36, height: 36, cursor: "pointer", fontSize: 15, color: "#8a7a6a", display: "flex", alignItems: "center", justifyContent: "center" }}>⚙</button>
           </div>
         </div>
@@ -267,7 +277,7 @@ export default function App() {
             <div style={{ fontSize: 9, color: "#b4a494" }}>{people.length} people · {places.length} places</div>
           </div>
           <button onClick={() => {
-            const data = { exportDate: TODAY(), version: "2.2", people, places, placeCategories };
+            const data = { exportDate: TODAY(), version: "2.2", people, places, placeCategories, peopleTags };
             const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
             const url = URL.createObjectURL(blob);
             const a = document.createElement("a"); a.href = url; a.download = `my-circle-backup-${TODAY()}.json`; a.click();
@@ -286,6 +296,13 @@ export default function App() {
           <input placeholder="Search people..." value={search} onChange={e => setSearch(e.target.value)} style={{ width: "100%", padding: "10px 36px 10px 14px", borderRadius: 10, border: "1px solid rgba(90,74,62,0.1)", background: "rgba(90,74,62,0.04)", fontSize: 13, color: "#3a2e24", outline: "none" }} />
           {search && <button onClick={() => setSearch("")} style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", background: "rgba(90,74,62,0.12)", border: "none", borderRadius: "50%", width: 22, height: 22, cursor: "pointer", fontSize: 11, color: "#8a7a6a", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700 }}>×</button>}
         </div>
+
+        {/* Tag filter */}
+        {!search && peopleTags.length > 0 && (<div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginBottom: 10 }}>
+          <button onClick={() => setPeopleTagFilter("all")} style={{ padding: "4px 10px", borderRadius: 6, border: `1px solid ${peopleTagFilter === "all" ? accent + "44" : "rgba(90,74,62,0.08)"}`, cursor: "pointer", fontWeight: 600, fontSize: 10, background: peopleTagFilter === "all" ? `${accent}12` : "transparent", color: peopleTagFilter === "all" ? accent : "#8a7a6a" }}>All</button>
+          {peopleTags.map(t => (<button key={t} onClick={() => setPeopleTagFilter(peopleTagFilter === t ? "all" : t)} style={{ padding: "4px 10px", borderRadius: 6, border: `1px solid ${peopleTagFilter === t ? accent + "44" : "rgba(90,74,62,0.08)"}`, cursor: "pointer", fontWeight: 600, fontSize: 10, background: peopleTagFilter === t ? `${accent}12` : "transparent", color: peopleTagFilter === t ? accent : "#8a7a6a" }}>{t}</button>))}
+          <button onClick={() => setEditingPeopleTags(true)} style={{ padding: "4px 8px", borderRadius: 6, border: "1px solid rgba(90,74,62,0.08)", cursor: "pointer", fontWeight: 600, fontSize: 10, background: "transparent", color: "#b4a494" }}>✎</button>
+        </div>)}
 
         {!search && upcoming.length > 0 && (<div style={{ marginBottom: 16, padding: "14px 16px", borderRadius: 12, background: "rgba(90,74,62,0.03)", border: "1px solid rgba(90,74,62,0.06)" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
@@ -321,7 +338,7 @@ export default function App() {
           {Object.keys(letterGroups).sort().map(letter => (
             <div key={letter}>
               <div style={{ fontSize: 11, fontWeight: 700, color: accent, padding: "8px 0 4px", borderBottom: `1px solid ${accent}15` }}>{letter}</div>
-              {letterGroups[letter].map(p => { const z = getZodiacSign(p.date); const rels = p.relationships || []; const ints = p.interests || []; const preview = rels.length > 0 ? rels[0].label : (ints.length > 0 ? ints[0] : (p.notes ? "📝 Has notes" : "")); return (
+              {letterGroups[letter].map(p => { const z = getZodiacSign(p.date); const tags = p.tags || []; const preview = tags.length > 0 ? tags.join(" · ") : (p.notes ? "📝 Has notes" : ""); return (
                 <div key={p.id} onClick={() => openPerson(p)} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 4px", cursor: "pointer", borderBottom: "1px solid rgba(90,74,62,0.04)" }}>
                   <div style={{ width: 34, height: 34, borderRadius: 9, background: z ? `${z.color}12` : "rgba(90,74,62,0.06)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                     <span style={{ fontSize: 14, color: z ? z.color : "#b4a494" }}>{z ? z.symbol : "?"}</span>
@@ -338,7 +355,7 @@ export default function App() {
         </div>
         {filteredPeople.length === 0 && (<div style={{ textAlign: "center", padding: 32, color: "#c4b4a4", fontSize: 12 }}>
           {search ? "No people match your search" : "No people added yet"}
-          <div style={{ marginTop: 12 }}><button onClick={() => { setNb({ name: "", date: "", notes: "", cadence: "monthly", interests: [] }); setModal("addPerson"); }} style={{ fontSize: 12, fontWeight: 700, border: "none", borderRadius: 8, padding: "8px 18px", cursor: "pointer", background: accent, color: "white" }}>+ Add someone</button></div>
+          <div style={{ marginTop: 12 }}><button onClick={() => { setNb({ name: "", date: "", notes: "", cadence: "monthly", interests: [], tags: [] }); setModal("addPerson"); }} style={{ fontSize: 12, fontWeight: 700, border: "none", borderRadius: 8, padding: "8px 18px", cursor: "pointer", background: accent, color: "white" }}>+ Add someone</button></div>
         </div>)}
       </div>)}
 
@@ -401,7 +418,7 @@ export default function App() {
         return (<div style={{ padding: "0 20px 80px", animation: "fi 0.25s ease" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12, marginTop: 8 }}>
             <span style={{ fontWeight: 700, fontSize: 14, color: "#3a2e24" }}>Birthdays</span>
-            <button onClick={() => { setNb({ name: "", date: "", notes: "", cadence: "monthly", interests: [] }); setModal("addPerson"); }} style={{ fontWeight: 700, fontSize: 11, border: "none", borderRadius: 8, padding: "6px 14px", cursor: "pointer", background: "#e86a8a", color: "white" }}>+ Add</button>
+            <button onClick={() => { setNb({ name: "", date: "", notes: "", cadence: "monthly", interests: [], tags: [] }); setModal("addPerson"); }} style={{ fontWeight: 700, fontSize: 11, border: "none", borderRadius: 8, padding: "6px 14px", cursor: "pointer", background: "#e86a8a", color: "white" }}>+ Add</button>
           </div>
           <div style={{ position: "relative", marginBottom: 10 }}>
             <input placeholder="Search names..." value={bdSearch} onChange={e => setBdSearch(e.target.value)} style={{ width: "100%", padding: "8px 34px 8px 12px", borderRadius: 8, border: "1px solid rgba(90,74,62,0.1)", background: "rgba(90,74,62,0.04)", fontSize: 12.5, color: "#3a2e24", outline: "none" }} />
@@ -527,6 +544,17 @@ export default function App() {
         <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginBottom: 12 }}>
           {CADENCES.map(c => (<button key={c.id} onClick={() => setNb(p => ({ ...p, cadence: c.id }))} style={{ padding: "5px 10px", borderRadius: 6, border: `1px solid ${nb.cadence === c.id ? accent + "44" : "rgba(90,74,62,0.08)"}`, cursor: "pointer", fontWeight: 600, fontSize: 10, background: nb.cadence === c.id ? `${accent}12` : "transparent", color: nb.cadence === c.id ? accent : "#8a7a6a" }}>{c.label}</button>))}
         </div>
+        <div style={{ fontSize: 9, fontWeight: 700, color: "#b4a494", marginBottom: 5, letterSpacing: 1 }}>TAGS</div>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginBottom: 6 }}>
+          {nb.tags.map((tag, i) => (
+            <span key={i} style={{ fontSize: 10, padding: "3px 8px", borderRadius: 6, background: `${accent}12`, color: accent, fontWeight: 600, display: "flex", alignItems: "center", gap: 4 }}>
+              {tag}<button onClick={() => setNb(p => ({ ...p, tags: p.tags.filter((_, j) => j !== i) }))} style={{ background: "none", border: "none", fontSize: 10, color: accent, cursor: "pointer", padding: 0, opacity: 0.5 }}>×</button>
+            </span>
+          ))}
+          {peopleTags.filter(t => !nb.tags.includes(t)).map(t => (
+            <button key={t} onClick={() => setNb(p => ({ ...p, tags: [...p.tags, t] }))} style={{ padding: "3px 8px", borderRadius: 6, border: "1px dashed rgba(90,74,62,0.15)", cursor: "pointer", fontWeight: 600, fontSize: 10, background: "transparent", color: "#b4a494" }}>+ {t}</button>
+          ))}
+        </div>
         <div style={{ fontSize: 9, fontWeight: 700, color: "#b4a494", marginBottom: 5, letterSpacing: 1 }}>INTERESTS</div>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginBottom: 6 }}>
           {nb.interests.map((int, i) => (
@@ -565,6 +593,19 @@ export default function App() {
           <div style={{ display: "flex", gap: 4, marginBottom: 12 }}>{pTab("info", "Info")}{pTab("touch", "Touch")}{pTab("gifts", "Gifts")}{pTab("events", "Events")}{pTab("notes", "Notes")}</div>
 
           {profileTab === "info" && <div>
+            {sH("TAGS")}
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginBottom: 6 }}>
+              {(viewingPerson.tags || []).map((tag, i) => (
+                <span key={i} style={{ fontSize: 10, padding: "3px 8px", borderRadius: 6, background: `${accent}12`, color: accent, fontWeight: 600, display: "flex", alignItems: "center", gap: 4 }}>
+                  {tag}<button onClick={() => upd({ tags: (viewingPerson.tags || []).filter((_, j) => j !== i) })} style={{ background: "none", border: "none", fontSize: 10, color: accent, cursor: "pointer", padding: 0, opacity: 0.5 }}>×</button>
+                </span>
+              ))}
+            </div>
+            <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginBottom: 12 }}>
+              {peopleTags.filter(t => !(viewingPerson.tags || []).includes(t)).map(t => (
+                <button key={t} onClick={() => upd({ tags: [...(viewingPerson.tags || []), t] })} style={{ padding: "3px 8px", borderRadius: 6, border: "1px dashed rgba(90,74,62,0.15)", cursor: "pointer", fontWeight: 600, fontSize: 10, background: "transparent", color: "#b4a494" }}>+ {t}</button>
+              ))}
+            </div>
             {sH("RELATIONSHIPS")}
             {rels.length > 0 && <div style={{ display: "flex", flexDirection: "column", gap: 4, marginBottom: 8 }}>{rels.map((r, i) => { const linked = people.find(b => b.id === r.personId); return (<div key={i} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 10px", borderRadius: 8, background: "rgba(90,74,62,0.03)", border: "1px solid rgba(90,74,62,0.06)" }}><span style={{ fontSize: 10, fontWeight: 700, color: z.color, background: `${z.color}12`, padding: "2px 6px", borderRadius: 4 }}>{r.label}</span><span style={{ flex: 1, fontSize: 12, fontWeight: 600, color: "#3a2e24", cursor: linked ? "pointer" : "default" }} onClick={() => { if (linked) { upd({ gifts, events, interests, rels, notes: editNotes }); setPeople(p => p.map(b => b.id === viewingPerson.id ? { ...viewingPerson, notes: editNotes } : b)); setViewingPerson(linked); setEditNotes(linked.notes || ""); setProfileTab("info"); setLinkSearch(""); } }}>{linked ? linked.name : "(removed)"}</span><button onClick={() => { const newRels = rels.filter((_, j) => j !== i); upd({ relationships: newRels }); if (linked) { setPeople(p => p.map(b => b.id === r.personId ? { ...b, relationships: (b.relationships || []).filter(lr => lr.personId !== viewingPerson.id) } : b)); } }} style={{ background: "none", border: "none", fontSize: 13, color: "#c4b4a4", cursor: "pointer", padding: "0 4px" }}>×</button></div>); })}</div>}
             <div style={{ display: "flex", gap: 4, marginBottom: 4 }}><input placeholder="Search to link..." value={linkSearch} onChange={e => setLinkSearch(e.target.value)} style={{ flex: 1, padding: "6px 10px", borderRadius: 6, border: "1px solid rgba(90,74,62,0.1)", background: "rgba(90,74,62,0.03)", fontSize: 11, color: "#3a2e24", outline: "none" }} /><select value={linkLabel} onChange={e => setLinkLabel(e.target.value)} style={{ padding: "6px 8px", borderRadius: 6, border: "1px solid rgba(90,74,62,0.1)", background: "rgba(90,74,62,0.03)", fontSize: 10, color: "#3a2e24", outline: "none" }}>{REL_LABELS.map(l => <option key={l} value={l}>{l}</option>)}</select></div>
@@ -825,6 +866,25 @@ export default function App() {
           <button onClick={() => { if (newCategoryName.trim()) { setPlaceCategories(p => [...p, newCategoryName.trim()]); setNewCategoryName(""); } }} style={{ padding: "8px 14px", borderRadius: 6, border: "none", background: accent, color: "white", fontWeight: 700, fontSize: 11, cursor: "pointer" }}>+</button>
         </div>
         <button onClick={() => setEditingCategory(false)} style={{ width: "100%", padding: "11px 0", borderRadius: 10, border: "none", background: accent, cursor: "pointer", fontWeight: 700, fontSize: 12, color: "white" }}>Done</button>
+      </Modal>)}
+
+      {/* Edit People Tags Modal */}
+      {editingPeopleTags && (<Modal onClose={() => setEditingPeopleTags(false)}>
+        <div style={{ fontFamily: "'Space Grotesk'", fontSize: 16, fontWeight: 700, color: "#3a2e24", marginBottom: 14 }}>Edit People Tags</div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 4, marginBottom: 12 }}>
+          {peopleTags.map((c, i) => (
+            <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 10px", borderRadius: 8, background: "rgba(90,74,62,0.03)", border: "1px solid rgba(90,74,62,0.06)" }}>
+              <span style={{ flex: 1, fontSize: 13, fontWeight: 600, color: "#3a2e24" }}>{c}</span>
+              <span style={{ fontSize: 9, color: "#b4a494" }}>{people.filter(p => (p.tags || []).includes(c)).length}</span>
+              <button onClick={() => setPeopleTags(p => p.filter((_, j) => j !== i))} style={{ background: "none", border: "none", fontSize: 13, color: "#c4b4a4", cursor: "pointer", padding: "0 4px" }}>×</button>
+            </div>
+          ))}
+        </div>
+        <div style={{ display: "flex", gap: 4, marginBottom: 14 }}>
+          <input placeholder="New tag..." value={newPeopleTagName} onChange={e => setNewPeopleTagName(e.target.value)} onKeyDown={e => { if (e.key === "Enter" && newPeopleTagName.trim()) { setPeopleTags(p => [...p, newPeopleTagName.trim()]); setNewPeopleTagName(""); } }} style={{ flex: 1, padding: "8px 10px", borderRadius: 6, border: "1px solid rgba(90,74,62,0.1)", background: "rgba(90,74,62,0.03)", fontSize: 12, color: "#3a2e24", outline: "none" }} />
+          <button onClick={() => { if (newPeopleTagName.trim()) { setPeopleTags(p => [...p, newPeopleTagName.trim()]); setNewPeopleTagName(""); } }} style={{ padding: "8px 14px", borderRadius: 6, border: "none", background: accent, color: "white", fontWeight: 700, fontSize: 11, cursor: "pointer" }}>+</button>
+        </div>
+        <button onClick={() => setEditingPeopleTags(false)} style={{ width: "100%", padding: "11px 0", borderRadius: 10, border: "none", background: accent, cursor: "pointer", fontWeight: 700, fontSize: 12, color: "white" }}>Done</button>
       </Modal>)}
     </div>
   );
