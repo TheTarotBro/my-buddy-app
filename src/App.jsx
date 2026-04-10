@@ -64,6 +64,25 @@ function getOverdueInfo(person, today) {
 function getBdToday(ppl) { const t = new Date(), m = t.getMonth(), d = t.getDate(); return ppl.filter(b => { if (!b.date) return false; const x = new Date(b.date + "T00:00:00"); return !isNaN(x) && x.getMonth() === m && x.getDate() === d; }); }
 function daysUntil(ds) { if (!ds) return Infinity; const now = new Date(), bd = new Date(ds + "T00:00:00"); if (isNaN(bd)) return Infinity; bd.setFullYear(now.getFullYear()); const td = new Date(now.getFullYear(), now.getMonth(), now.getDate()); if (bd < td) bd.setFullYear(now.getFullYear() + 1); return Math.round((bd - td) / 86400000); }
 
+function ZodiacGlyph({ sign, color, size = 18 }) {
+  const s = size / 18;
+  const paths = {
+    Aries: <path d="M4 14C4 8 7 4 9 4s5 4 5 10M9 4V14" stroke={color} strokeWidth={1.5*s} strokeLinecap="round" fill="none"/>,
+    Taurus: <><circle cx="9" cy="11" r="5" stroke={color} strokeWidth={1.4*s} fill="none"/><path d="M4 5C4 3 6 1.5 9 4C12 1.5 14 3 14 5" stroke={color} strokeWidth={1.4*s} strokeLinecap="round" fill="none"/></>,
+    Gemini: <><line x1="6" y1="3" x2="6" y2="15" stroke={color} strokeWidth={1.4*s}/><line x1="12" y1="3" x2="12" y2="15" stroke={color} strokeWidth={1.4*s}/><path d="M3 4C5 3 7 3 9 4C11 3 13 3 15 4" stroke={color} strokeWidth={1.3*s} strokeLinecap="round" fill="none"/><path d="M3 14C5 15 7 15 9 14C11 15 13 15 15 14" stroke={color} strokeWidth={1.3*s} strokeLinecap="round" fill="none"/></>,
+    Cancer: <><path d="M14 7C14 4.5 12 3 9.5 3C7 3 5 4.5 5 7" stroke={color} strokeWidth={1.4*s} strokeLinecap="round" fill="none"/><circle cx="13" cy="7" r="2.5" stroke={color} strokeWidth={1.3*s} fill="none"/><path d="M4 11C4 13.5 6 15 8.5 15C11 15 13 13.5 13 11" stroke={color} strokeWidth={1.4*s} strokeLinecap="round" fill="none"/><circle cx="5" cy="11" r="2.5" stroke={color} strokeWidth={1.3*s} fill="none"/></>,
+    Leo: <><circle cx="6" cy="6" r="3.5" stroke={color} strokeWidth={1.4*s} fill="none"/><path d="M9.5 6C9.5 10 12 12 14 12C15.5 12 16 11 16 9.5" stroke={color} strokeWidth={1.4*s} strokeLinecap="round" fill="none"/></>,
+    Virgo: <><path d="M3 12V4C3 4 3 2 5 4V12M5 4C5 4 5 2 7 4V12M7 4C7 4 7 2 9 4V10C9 10 9 12 11 12C13 12 13 10 13 10" stroke={color} strokeWidth={1.3*s} strokeLinecap="round" fill="none"/><line x1="8" y1="10" x2="14" y2="10" stroke={color} strokeWidth={1.2*s}/></>,
+    Libra: <><line x1="3" y1="13" x2="15" y2="13" stroke={color} strokeWidth={1.4*s} strokeLinecap="round"/><line x1="3" y1="9" x2="15" y2="9" stroke={color} strokeWidth={1.4*s} strokeLinecap="round"/><path d="M9 9C9 6 11 4 13 3" stroke={color} strokeWidth={1.4*s} strokeLinecap="round" fill="none"/></>,
+    Scorpio: <><path d="M3 12V4C3 4 3 2 5 4V12M5 4C5 4 5 2 7 4V12M7 4C7 4 7 2 9 4V12C9 12 9 14 11 12L13 10" stroke={color} strokeWidth={1.3*s} strokeLinecap="round" fill="none"/><path d="M11.5 12L13 10L13 13" stroke={color} strokeWidth={1.2*s} strokeLinecap="round" strokeLinejoin="round" fill="none"/></>,
+    Sagittarius: <><line x1="4" y1="14" x2="14" y2="4" stroke={color} strokeWidth={1.5*s} strokeLinecap="round"/><path d="M9 4H14V9" stroke={color} strokeWidth={1.5*s} strokeLinecap="round" strokeLinejoin="round" fill="none"/><line x1="6" y1="9" x2="9" y2="12" stroke={color} strokeWidth={1.3*s} strokeLinecap="round"/></>,
+    Capricorn: <><path d="M3 12V5C3 3 5 3 5 5V12C5 14 7 15 9 13C11 11 11 8 11 6C11 4 13 3 14 5C15 7 15 9 13 11" stroke={color} strokeWidth={1.3*s} strokeLinecap="round" fill="none"/></>,
+    Aquarius: <><path d="M2 6L4.5 4L7 6L9.5 4L12 6L14.5 4L16 6" stroke={color} strokeWidth={1.5*s} strokeLinecap="round" strokeLinejoin="round" fill="none"/><path d="M2 11L4.5 9L7 11L9.5 9L12 11L14.5 9L16 11" stroke={color} strokeWidth={1.5*s} strokeLinecap="round" strokeLinejoin="round" fill="none"/></>,
+    Pisces: <><path d="M5 3C3 6 3 12 5 15" stroke={color} strokeWidth={1.4*s} strokeLinecap="round" fill="none"/><path d="M13 3C15 6 15 12 13 15" stroke={color} strokeWidth={1.4*s} strokeLinecap="round" fill="none"/><line x1="3" y1="9" x2="15" y2="9" stroke={color} strokeWidth={1.4*s} strokeLinecap="round"/></>,
+  };
+  return <svg width={size} height={size} viewBox="0 0 18 18" fill="none" style={{ flexShrink: 0 }}>{paths[sign] || <text x="9" y="13" textAnchor="middle" fill={color} fontSize="12">?</text>}</svg>;
+}
+
 function Modal({children,onClose}){
   return(<div role="dialog" aria-modal="true" style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.55)",backdropFilter:"blur(8px)",display:"flex",alignItems:"flex-start",justifyContent:"center",zIndex:200,paddingTop:"env(safe-area-inset-top, 20px)"}} onClick={e=>{if(e.target===e.currentTarget)onClose()}}>
     <div style={{background:"#F6F2EB",borderRadius:14,padding:"20px 18px",width:"92%",maxWidth:400,maxHeight:"85vh",overflow:"auto",animation:"sd 0.25s ease",marginTop:16,WebkitOverflowScrolling:"touch",overflowX:"hidden"}}>{children}</div>
@@ -284,12 +303,7 @@ export default function App() {
             <button onClick={() => setSettings(!settings)} aria-label="Settings" style={{ background: "#EDEAE3", border: "1px solid #D6D0C6", borderRadius: 8, width: 30, height: 30, cursor: "pointer", fontSize: 13, color: "#8A8078", display: "flex", alignItems: "center", justifyContent: "center" }}>...</button>
           </div>
         </div>
-        <div style={{ display: "flex", gap: 5, padding: "4px 20px 12px" }}>
-          {[{ id: "people", l: "People" }, { id: "touchpoints", l: "Touch" }, { id: "birthdays", l: "Birthdays" }, { id: "places", l: "Places" }].map(t => (
-            <button key={t.id} onClick={() => setTab(t.id)} aria-label={`${t.l} tab`} aria-current={tab === t.id ? "page" : undefined} style={{ flex: 1, padding: "8px 0", borderRadius: 8, border: tab === t.id ? "1px solid #1E1B18" : "1px solid #D6D0C6", cursor: "pointer", fontWeight: tab === t.id ? 500 : 400, fontSize: 10, background: tab === t.id ? "#1E1B18" : "transparent", color: tab === t.id ? "#F6F2EB" : "#8A8078", letterSpacing: 0.3 }}>{t.l}</button>
-          ))}
-        </div>
-        <div style={{ height: 1, background: "#EDEAE3", margin: "0 20px" }} />
+        <div style={{ height: 0.5, background: "#E0DCD4", margin: "0 18px" }} />
       </div>
 
       {settings && (<div style={{ margin: "4px 20px 8px", padding: 14, background: "#EDEAE3", borderRadius: 12, border: "1px solid #D6D0C6", animation: "fi 0.2s ease" }}>
@@ -317,7 +331,7 @@ export default function App() {
         {sortedTodayBd.map(b => (<div key={b.name} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 3, opacity: wishes[b.name] ? 0.5 : 1 }}><span style={{ fontSize: 12.5, fontWeight: 600, cursor: "pointer" }} onClick={() => openPerson(b)}>{b.name}</span><button onClick={() => toggleWish(b.name)} style={{ fontSize: 10.5, fontWeight: 700, border: "none", borderRadius: 6, padding: "4px 10px", cursor: "pointer", background: wishes[b.name] ? "#E8E4DC" : "#e86a8a", color: wishes[b.name] ? "#8A8078" : "white" }}>{wishes[b.name] ? "↩ Undo" : "Wish HBD"}</button></div>))}
       </div>)}
 
-      {tab === "people" && (<div style={{ padding: "0 20px 80px", animation: "fi 0.25s ease" }}>
+      {tab === "people" && (<div style={{ padding: "0 18px 90px", animation: "fi 0.25s ease" }}>
         <div style={{ position: "relative", marginBottom: 14, marginTop: 8 }}>
           <input placeholder="Search people..." value={search} onChange={e => setSearch(e.target.value)} style={{ width: "100%", padding: "10px 36px 10px 14px", borderRadius: 10, border: "1px solid #D6D0C6", background: "#EDEAE3", fontSize: 13, color: "#1E1B18", outline: "none" }} />
           {search && <button onClick={() => setSearch("")} style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", background: "#E0DCD4", border: "none", borderRadius: "50%", width: 22, height: 22, cursor: "pointer", fontSize: 11, color: "#8A8078", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700 }}>×</button>}
@@ -338,7 +352,7 @@ export default function App() {
           {upcoming.map(p => { const z = getZodiacSign(p.date), d = daysUntil(p.date), bd = new Date(p.date + "T00:00:00"); return (
             <div key={p.id} onClick={() => openPerson(p)} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 0", cursor: "pointer", borderTop: "0.5px solid #EDE9E2" }}>
               <div style={{ width: 32, height: 32, borderRadius: 8, background: z ? `${z.color}15` : "#EDEAE3", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                <span style={{ fontFamily: "'Times New Roman', Georgia, serif", fontSize: 18, color: z ? z.color : "#A09888", fontVariantEmoji: "text" }}>{z ? z.symbol : "?"}</span>
+                {z ? <ZodiacGlyph sign={z.sign} color={z.color} size={20} /> : <span style={{ fontSize: 14, color: "#A09888" }}>?</span>}
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontWeight: 600, fontSize: 13, color: "#1E1B18" }}>{p.name}</div>
@@ -392,7 +406,7 @@ export default function App() {
                     <div style={{ fontWeight: 500, fontSize: 13, color: "#1E1B18" }}>{p.name}</div>
                     {preview && <div style={{ fontSize: 10, color: "#A09888", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{preview}</div>}
                   </div>
-                  {z && <span style={{ fontFamily: "'Times New Roman', Georgia, serif", fontSize: 14, color: z.color, fontVariantEmoji: "text", opacity: 0.4, flexShrink: 0 }}>{z.symbol}</span>}
+                  {z && <span style={{ opacity: 0.4 }}><ZodiacGlyph sign={z.sign} color={z.color} size={14} /></span>}
                 </div>
               ); })}
             </div>
@@ -405,7 +419,7 @@ export default function App() {
       </div>)}
 
       {/* ═══ TOUCHPOINTS TAB ═══ */}
-      {tab === "touchpoints" && (<div style={{ padding: "0 20px 80px", animation: "fi 0.25s ease" }}>
+      {tab === "touchpoints" && (<div style={{ padding: "0 18px 90px", animation: "fi 0.25s ease" }}>
         {/* Overdue section */}
         {reconnectAll.length > 0 && (<div style={{ marginTop: 8, marginBottom: 20 }}>
           {sL(`OVERDUE (${reconnectAll.length})`)}
@@ -432,7 +446,7 @@ export default function App() {
             {comingUpAll.map(({ person: p, info }) => { const cadLabel = CADENCES.find(c => c.id === info.cadence)?.label || info.cadence; const z = getZodiacSign(p.date); return (
               <div key={p.id} onClick={() => openPerson(p)} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderRadius: 10, background: "#FFFFFF", border: "1px solid #DDD8D0", cursor: "pointer" }}>
                 <div style={{ width: 32, height: 32, borderRadius: 8, background: z ? `${z.color}12` : "#EDEAE3", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                  <span style={{ fontFamily: "'Times New Roman', Georgia, serif", fontSize: 18, color: z ? z.color : "#A09888", fontVariantEmoji: "text" }}>{z ? z.symbol : "?"}</span>
+                  {z ? <ZodiacGlyph sign={z.sign} color={z.color} size={20} /> : <span style={{ fontSize: 14, color: "#A09888" }}>?</span>}
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontWeight: 600, fontSize: 13, color: "#1E1B18" }}>{p.name}</div>
@@ -460,7 +474,7 @@ export default function App() {
         if (unknownBdays.length > 0) sections.push({ zodiac: null, bdays: unknownBdays, key: "unknown", sublabel: "unknown" });
         const fmtRange = (z) => `${months[z.start[0]-1]} ${z.start[1]} – ${months[z.end[0]-1]} ${z.end[1]}`;
 
-        return (<div style={{ padding: "0 20px 80px", animation: "fi 0.25s ease" }}>
+        return (<div style={{ padding: "0 18px 90px", animation: "fi 0.25s ease" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12, marginTop: 8 }}>
             <span style={{ fontWeight: 700, fontSize: 14, color: "#1E1B18" }}>Birthdays</span>
             <button onClick={() => { setNb({ name: "", date: "", notes: "", cadence: "monthly", interests: [], tags: [] }); setModal("addPerson"); }} style={{ fontWeight: 600, fontSize: 11, border: "none", borderRadius: 8, padding: "6px 14px", cursor: "pointer", background: "#e86a8a", color: "white" }}>+ Add</button>
@@ -479,7 +493,7 @@ export default function App() {
               <div key={sec.key} style={{ display: "flex", gap: 0, marginBottom: 8 }}>
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "center", width: 42, flexShrink: 0, paddingTop: 2 }}>
                   <div onClick={() => !isUnknown && setViewingZodiac(z)} style={{ cursor: isUnknown ? "default" : "pointer", textAlign: "center", marginBottom: 4 }}>
-                    <div style={{ fontFamily: "'Times New Roman', Georgia, serif", fontSize: 20, lineHeight: 1, color: sColor, fontVariantEmoji: "text", opacity: sec.sublabel === "passed" ? 0.4 : 1 }}>{isUnknown ? "?" : z.symbol}</div>
+                    <div style={{ opacity: sec.sublabel === "passed" ? 0.4 : 1 }}>{isUnknown ? <span style={{ fontSize: 16, color: sColor }}>?</span> : <ZodiacGlyph sign={z.sign} color={sColor} size={20} />}</div>
                     <div style={{ fontSize: 7.5, fontWeight: 700, color: sColor, letterSpacing: 0.3, marginTop: 2, lineHeight: 1.1, opacity: sec.sublabel === "passed" ? 0.4 : 1 }}>{isUnknown ? "UNKNOWN" : z.sign.toUpperCase()}</div>
                     {sec.sublabel && !isUnknown && <div style={{ fontSize: 6.5, fontWeight: 600, color: sec.sublabel === "passed" ? "#B8B0A4" : z.color, marginTop: 1, letterSpacing: 0.5 }}>{sec.sublabel === "passed" ? "PASSED" : "SOON"}</div>}
                   </div>
@@ -490,7 +504,7 @@ export default function App() {
                   {sec.bdays.map(b => { const hasDate = !!b.date, bd = hasDate ? new Date(b.date + "T00:00:00") : null, d = hasDate ? daysUntil(b.date) : Infinity, isTd = d === 0, isPassed = sec.sublabel === "passed"; return (
                     <div key={b.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 12px", borderRadius: 10, background: isTd ? "#e86a8a08" : "#F2EFE8", border: `1px solid ${isTd ? "#e86a8a20" : "#EDEAE3"}`, cursor: "pointer", opacity: isPassed ? 0.5 : 1 }} onClick={() => openPerson(b)}>
                       <div style={{ width: 30, height: 30, borderRadius: 7, background: isUnknown ? "#EDEAE3" : (isTd ? "#e86a8a20" : `${sColor}12`), display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                        <span style={{ fontFamily: "'Times New Roman', Georgia, serif", fontSize: 16, color: sColor, fontVariantEmoji: "text" }}>{isUnknown ? "?" : z.symbol}</span>
+                        {isUnknown ? <span style={{ fontSize: 12, color: sColor }}>?</span> : <ZodiacGlyph sign={z.sign} color={sColor} size={14} />}
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontWeight: 600, fontSize: 13, color: "#1E1B18" }}>{b.name}</div>
@@ -522,7 +536,7 @@ export default function App() {
         else if (placeSort === "rating") filtered.sort((a, b) => (b.rating || 0) - (a.rating || 0));
         else if (placeSort === "recent") filtered.sort((a, b) => { const da = lastVisitDate(a) || "", db = lastVisitDate(b) || ""; return db.localeCompare(da); });
         const stars = (n) => "★".repeat(n) + "☆".repeat(5 - n);
-        return (<div style={{ padding: "0 20px 80px", animation: "fi 0.25s ease" }}>
+        return (<div style={{ padding: "0 18px 90px", animation: "fi 0.25s ease" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12, marginTop: 8 }}>
             <span style={{ fontWeight: 700, fontSize: 14, color: "#1E1B18" }}>Places</span>
             <div style={{ display: "flex", gap: 6 }}>
@@ -628,7 +642,7 @@ export default function App() {
         const searchResults = linkSearch.length > 0 ? people.filter(b => b.id !== viewingPerson.id && b.name.toLowerCase().includes(linkSearch.toLowerCase()) && !rels.find(r => r.personId === b.id)) : [];
         return (<Modal onClose={() => { setPeople(p => p.map(b => b.id === viewingPerson.id ? { ...viewingPerson, notes: editNotes } : b)); setModal(null); setViewingPerson(null); setProfileTab("info"); setLinkSearch(""); }}>
           <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
-            <div style={{ width: 44, height: 44, borderRadius: 12, background: `${z.color}15`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><span style={{ fontFamily: "'Times New Roman', Georgia, serif", fontSize: 24, color: z.color, fontVariantEmoji: "text" }}>{z.symbol}</span></div>
+            <div style={{ width: 44, height: 44, borderRadius: 12, background: `${z.color}15`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><ZodiacGlyph sign={z.sign} color={z.color} size={26} /></div>
             <div style={{ flex: 1 }}>
               <input value={viewingPerson.name} onChange={e => upd({ name: e.target.value })} style={{ width: "100%", fontSize: 16, fontWeight: 700, color: "#1E1B18", border: "none", background: "transparent", outline: "none", padding: 0, fontFamily: "'Lora', Georgia, serif" }} />
               <div style={{ fontSize: 11, color: "#8A8078" }}>{z.sign}{hasDate ? ` · ${months[bd.getMonth()]} ${bd.getDate()} · ${daysUntil(viewingPerson.date) === 0 ? "Today!" : `${daysUntil(viewingPerson.date)}d away`}` : ""}</div>
@@ -654,7 +668,7 @@ export default function App() {
             {sH("RELATIONSHIPS")}
             {rels.length > 0 && <div style={{ display: "flex", flexDirection: "column", gap: 4, marginBottom: 8 }}>{rels.map((r, i) => { const linked = people.find(b => b.id === r.personId); return (<div key={i} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 10px", borderRadius: 8, background: "#FFFFFF", border: "1px solid #DDD8D0" }}><span style={{ fontSize: 10, fontWeight: 700, color: z.color, background: `${z.color}12`, padding: "2px 6px", borderRadius: 4 }}>{r.label}</span><span style={{ flex: 1, fontSize: 12, fontWeight: 600, color: "#1E1B18", cursor: linked ? "pointer" : "default" }} onClick={() => { if (linked) { upd({ gifts, events, interests, rels, notes: editNotes }); setPeople(p => p.map(b => b.id === viewingPerson.id ? { ...viewingPerson, notes: editNotes } : b)); setViewingPerson(linked); setEditNotes(linked.notes || ""); setProfileTab("info"); setLinkSearch(""); } }}>{linked ? linked.name : "(removed)"}</span><button onClick={() => { const newRels = rels.filter((_, j) => j !== i); upd({ relationships: newRels }); if (linked) { setPeople(p => p.map(b => b.id === r.personId ? { ...b, relationships: (b.relationships || []).filter(lr => lr.personId !== viewingPerson.id) } : b)); } }} style={{ background: "none", border: "none", fontSize: 13, color: "#B8B0A4", cursor: "pointer", padding: "0 4px" }}>×</button></div>); })}</div>}
             <div style={{ display: "flex", gap: 4, marginBottom: 4 }}><input placeholder="Search to link..." value={linkSearch} onChange={e => setLinkSearch(e.target.value)} style={{ flex: 1, padding: "6px 10px", borderRadius: 6, border: "1px solid #D6D0C6", background: "#EDEAE3", fontSize: 11, color: "#1E1B18", outline: "none" }} /><select value={linkLabel} onChange={e => setLinkLabel(e.target.value)} style={{ padding: "6px 8px", borderRadius: 6, border: "1px solid #D6D0C6", background: "#EDEAE3", fontSize: 10, color: "#1E1B18", outline: "none" }}>{REL_LABELS.map(l => <option key={l} value={l}>{l}</option>)}</select></div>
-            {searchResults.length > 0 && <div style={{ border: "1px solid #D6D0C6", borderRadius: 8, overflow: "hidden", marginBottom: 8 }}>{searchResults.slice(0, 5).map(b => (<div key={b.id} onClick={() => { upd({ relationships: [...rels, { personId: b.id, label: linkLabel }] }); setPeople(p => p.map(x => x.id === b.id ? { ...x, relationships: [...(x.relationships || []), { personId: viewingPerson.id, label: REL_REVERSE[linkLabel] || linkLabel }] } : x)); setLinkSearch(""); }} style={{ padding: "8px 10px", fontSize: 12, color: "#1E1B18", cursor: "pointer", borderBottom: "0.5px solid #EDE9E2", background: "#F0EDE6" }}>{b.name} <span style={{ fontSize: 10, color: "#A09888" }}>· {(getZodiacSign(b.date) || { symbol: "?" }).symbol}</span></div>))}</div>}
+            {searchResults.length > 0 && <div style={{ border: "1px solid #D6D0C6", borderRadius: 8, overflow: "hidden", marginBottom: 8 }}>{searchResults.slice(0, 5).map(b => (<div key={b.id} onClick={() => { upd({ relationships: [...rels, { personId: b.id, label: linkLabel }] }); setPeople(p => p.map(x => x.id === b.id ? { ...x, relationships: [...(x.relationships || []), { personId: viewingPerson.id, label: REL_REVERSE[linkLabel] || linkLabel }] } : x)); setLinkSearch(""); }} style={{ padding: "8px 10px", fontSize: 12, color: "#1E1B18", cursor: "pointer", borderBottom: "0.5px solid #EDE9E2", background: "#F0EDE6" }}>{b.name} {(() => { const bz = getZodiacSign(b.date); return bz ? <ZodiacGlyph sign={bz.sign} color={bz.color} size={12} /> : null; })()}</div>))}</div>}
             {sH("INTERESTS")}
             <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginBottom: 6 }}>{interests.map((int, i) => (<span key={i} style={{ fontSize: 11, padding: "3px 8px", borderRadius: 6, background: `${z.color}10`, color: z.color, fontWeight: 600, display: "flex", alignItems: "center", gap: 4 }}>{int}<button onClick={() => upd({ interests: interests.filter((_, j) => j !== i) })} style={{ background: "none", border: "none", fontSize: 11, color: z.color, cursor: "pointer", padding: 0, opacity: 0.5 }}>×</button></span>))}</div>
             <div style={{ display: "flex", gap: 4 }}><input placeholder="Add interest..." value={newInterest} onChange={e => setNewInterest(e.target.value)} onKeyDown={e => { if (e.key === "Enter" && newInterest.trim()) { upd({ interests: [...interests, newInterest.trim()] }); setNewInterest(""); } }} style={{ flex: 1, padding: "6px 10px", borderRadius: 6, border: "1px solid #D6D0C6", background: "#EDEAE3", fontSize: 11, color: "#1E1B18", outline: "none" }} /><button onClick={() => { if (newInterest.trim()) { upd({ interests: [...interests, newInterest.trim()] }); setNewInterest(""); } }} style={{ padding: "6px 12px", borderRadius: 6, border: "none", background: z.color, color: "white", fontWeight: 700, fontSize: 10, cursor: "pointer" }}>+</button></div>
@@ -826,7 +840,7 @@ export default function App() {
 
       {viewingZodiac && (<Modal onClose={() => setViewingZodiac(null)}>
         <div style={{ textAlign: "center", marginBottom: 16 }}>
-          <div style={{ fontFamily: "'Times New Roman', Georgia, serif", fontSize: 48, lineHeight: 1, color: viewingZodiac.color, fontVariantEmoji: "text", marginBottom: 8 }}>{viewingZodiac.symbol}</div>
+          <div style={{ marginBottom: 8, display: "flex", justifyContent: "center" }}><ZodiacGlyph sign={viewingZodiac.sign} color={viewingZodiac.color} size={48} /></div>
           <div style={{ fontFamily: "'Lora'", fontSize: 20, fontWeight: 700, color: "#1E1B18" }}>{viewingZodiac.sign}</div>
           <div style={{ fontSize: 12, color: "#8A8078", marginTop: 4 }}>{months[viewingZodiac.start[0] - 1]} {viewingZodiac.start[1]} – {months[viewingZodiac.end[0] - 1]} {viewingZodiac.end[1]}</div>
         </div>
@@ -1012,6 +1026,24 @@ export default function App() {
         </div>
         <button onClick={() => setEditingPeopleTags(false)} style={{ width: "100%", padding: "11px 0", borderRadius: 10, border: "none", background: accent, cursor: "pointer", fontWeight: 600, fontSize: 12, color: "white" }}>Done</button>
       </Modal>)}
+
+      {/* Bottom Tab Bar */}
+      <nav role="tablist" aria-label="Main navigation" style={{ position: "fixed", bottom: 0, left: "50%", transform: "translateX(-50%)", width: "100%", maxWidth: 480, background: "#F6F2EB", borderTop: "1px solid #E0DCD4", paddingBottom: "env(safe-area-inset-bottom, 8px)", zIndex: 100 }}>
+        <div style={{ display: "flex", justifyContent: "space-around", padding: "10px 16px 6px" }}>
+          {[
+            { id: "people", l: "People", icon: <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="6.5" r="3" stroke="currentColor" strokeWidth="1.3"/><path d="M3 16C3 12.5 5.5 10.5 9 10.5s6 2 6 5.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg> },
+            { id: "touchpoints", l: "Touch", icon: <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M9 2.5v6.5l3.5 2.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/><circle cx="9" cy="9" r="6.5" stroke="currentColor" strokeWidth="1.3"/></svg> },
+            { id: "birthdays", l: "Birthdays", icon: <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M9 2l2 4.5 5 .7-3.5 3.4.8 4.9L9 13.2 4.7 15.5l.8-4.9L2 7.2l5-.7z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round" fill="none"/></svg> },
+            { id: "places", l: "Places", icon: <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="8" r="2.5" stroke="currentColor" strokeWidth="1.3"/><circle cx="9" cy="8" r="6.5" stroke="currentColor" strokeWidth="1.2"/><path d="M9 1.5V3M9 13v1.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/></svg> },
+          ].map(t => (
+            <button key={t.id} role="tab" aria-selected={tab === t.id} aria-label={t.l} onClick={() => setTab(t.id)} style={{ background: "none", border: "none", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 2, padding: "0 8px", color: tab === t.id ? "#1E1B18" : "#B8B0A4" }}>
+              {t.icon}
+              <span style={{ fontSize: 9, fontWeight: tab === t.id ? 500 : 400 }}>{t.l}</span>
+              {tab === t.id && <div style={{ width: 4, height: 4, borderRadius: "50%", background: "#1E1B18", marginTop: -1 }} />}
+            </button>
+          ))}
+        </div>
+      </nav>
     </div>
   );
 }
