@@ -1,0 +1,16 @@
+name: Birthday Notification Check
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch: {}
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping birthday-check endpoint
+        run: |
+          curl -sS -o /dev/null -w "%{http_code}\n" \
+            -H "Authorization: Bearer ${{ secrets.BIRTHDAY_CHECK_SECRET }}" \
+            https://my-buddy-app-xi.vercel.app/api/birthday-check
