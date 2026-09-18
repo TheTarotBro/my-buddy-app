@@ -1,6 +1,7 @@
 import { initializeApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "firebase/auth";
 import { getDatabase, ref, set, get, onValue } from "firebase/database";
+import { getMessaging, getToken as getFcmToken, isSupported as isMessagingSupported } from "firebase/messaging";
 
 const firebaseConfig = {
   apiKey: "AIzaSyABzrfG8Sjx3pcvktXUicJEudm653Xnn3g",
@@ -49,4 +50,28 @@ export function watchData(userId, path, callback) {
   return onValue(ref(db, `buddy/${userId}/${path}`), (snapshot) => {
     callback(snapshot.exists() ? snapshot.val() : null);
   });
+}
+
+// Push notifications
+const VAPID_KEY = "BIraRmDryytr5zL_wcUQ1E36FE_ZUZvZdyrpNVy61T29ScoVnpsi2MB-mqMCXzCtue_yEo0bQPPpnmb6xM-N_sU";
+
+export async function registerPushNotifications(userId) {
+  try {
+    if (typeof window === "undefined") return { ok: false, reason: "no-window" };
+    if (!("Notification" in window) || !("serviceWorker" in navigator)) return { ok: false, reason: "unsupported" };
+    if (!(await isMessagingSupported())) return { ok: false, reason: "unsupported" };
+    const permission = await Notification.requestPermission();
+    if (permission !== "granted") return { ok: false, reason: "denied" };
+    const registration = await navigator.serviceWorker.register("/firebase-messaging-sw.js");
+    const messaging = getMessaging(app);
+    const token = await getFcmToken(messaging, { vapidKey: VAPID_KEY, serviceWorkerRegistration: registration });
+    if (token) {
+      await set(ref(db, `buddy/${userId}/fcmTokens/${token}`), true);
+      return { ok: true };
+    }
+    return { ok: false, reason: "no-token" };
+  } catch (err) {
+    console.error("Push notification setup error:", err);
+    return { ok: false, reason: "error", error: err.message };
+  }
 }
