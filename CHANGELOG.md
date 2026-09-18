@@ -1,5 +1,11 @@
 # My Circle — Changelog
 
+## v3.2 — September 18, 2026
+### Documentation catch-up (retroactive)
+- Bumped version from 2.0.0 to 3.2.0 — the app has been running this feature set live since April 2026, but package.json and this changelog were never updated to match
+- Verified live features not previously logged here: full visual redesign (cream/warm-white palette, Lora serif headers, zodiac-colored monogram initials, "leather-bound journal" aesthetic), WCAG accessibility pass, `?preview=1` testing flag
+- Granular v2.1–v3.1 history wasn't reconstructed; this entry only confirms the end state matches what's live
+
 ## v2.0 — April 6, 2026
 ### Places + Cross-Linked Events
 - **Places tab**: New 4th tab for tracking places — name, rating (1-5 stars), notes, Google Maps link (opens in Maps app on iOS)
