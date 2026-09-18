@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { signInGoogle, signOutUser, onAuthChange, saveData, loadData } from "./firebase.js";
+import { signInGoogle, signOutUser, onAuthChange, saveData, loadData, registerPushNotifications } from "./firebase.js";
 
 const TODAY = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; };
 const IS_PREVIEW = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("preview") === "1";
@@ -187,6 +187,7 @@ export default function App() {
   const [editingTp, setEditingTp] = useState(null);
   const [editingEvent, setEditingEvent] = useState(null); // { personId, event }
   const [showAllMilestones, setShowAllMilestones] = useState(false);
+  const [notifSettings, setNotifSettings] = useState({ enabled: false, hour: 8 });
 
   const saveTimers = useRef({});
   const save = useCallback((path, data, immediate) => {
@@ -202,7 +203,8 @@ export default function App() {
     if (IS_PREVIEW) return;
     if (!user) { setDataLoaded(false); return; }
     (async () => {
-      const [b, w, pl, cats, ptags] = await Promise.all([loadData(user.uid, "birthdays"), loadData(user.uid, `wishes/${today}`), loadData(user.uid, "places"), loadData(user.uid, "placeCategories"), loadData(user.uid, "peopleTags")]);
+      const [b, w, pl, cats, ptags, ns] = await Promise.all([loadData(user.uid, "birthdays"), loadData(user.uid, `wishes/${today}`), loadData(user.uid, "places"), loadData(user.uid, "placeCategories"), loadData(user.uid, "peopleTags"), loadData(user.uid, "settings/notifications")]);
+      if (ns) setNotifSettings({ enabled: !!ns.enabled, hour: Number.isInteger(ns.hour) ? ns.hour : 8 });
       if (b) {
         const loaded = Object.values(b).map(p => ({
           ...p,
@@ -325,6 +327,32 @@ export default function App() {
             const a = document.createElement("a"); a.href = url; a.download = `my-circle-backup-${TODAY()}.json`; a.click();
             URL.revokeObjectURL(url);
           }} style={{ fontSize: 10, fontWeight: 700, border: `1px solid ${accent}44`, borderRadius: 6, padding: "6px 12px", cursor: "pointer", background: `${accent}12`, color: accent }}>Download</button>
+        </div>
+        <div style={{ paddingTop: 10, marginTop: 10, borderTop: "1px solid #E8E4DC" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: notifSettings.enabled ? 8 : 0 }}>
+            <div>
+              <div style={{ fontSize: 11, fontWeight: 600, color: "#1E1B18" }}>Birthday Alerts</div>
+              <div style={{ fontSize: 9, color: "#A09888" }}>Daily push if it's someone's birthday</div>
+            </div>
+            <button onClick={async () => {
+              const next = { ...notifSettings, enabled: !notifSettings.enabled };
+              setNotifSettings(next);
+              save("settings/notifications", next, true);
+              if (next.enabled) await registerPushNotifications(user.uid);
+            }} style={{ width: 40, height: 22, borderRadius: 11, border: "none", cursor: "pointer", background: notifSettings.enabled ? accent : "#D6D0C6", position: "relative", flexShrink: 0 }}>
+              <div style={{ position: "absolute", top: 2, left: notifSettings.enabled ? 20 : 2, width: 18, height: 18, borderRadius: 9, background: "white", transition: "left 0.15s ease" }} />
+            </button>
+          </div>
+          {notifSettings.enabled && (<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <div style={{ fontSize: 10, color: "#8A8078" }}>Alert time</div>
+            <select value={notifSettings.hour} onChange={e => {
+              const next = { ...notifSettings, hour: parseInt(e.target.value, 10) };
+              setNotifSettings(next);
+              save("settings/notifications", next, true);
+            }} style={{ fontSize: 11, fontWeight: 600, color: "#1E1B18", background: "#FFFFFF", border: "1px solid #D6D0C6", borderRadius: 6, padding: "4px 8px" }}>
+              {Array.from({ length: 24 }, (_, h) => (<option key={h} value={h}>{h === 0 ? "12:00 AM" : h < 12 ? `${h}:00 AM` : h === 12 ? "12:00 PM" : `${h - 12}:00 PM`}</option>))}
+            </select>
+          </div>)}
         </div>
       </div>)}
 
