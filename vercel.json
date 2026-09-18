@@ -1,5 +1,7 @@
 {
   "functions": {
-    "api/birthday-check.js": {}
+    "api/birthday-check.js": {
+      "maxDuration": 10
+    }
   }
 }
