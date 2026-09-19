@@ -5,6 +5,31 @@ const TODAY = () => { const d = new Date(); return `${d.getFullYear()}-${String(
 const IS_PREVIEW = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("preview") === "1";
 const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 
+const COLORS = {
+  ink: "#1E1B18",
+  border: "#D6D0C6",
+  textMuted: "#8A8078",
+  inputBg: "#EDEAE3",
+  textMuted2: "#A09888",
+  borderLight: "#E8E4DC",
+  textMuted3: "#B8B0A4",
+  gold: "#E8A84C",
+  bg: "#F6F2EB",
+  white: "#FFFFFF",
+  borderCard: "#DDD8D0",
+  red: "#E86A6A",
+  pink: "#E86A8A",
+  divider: "#E0DCD4",
+  bgAlt: "#F0EDE6",
+  textMuted4: "#6B6058",
+  accent: "#3D6B52",
+  borderSubtle: "#EDE9E2",
+  bgSubtle: "#F2EFE8",
+  bgSelected: "#E4E0D8",
+  textMuted5: "#5C564C",
+  bgSubtle2: "#F5F2EB",
+};
+
 const ZODIAC = [
   { sign: "Aries", symbol: "♈", start: [3,21], end: [4,19], color: "#e84040", traits: "Bold, ambitious, and energetic. Natural leaders who love a challenge.", likes: "Comfortable clothes, taking on leadership, individual sports, physical challenges", dislikes: "Inactivity, delays, work that doesn't use their talents" },
   { sign: "Taurus", symbol: "♉", start: [4,20], end: [5,20], color: "#e87040", traits: "Reliable, patient, and devoted. Lovers of beauty and comfort.", likes: "Gardening, cooking, good music, romance, quality craftsmanship", dislikes: "Sudden changes, complications, insecurity, synthetic fabrics" },
@@ -87,27 +112,27 @@ function ZodiacGlyph({ sign, color, size = 18 }) {
 
 function Modal({children,onClose}){
   return(<div role="dialog" aria-modal="true" style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.55)",backdropFilter:"blur(8px)",display:"flex",alignItems:"flex-start",justifyContent:"center",zIndex:200,paddingTop:"env(safe-area-inset-top, 20px)"}} onClick={e=>{if(e.target===e.currentTarget)onClose()}}>
-    <div style={{background:"#F6F2EB",borderRadius:14,padding:"20px 18px",width:"92%",maxWidth:400,maxHeight:"85vh",overflow:"auto",animation:"sd 0.25s ease",marginTop:16,WebkitOverflowScrolling:"touch",overflowX:"hidden"}}>{children}</div>
+    <div style={{background:COLORS.bg,borderRadius:14,padding:"20px 18px",width:"92%",maxWidth:400,maxHeight:"85vh",overflow:"auto",animation:"sd 0.25s ease",marginTop:16,WebkitOverflowScrolling:"touch",overflowX:"hidden"}}>{children}</div>
   </div>);
 }
 
 function LoginScreen({ onSignIn, loading }) {
   return (
-    <div style={{ minHeight: "100vh", background: "#F6F2EB", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", fontFamily: "'Inter', -apple-system, sans-serif", padding: 32, paddingTop: "calc(env(safe-area-inset-top, 20px) + 32px)" }}>
-      <div style={{ width: 64, height: 64, borderRadius: 16, background: "#1E1B18", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 20 }}>
-        <span style={{ fontSize: 28, color: "#F6F2EB" }}>●</span>
+    <div style={{ minHeight: "100vh", background: COLORS.bg, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", fontFamily: "'Inter', -apple-system, sans-serif", padding: 32, paddingTop: "calc(env(safe-area-inset-top, 20px) + 32px)" }}>
+      <div style={{ width: 64, height: 64, borderRadius: 16, background: COLORS.ink, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 20 }}>
+        <span style={{ fontSize: 28, color: COLORS.bg }}>●</span>
       </div>
-      <h1 style={{ fontFamily: "'Lora', Georgia, serif", fontSize: 28, fontWeight: 400, color: "#1E1B18", letterSpacing: -0.5, marginBottom: 8 }}>My Circle</h1>
-      <p style={{ fontSize: 13, color: "#8A8078", marginBottom: 32, textAlign: "center", lineHeight: 1.5 }}>Your personal CRM.<br/>Remember everyone who matters.</p>
-      <button onClick={onSignIn} disabled={loading} aria-label="Sign in with Google" style={{ padding: "14px 32px", borderRadius: 12, border: "none", cursor: loading ? "wait" : "pointer", background: "#1E1B18", color: "#F6F2EB", fontWeight: 600, fontSize: 14, display: "flex", alignItems: "center", gap: 10, boxShadow: "0 4px 20px rgba(30,27,24,0.15)" }}>
-        <svg width="18" height="18" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.27-4.74 3.27-8.1z" fill="#F6F2EB" opacity="0.7"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#F6F2EB" opacity="0.7"/><path d="M5.84 14.09A6.95 6.95 0 0 1 5.48 12c0-.72.12-1.42.36-2.09V7.07H2.18A11.03 11.03 0 0 0 1 12c0 1.77.42 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#F6F2EB" opacity="0.7"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#F6F2EB" opacity="0.7"/></svg>
+      <h1 style={{ fontFamily: "'Lora', Georgia, serif", fontSize: 28, fontWeight: 400, color: COLORS.ink, letterSpacing: -0.5, marginBottom: 8 }}>My Circle</h1>
+      <p style={{ fontSize: 13, color: COLORS.textMuted, marginBottom: 32, textAlign: "center", lineHeight: 1.5 }}>Your personal CRM.<br/>Remember everyone who matters.</p>
+      <button onClick={onSignIn} disabled={loading} aria-label="Sign in with Google" style={{ padding: "14px 32px", borderRadius: 12, border: "none", cursor: loading ? "wait" : "pointer", background: COLORS.ink, color: COLORS.bg, fontWeight: 600, fontSize: 14, display: "flex", alignItems: "center", gap: 10, boxShadow: "0 4px 20px rgba(30,27,24,0.15)" }}>
+        <svg width="18" height="18" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.27-4.74 3.27-8.1z" fill={COLORS.bg} opacity="0.7"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill={COLORS.bg} opacity="0.7"/><path d="M5.84 14.09A6.95 6.95 0 0 1 5.48 12c0-.72.12-1.42.36-2.09V7.07H2.18A11.03 11.03 0 0 0 1 12c0 1.77.42 3.45 1.18 4.93l2.85-2.22.81-.62z" fill={COLORS.bg} opacity="0.7"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill={COLORS.bg} opacity="0.7"/></svg>
         {loading ? "Signing in..." : "Sign in with Google"}
       </button>
     </div>
   );
 }
 
-const accent = "#3D6B52";
+const accent = COLORS.accent;
 
 export default function App() {
   const [user, setUser] = useState(IS_PREVIEW ? { uid: "preview", displayName: "Preview User" } : null);
@@ -234,9 +259,9 @@ export default function App() {
 
   const handleSignIn = async () => { setSignInLoading(true); await signInGoogle(); setSignInLoading(false); };
 
-  if (authLoading) return <div style={{ minHeight: "100vh", background: "#F6F2EB", display: "flex", alignItems: "center", justifyContent: "center", color: "#8A8078", fontFamily: "'Lora', Georgia, serif", fontSize: 14 }}>Loading...</div>;
+  if (authLoading) return <div style={{ minHeight: "100vh", background: COLORS.bg, display: "flex", alignItems: "center", justifyContent: "center", color: COLORS.textMuted, fontFamily: "'Lora', Georgia, serif", fontSize: 14 }}>Loading...</div>;
   if (!user) return <LoginScreen onSignIn={handleSignIn} loading={signInLoading} />;
-  if (!dataLoaded) return <div style={{ minHeight: "100vh", background: "#F6F2EB", display: "flex", alignItems: "center", justifyContent: "center", color: "#8A8078", fontFamily: "'Lora', Georgia, serif", fontSize: 14 }}>Loading your data...</div>;
+  if (!dataLoaded) return <div style={{ minHeight: "100vh", background: COLORS.bg, display: "flex", alignItems: "center", justifyContent: "center", color: COLORS.textMuted, fontFamily: "'Lora', Georgia, serif", fontSize: 14 }}>Loading your data...</div>;
 
   const todayBd = getBdToday(people);
   const sortedTodayBd = [...todayBd].sort((a, b) => (wishes[a.name] ? 1 : 0) - (wishes[b.name] ? 1 : 0));
@@ -292,12 +317,12 @@ export default function App() {
   }).sort((a, b) => a.name.localeCompare(b.name));
   const filteredBdays = people.filter(b => { if (bdSearch && !b.name.toLowerCase().includes(bdSearch.toLowerCase())) return false; const d = daysUntil(b.date); if (bdFilter === "week") return d <= 7; if (bdFilter === "month") return d <= 30; return true; }).sort((a, b) => daysUntil(a.date) - daysUntil(b.date));
 
-  const sL = (t) => <div style={{ fontFamily: "'Lora', Georgia, serif", fontSize: 11, fontWeight: 400, color: "#1E1B18", letterSpacing: 0.3, marginBottom: 8, marginTop: 4 }}>{t}</div>;
+  const sL = (t) => <div style={{ fontFamily: "'Lora', Georgia, serif", fontSize: 11, fontWeight: 400, color: COLORS.ink, letterSpacing: 0.3, marginBottom: 8, marginTop: 4 }}>{t}</div>;
   const letterGroups = {};
   filteredPeople.forEach(p => { const letter = p.name[0]?.toUpperCase() || "#"; if (!letterGroups[letter]) letterGroups[letter] = []; letterGroups[letter].push(p); });
 
   return (
-    <div style={{ minHeight: "100vh", background: "#F6F2EB", fontFamily: "'Inter', -apple-system, sans-serif", color: "#1E1B18", maxWidth: 480, margin: "0 auto" }}>
+    <div style={{ minHeight: "100vh", background: COLORS.bg, fontFamily: "'Inter', -apple-system, sans-serif", color: COLORS.ink, maxWidth: 480, margin: "0 auto" }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lora:wght@400;500;600;700&display=swap');
         @keyframes fi{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
@@ -306,32 +331,32 @@ export default function App() {
         input[type="date"]{-webkit-min-logical-width:0!important;min-width:0!important}
         button:active{transform:scale(0.97)!important}
         ::-webkit-scrollbar{width:0}textarea{resize:vertical}
-        button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid #3D6B52;outline-offset:2px}
-        a:focus-visible{outline:2px solid #3D6B52;outline-offset:2px}
+        button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid ${COLORS.accent};outline-offset:2px}
+        a:focus-visible{outline:2px solid ${COLORS.accent};outline-offset:2px}
       `}</style>
 
       <div style={{ paddingTop: "env(safe-area-inset-top, 20px)", background: "linear-gradient(180deg, rgba(30,27,24,0.03) 0%, transparent 100%)" }}>
         <div style={{ padding: "16px 18px 8px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <div>
-            <h1 style={{ fontFamily: "'Lora', Georgia, serif", fontSize: 22, fontWeight: 400, color: "#1E1B18", letterSpacing: -0.3 }}>My Circle</h1>
+            <h1 style={{ fontFamily: "'Lora', Georgia, serif", fontSize: 22, fontWeight: 400, color: COLORS.ink, letterSpacing: -0.3 }}>My Circle</h1>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <button onClick={() => { setNb({ name: "", date: "", notes: "", cadence: "monthly", interests: [], tags: [] }); setModal("addPerson"); }} aria-label="Add person" style={{ background: "#1E1B18", border: "none", borderRadius: 8, width: 30, height: 30, cursor: "pointer", fontSize: 16, color: "#F6F2EB", display: "flex", alignItems: "center", justifyContent: "center" }}>+</button>
-            <button onClick={() => setSettings(!settings)} aria-label="Settings" style={{ background: "#EDEAE3", border: "1px solid #D6D0C6", borderRadius: 8, width: 30, height: 30, cursor: "pointer", fontSize: 13, color: "#8A8078", display: "flex", alignItems: "center", justifyContent: "center" }}>...</button>
+            <button onClick={() => { setNb({ name: "", date: "", notes: "", cadence: "monthly", interests: [], tags: [] }); setModal("addPerson"); }} aria-label="Add person" style={{ background: COLORS.ink, border: "none", borderRadius: 8, width: 30, height: 30, cursor: "pointer", fontSize: 16, color: COLORS.bg, display: "flex", alignItems: "center", justifyContent: "center" }}>+</button>
+            <button onClick={() => setSettings(!settings)} aria-label="Settings" style={{ background: COLORS.inputBg, border: `1px solid ${COLORS.border}`, borderRadius: 8, width: 30, height: 30, cursor: "pointer", fontSize: 13, color: COLORS.textMuted, display: "flex", alignItems: "center", justifyContent: "center" }}>...</button>
           </div>
         </div>
-        <div style={{ height: 0.5, background: "#E0DCD4", margin: "0 18px" }} />
+        <div style={{ height: 0.5, background: COLORS.divider, margin: "0 18px" }} />
       </div>
 
-      {settings && (<div style={{ margin: "4px 20px 8px", padding: 14, background: "#EDEAE3", borderRadius: 12, border: "1px solid #D6D0C6", animation: "fi 0.2s ease" }}>
+      {settings && (<div style={{ margin: "4px 20px 8px", padding: 14, background: COLORS.inputBg, borderRadius: 12, border: `1px solid ${COLORS.border}`, animation: "fi 0.2s ease" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-          <span style={{ fontSize: 11, color: "#8A8078" }}>Signed in as {user.displayName || user.email}</span>
-          <button onClick={signOutUser} style={{ fontSize: 10, fontWeight: 700, border: "1px solid rgba(232,106,106,0.3)", borderRadius: 6, padding: "4px 10px", cursor: "pointer", background: "transparent", color: "#e86a6a" }}>Sign Out</button>
+          <span style={{ fontSize: 11, color: COLORS.textMuted }}>Signed in as {user.displayName || user.email}</span>
+          <button onClick={signOutUser} style={{ fontSize: 10, fontWeight: 700, border: "1px solid rgba(232,106,106,0.3)", borderRadius: 6, padding: "4px 10px", cursor: "pointer", background: "transparent", color: COLORS.red }}>Sign Out</button>
         </div>
-        <div style={{ paddingTop: 10, borderTop: "1px solid #E8E4DC", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div style={{ paddingTop: 10, borderTop: `1px solid ${COLORS.borderLight}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <div>
-            <div style={{ fontSize: 11, fontWeight: 600, color: "#1E1B18" }}>Export Data</div>
-            <div style={{ fontSize: 9, color: "#A09888" }}>{people.length} people · {places.length} places</div>
+            <div style={{ fontSize: 11, fontWeight: 600, color: COLORS.ink }}>Export Data</div>
+            <div style={{ fontSize: 9, color: COLORS.textMuted2 }}>{people.length} people · {places.length} places</div>
           </div>
           <button onClick={() => {
             const data = { exportDate: TODAY(), version: "2.2", people, places, placeCategories, peopleTags };
@@ -341,88 +366,88 @@ export default function App() {
             URL.revokeObjectURL(url);
           }} style={{ fontSize: 10, fontWeight: 700, border: `1px solid ${accent}44`, borderRadius: 6, padding: "6px 12px", cursor: "pointer", background: `${accent}12`, color: accent }}>Download</button>
         </div>
-        <div style={{ paddingTop: 10, marginTop: 10, borderTop: "1px solid #E8E4DC" }}>
+        <div style={{ paddingTop: 10, marginTop: 10, borderTop: `1px solid ${COLORS.borderLight}` }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: notifSettings.enabled ? 8 : 0 }}>
             <div>
-              <div style={{ fontSize: 11, fontWeight: 600, color: "#1E1B18" }}>Birthday Alerts</div>
-              <div style={{ fontSize: 9, color: "#A09888" }}>Daily push if it's someone's birthday</div>
+              <div style={{ fontSize: 11, fontWeight: 600, color: COLORS.ink }}>Birthday Alerts</div>
+              <div style={{ fontSize: 9, color: COLORS.textMuted2 }}>Daily push if it's someone's birthday</div>
             </div>
             <button onClick={async () => {
               const next = { ...notifSettings, enabled: !notifSettings.enabled };
               setNotifSettings(next);
               save("settings/notifications", next, true);
               if (next.enabled) await registerPushNotifications(user.uid);
-            }} style={{ width: 40, height: 22, borderRadius: 11, border: "none", cursor: "pointer", background: notifSettings.enabled ? accent : "#D6D0C6", position: "relative", flexShrink: 0 }}>
+            }} style={{ width: 40, height: 22, borderRadius: 11, border: "none", cursor: "pointer", background: notifSettings.enabled ? accent : COLORS.border, position: "relative", flexShrink: 0 }}>
               <div style={{ position: "absolute", top: 2, left: notifSettings.enabled ? 20 : 2, width: 18, height: 18, borderRadius: 9, background: "white", transition: "left 0.15s ease" }} />
             </button>
           </div>
           {notifSettings.enabled && (<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <div style={{ fontSize: 10, color: "#8A8078" }}>Alert time</div>
+            <div style={{ fontSize: 10, color: COLORS.textMuted }}>Alert time</div>
             <select value={notifSettings.hour} onChange={e => {
               const next = { ...notifSettings, hour: parseInt(e.target.value, 10) };
               setNotifSettings(next);
               save("settings/notifications", next, true);
-            }} style={{ fontSize: 11, fontWeight: 600, color: "#1E1B18", background: "#FFFFFF", border: "1px solid #D6D0C6", borderRadius: 6, padding: "4px 8px" }}>
+            }} style={{ fontSize: 11, fontWeight: 600, color: COLORS.ink, background: COLORS.white, border: `1px solid ${COLORS.border}`, borderRadius: 6, padding: "4px 8px" }}>
               {Array.from({ length: 24 }, (_, h) => (<option key={h} value={h}>{h === 0 ? "12:00 AM" : h < 12 ? `${h}:00 AM` : h === 12 ? "12:00 PM" : `${h - 12}:00 PM`}</option>))}
             </select>
           </div>)}
         </div>
       </div>)}
 
-      {sortedTodayBd.length > 0 && (<div style={{ margin: "4px 20px 6px", padding: "10px 14px", borderRadius: 10, background: "#e86a8a08", border: "1px solid #e86a8a18", animation: "fi 0.4s ease" }}>
-        <div style={{ fontWeight: 700, fontSize: 10, color: "#e86a8a", marginBottom: 6, letterSpacing: 1 }}>🎂 BIRTHDAY TODAY</div>
-        {sortedTodayBd.map(b => (<div key={b.name} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 3, opacity: wishes[b.name] ? 0.5 : 1 }}><span style={{ fontSize: 12.5, fontWeight: 600, cursor: "pointer" }} onClick={() => openPerson(b)}>{b.name}</span><button onClick={() => toggleWish(b.name)} style={{ fontSize: 10.5, fontWeight: 700, border: "none", borderRadius: 6, padding: "4px 10px", cursor: "pointer", background: wishes[b.name] ? "#E8E4DC" : "#e86a8a", color: wishes[b.name] ? "#8A8078" : "white" }}>{wishes[b.name] ? "↩ Undo" : "Wish HBD"}</button></div>))}
+      {sortedTodayBd.length > 0 && (<div style={{ margin: "4px 20px 6px", padding: "10px 14px", borderRadius: 10, background: `${COLORS.pink}08`, border: `1px solid ${COLORS.pink}18`, animation: "fi 0.4s ease" }}>
+        <div style={{ fontWeight: 700, fontSize: 10, color: COLORS.pink, marginBottom: 6, letterSpacing: 1 }}>🎂 BIRTHDAY TODAY</div>
+        {sortedTodayBd.map(b => (<div key={b.name} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 3, opacity: wishes[b.name] ? 0.5 : 1 }}><span style={{ fontSize: 12.5, fontWeight: 600, cursor: "pointer" }} onClick={() => openPerson(b)}>{b.name}</span><button onClick={() => toggleWish(b.name)} style={{ fontSize: 10.5, fontWeight: 700, border: "none", borderRadius: 6, padding: "4px 10px", cursor: "pointer", background: wishes[b.name] ? COLORS.borderLight : COLORS.pink, color: wishes[b.name] ? COLORS.textMuted : "white" }}>{wishes[b.name] ? "↩ Undo" : "Wish HBD"}</button></div>))}
       </div>)}
 
       {tab === "people" && (<div style={{ padding: "0 18px 90px", animation: "fi 0.25s ease" }}>
         <div style={{ position: "relative", marginBottom: 14, marginTop: 8 }}>
-          <input placeholder="Search people..." value={search} onChange={e => setSearch(e.target.value)} style={{ width: "100%", padding: "10px 36px 10px 14px", borderRadius: 10, border: "1px solid #D6D0C6", background: "#EDEAE3", fontSize: 13, color: "#1E1B18", outline: "none" }} />
-          {search && <button onClick={() => setSearch("")} style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", background: "#E0DCD4", border: "none", borderRadius: "50%", width: 22, height: 22, cursor: "pointer", fontSize: 11, color: "#8A8078", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700 }}>×</button>}
+          <input placeholder="Search people..." value={search} onChange={e => setSearch(e.target.value)} style={{ width: "100%", padding: "10px 36px 10px 14px", borderRadius: 10, border: `1px solid ${COLORS.border}`, background: COLORS.inputBg, fontSize: 13, color: COLORS.ink, outline: "none" }} />
+          {search && <button onClick={() => setSearch("")} style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", background: COLORS.divider, border: "none", borderRadius: "50%", width: 22, height: 22, cursor: "pointer", fontSize: 11, color: COLORS.textMuted, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700 }}>×</button>}
         </div>
 
         {/* Tag filter */}
         {!search && peopleTags.length > 0 && (<div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginBottom: 10 }}>
-          <button onClick={() => setPeopleTagFilter("all")} style={{ padding: "4px 10px", borderRadius: 6, border: `1px solid ${peopleTagFilter === "all" ? accent + "44" : "#E8E4DC"}`, cursor: "pointer", fontWeight: 600, fontSize: 10, background: peopleTagFilter === "all" ? `${accent}12` : "transparent", color: peopleTagFilter === "all" ? accent : "#8A8078" }}>All</button>
-          {peopleTags.map(t => (<button key={t} onClick={() => setPeopleTagFilter(peopleTagFilter === t ? "all" : t)} style={{ padding: "4px 10px", borderRadius: 6, border: `1px solid ${peopleTagFilter === t ? accent + "44" : "#E8E4DC"}`, cursor: "pointer", fontWeight: 600, fontSize: 10, background: peopleTagFilter === t ? `${accent}12` : "transparent", color: peopleTagFilter === t ? accent : "#8A8078" }}>{t}</button>))}
-          <button onClick={() => setEditingPeopleTags(true)} style={{ padding: "4px 8px", borderRadius: 6, border: "1px solid #D6D0C6", cursor: "pointer", fontWeight: 600, fontSize: 10, background: "transparent", color: "#A09888" }}>✎</button>
+          <button onClick={() => setPeopleTagFilter("all")} style={{ padding: "4px 10px", borderRadius: 6, border: `1px solid ${peopleTagFilter === "all" ? accent + "44" : COLORS.borderLight}`, cursor: "pointer", fontWeight: 600, fontSize: 10, background: peopleTagFilter === "all" ? `${accent}12` : "transparent", color: peopleTagFilter === "all" ? accent : COLORS.textMuted }}>All</button>
+          {peopleTags.map(t => (<button key={t} onClick={() => setPeopleTagFilter(peopleTagFilter === t ? "all" : t)} style={{ padding: "4px 10px", borderRadius: 6, border: `1px solid ${peopleTagFilter === t ? accent + "44" : COLORS.borderLight}`, cursor: "pointer", fontWeight: 600, fontSize: 10, background: peopleTagFilter === t ? `${accent}12` : "transparent", color: peopleTagFilter === t ? accent : COLORS.textMuted }}>{t}</button>))}
+          <button onClick={() => setEditingPeopleTags(true)} style={{ padding: "4px 8px", borderRadius: 6, border: `1px solid ${COLORS.border}`, cursor: "pointer", fontWeight: 600, fontSize: 10, background: "transparent", color: COLORS.textMuted2 }}>✎</button>
         </div>)}
 
-        {!search && upcoming.length > 0 && (<div style={{ marginBottom: 12, padding: "12px 14px", borderRadius: 12, background: "#FFFFFF", border: "1px solid #DDD8D0" }}>
+        {!search && upcoming.length > 0 && (<div style={{ marginBottom: 12, padding: "12px 14px", borderRadius: 12, background: COLORS.white, border: `1px solid ${COLORS.borderCard}` }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-            <span style={{ fontFamily: "'Lora', Georgia, serif", fontSize: 11, fontWeight: 400, color: "#1E1B18", letterSpacing: 0.3 }}>UPCOMING BIRTHDAYS</span>
+            <span style={{ fontFamily: "'Lora', Georgia, serif", fontSize: 11, fontWeight: 400, color: COLORS.ink, letterSpacing: 0.3 }}>UPCOMING BIRTHDAYS</span>
             <button onClick={() => setTab("birthdays")} style={{ fontSize: 10, fontWeight: 700, color: accent, background: "none", border: "none", cursor: "pointer" }}>View all →</button>
           </div>
           {upcoming.map(p => { const z = getZodiacSign(p.date), d = daysUntil(p.date), bd = new Date(p.date + "T00:00:00"); return (
-            <div key={p.id} onClick={() => openPerson(p)} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 0", cursor: "pointer", borderTop: "0.5px solid #EDE9E2" }}>
-              <div style={{ width: 32, height: 32, borderRadius: 8, background: z ? `${z.color}15` : "#EDEAE3", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                {z ? <ZodiacGlyph sign={z.sign} color={z.color} size={20} /> : <span style={{ fontSize: 14, color: "#A09888" }}>?</span>}
+            <div key={p.id} onClick={() => openPerson(p)} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 0", cursor: "pointer", borderTop: `0.5px solid ${COLORS.borderSubtle}` }}>
+              <div style={{ width: 32, height: 32, borderRadius: 8, background: z ? `${z.color}15` : COLORS.inputBg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                {z ? <ZodiacGlyph sign={z.sign} color={z.color} size={20} /> : <span style={{ fontSize: 14, color: COLORS.textMuted2 }}>?</span>}
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontWeight: 600, fontSize: 13, color: "#1E1B18" }}>{p.name}</div>
-                <div style={{ fontSize: 10, color: "#A09888" }}>{months[bd.getMonth()]} {bd.getDate()}</div>
+                <div style={{ fontWeight: 600, fontSize: 13, color: COLORS.ink }}>{p.name}</div>
+                <div style={{ fontSize: 10, color: COLORS.textMuted2 }}>{months[bd.getMonth()]} {bd.getDate()}</div>
               </div>
-              <span style={{ fontSize: 11, fontWeight: 600, color: d <= 7 ? "#e86a8a" : "#A09888" }}>{d === 1 ? "Tomorrow" : `${d}d`}</span>
+              <span style={{ fontSize: 11, fontWeight: 600, color: d <= 7 ? COLORS.pink : COLORS.textMuted2 }}>{d === 1 ? "Tomorrow" : `${d}d`}</span>
             </div>
           ); })}
         </div>)}
 
         {/* Upcoming Milestones */}
-        {!search && (upcomingMilestones.length > 0 || allMilestones.length > 0) && (<div style={{ marginBottom: 12, padding: "12px 14px", borderRadius: 12, background: "#FFFFFF", border: "1px solid #DDD8D0" }}>
+        {!search && (upcomingMilestones.length > 0 || allMilestones.length > 0) && (<div style={{ marginBottom: 12, padding: "12px 14px", borderRadius: 12, background: COLORS.white, border: `1px solid ${COLORS.borderCard}` }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: upcomingMilestones.length > 0 ? 10 : 0 }}>
-            <span style={{ fontFamily: "'Lora', Georgia, serif", fontSize: 11, fontWeight: 400, color: "#1E1B18", letterSpacing: 0.3 }}>UPCOMING MILESTONES</span>
+            <span style={{ fontFamily: "'Lora', Georgia, serif", fontSize: 11, fontWeight: 400, color: COLORS.ink, letterSpacing: 0.3 }}>UPCOMING MILESTONES</span>
             <button onClick={() => setShowAllMilestones(true)} style={{ fontSize: 10, fontWeight: 700, color: accent, background: "none", border: "none", cursor: "pointer" }}>{upcomingMilestones.length === 0 ? `${allMilestones.length} upcoming →` : `View all (${allMilestones.length}) →`}</button>
           </div>
           {upcomingMilestones.slice(0, 5).map((m, i) => (
-            <div key={m.event.id || i} onClick={() => setEditingEvent({ personId: m.person.id, event: { ...m.event } })} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 0", cursor: "pointer", borderTop: i > 0 ? "1px solid #F0EDE6" : "none" }}>
-              <div style={{ width: 32, height: 32, borderRadius: 8, background: m.daysAway === 0 ? "rgba(232,106,138,0.1)" : m.event.significant ? "rgba(232,168,76,0.1)" : "#EDEAE3", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                <span style={{ fontSize: 13, color: m.daysAway === 0 ? "#e86a8a" : m.event.significant ? "#e8a84c" : "#8A8078" }}>{m.event.significant ? "✦" : "◆"}</span>
+            <div key={m.event.id || i} onClick={() => setEditingEvent({ personId: m.person.id, event: { ...m.event } })} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 0", cursor: "pointer", borderTop: i > 0 ? `1px solid ${COLORS.bgAlt}` : "none" }}>
+              <div style={{ width: 32, height: 32, borderRadius: 8, background: m.daysAway === 0 ? "rgba(232,106,138,0.1)" : m.event.significant ? "rgba(232,168,76,0.1)" : COLORS.inputBg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <span style={{ fontSize: 13, color: m.daysAway === 0 ? COLORS.pink : m.event.significant ? COLORS.gold : COLORS.textMuted }}>{m.event.significant ? "✦" : "◆"}</span>
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontWeight: 600, fontSize: 12, color: "#1E1B18" }}>{m.person.name}</div>
-                <div style={{ fontSize: 10, color: "#8A8078" }}>{m.event.text}{m.isAnniversary ? ` (${m.years}yr)` : ""}</div>
-                {m.event.privateNote && <div style={{ fontSize: 9, color: "#e8a84c", fontStyle: "italic", marginTop: 1 }}>📌 {m.event.privateNote}</div>}
+                <div style={{ fontWeight: 600, fontSize: 12, color: COLORS.ink }}>{m.person.name}</div>
+                <div style={{ fontSize: 10, color: COLORS.textMuted }}>{m.event.text}{m.isAnniversary ? ` (${m.years}yr)` : ""}</div>
+                {m.event.privateNote && <div style={{ fontSize: 9, color: COLORS.gold, fontStyle: "italic", marginTop: 1 }}>📌 {m.event.privateNote}</div>}
               </div>
-              <span style={{ fontSize: 10, fontWeight: 600, color: m.daysAway === 0 ? "#e86a8a" : m.daysAway <= 7 ? "#e8a84c" : "#A09888", flexShrink: 0 }}>{m.daysAway === 0 ? "Today" : m.daysAway === 1 ? "Tomorrow" : `${m.daysAway}d`}</span>
+              <span style={{ fontSize: 10, fontWeight: 600, color: m.daysAway === 0 ? COLORS.pink : m.daysAway <= 7 ? COLORS.gold : COLORS.textMuted2, flexShrink: 0 }}>{m.daysAway === 0 ? "Today" : m.daysAway === 1 ? "Tomorrow" : `${m.daysAway}d`}</span>
             </div>
           ))}
         </div>)}
@@ -430,8 +455,8 @@ export default function App() {
         {/* Touchpoints summary */}
         {!search && reconnectAll.length > 0 && (<div onClick={() => setTab("touchpoints")} style={{ marginBottom: 16, padding: "12px 16px", borderRadius: 12, background: "rgba(232,106,106,0.04)", border: "1px solid rgba(232,106,106,0.1)", cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <div>
-            <div style={{ fontSize: 10, fontWeight: 700, color: "#e86a6a", letterSpacing: 1.2, marginBottom: 2 }}>OVERDUE TOUCHPOINTS</div>
-            <div style={{ fontSize: 12, color: "#8A8078" }}>{reconnectAll.length} {reconnectAll.length === 1 ? "person needs" : "people need"} a check-in</div>
+            <div style={{ fontSize: 10, fontWeight: 700, color: COLORS.red, letterSpacing: 1.2, marginBottom: 2 }}>OVERDUE TOUCHPOINTS</div>
+            <div style={{ fontSize: 12, color: COLORS.textMuted }}>{reconnectAll.length} {reconnectAll.length === 1 ? "person needs" : "people need"} a check-in</div>
           </div>
           <span style={{ fontSize: 11, fontWeight: 700, color: accent }}>View →</span>
         </div>)}
@@ -443,20 +468,20 @@ export default function App() {
             <div key={letter}>
               <div style={{ fontFamily: "'Lora', Georgia, serif", fontSize: 13, fontWeight: 400, color: accent, padding: "4px 0 4px" }}>{letter}</div>
               {letterGroups[letter].map(p => { const z = getZodiacSign(p.date); const tags = p.tags || []; const preview = tags.length > 0 ? tags.join(" · ") : (p.notes ? "Has notes" : ""); const initials = p.name.split(" ").map(w => w[0]).join("").slice(0,2).toUpperCase(); return (
-                <div key={p.id} onClick={() => openPerson(p)} role="button" tabIndex={0} aria-label={p.name} style={{ display: "flex", alignItems: "center", gap: 12, padding: "8px 0", cursor: "pointer", borderTop: "0.5px solid #E8E4DC" }}>
-                  <div style={{ fontFamily: "'Lora', Georgia, serif", fontSize: 18, fontWeight: 400, color: z ? z.color : "#8A8078", lineHeight: 1, width: 28 }}>{initials}</div>
+                <div key={p.id} onClick={() => openPerson(p)} role="button" tabIndex={0} aria-label={p.name} style={{ display: "flex", alignItems: "center", gap: 12, padding: "8px 0", cursor: "pointer", borderTop: `0.5px solid ${COLORS.borderLight}` }}>
+                  <div style={{ fontFamily: "'Lora', Georgia, serif", fontSize: 18, fontWeight: 400, color: z ? z.color : COLORS.textMuted, lineHeight: 1, width: 28 }}>{initials}</div>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontWeight: 500, fontSize: 13, color: "#1E1B18" }}>{p.name}</div>
-                    {preview && <div style={{ fontSize: 10, color: "#A09888", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{preview}</div>}
+                    <div style={{ fontWeight: 500, fontSize: 13, color: COLORS.ink }}>{p.name}</div>
+                    {preview && <div style={{ fontSize: 10, color: COLORS.textMuted2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{preview}</div>}
                   </div>
                   {z && <span style={{ opacity: 0.4 }}><ZodiacGlyph sign={z.sign} color={z.color} size={14} /></span>}
-                  <button onClick={(e) => { e.stopPropagation(); openQuickTouch(p); }} aria-label={`Log touchpoint with ${p.name}`} style={{ padding: "5px 10px", borderRadius: 7, border: "1px solid #D6D0C6", background: "#EDEAE3", color: "#5C564C", fontWeight: 600, fontSize: 10, cursor: "pointer", flexShrink: 0 }}>Touch</button>
+                  <button onClick={(e) => { e.stopPropagation(); openQuickTouch(p); }} aria-label={`Log touchpoint with ${p.name}`} style={{ padding: "5px 10px", borderRadius: 7, border: `1px solid ${COLORS.border}`, background: COLORS.inputBg, color: COLORS.textMuted5, fontWeight: 600, fontSize: 10, cursor: "pointer", flexShrink: 0 }}>Touch</button>
                 </div>
               ); })}
             </div>
           ))}
         </div>
-        {filteredPeople.length === 0 && (<div style={{ textAlign: "center", padding: 32, color: "#B8B0A4", fontSize: 12 }}>
+        {filteredPeople.length === 0 && (<div style={{ textAlign: "center", padding: 32, color: COLORS.textMuted3, fontSize: 12 }}>
           {search ? "No people match your search" : "No people added yet"}
           <div style={{ marginTop: 12 }}><button onClick={() => { setNb({ name: "", date: "", notes: "", cadence: "monthly", interests: [], tags: [] }); setModal("addPerson"); }} style={{ fontSize: 12, fontWeight: 700, border: "none", borderRadius: 8, padding: "8px 18px", cursor: "pointer", background: accent, color: "white" }}>+ Add someone</button></div>
         </div>)}
@@ -471,13 +496,13 @@ export default function App() {
             {reconnectAll.map(({ person: p, info }) => { const overdueDays = Math.abs(info.daysUntilDue); const cadLabel = CADENCES.find(c => c.id === info.cadence)?.label || info.cadence; return (
               <div key={p.id} onClick={() => openPerson(p)} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderRadius: 10, background: "rgba(232,106,106,0.04)", border: "1px solid rgba(232,106,106,0.12)", cursor: "pointer" }}>
                 <div style={{ width: 32, height: 32, borderRadius: 8, background: overdueDays > getCadenceDays(info.cadence) ? "rgba(232,106,106,0.12)" : "rgba(232,168,76,0.12)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                  <span style={{ fontSize: 13, color: overdueDays > getCadenceDays(info.cadence) ? "#e86a6a" : "#e8a84c" }}>↻</span>
+                  <span style={{ fontSize: 13, color: overdueDays > getCadenceDays(info.cadence) ? COLORS.red : COLORS.gold }}>↻</span>
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontWeight: 600, fontSize: 13, color: "#1E1B18" }}>{p.name}</div>
-                  <div style={{ fontSize: 10, color: "#A09888" }}>{cadLabel} · last {info.daysSince}d ago</div>
+                  <div style={{ fontWeight: 600, fontSize: 13, color: COLORS.ink }}>{p.name}</div>
+                  <div style={{ fontSize: 10, color: COLORS.textMuted2 }}>{cadLabel} · last {info.daysSince}d ago</div>
                 </div>
-                <span style={{ fontSize: 11, fontWeight: 600, color: overdueDays > getCadenceDays(info.cadence) ? "#e86a6a" : "#e8a84c", flexShrink: 0 }}>{overdueDays}d overdue</span>
+                <span style={{ fontSize: 11, fontWeight: 600, color: overdueDays > getCadenceDays(info.cadence) ? COLORS.red : COLORS.gold, flexShrink: 0 }}>{overdueDays}d overdue</span>
               </div>
             ); })}
           </div>
@@ -488,22 +513,22 @@ export default function App() {
           {sL(`COMING UP (${comingUpAll.length})`)}
           <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
             {comingUpAll.map(({ person: p, info }) => { const cadLabel = CADENCES.find(c => c.id === info.cadence)?.label || info.cadence; const z = getZodiacSign(p.date); return (
-              <div key={p.id} onClick={() => openPerson(p)} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderRadius: 10, background: "#FFFFFF", border: "1px solid #DDD8D0", cursor: "pointer" }}>
-                <div style={{ width: 32, height: 32, borderRadius: 8, background: z ? `${z.color}12` : "#EDEAE3", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                  {z ? <ZodiacGlyph sign={z.sign} color={z.color} size={20} /> : <span style={{ fontSize: 14, color: "#A09888" }}>?</span>}
+              <div key={p.id} onClick={() => openPerson(p)} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderRadius: 10, background: COLORS.white, border: `1px solid ${COLORS.borderCard}`, cursor: "pointer" }}>
+                <div style={{ width: 32, height: 32, borderRadius: 8, background: z ? `${z.color}12` : COLORS.inputBg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  {z ? <ZodiacGlyph sign={z.sign} color={z.color} size={20} /> : <span style={{ fontSize: 14, color: COLORS.textMuted2 }}>?</span>}
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontWeight: 600, fontSize: 13, color: "#1E1B18" }}>{p.name}</div>
-                  <div style={{ fontSize: 10, color: "#A09888" }}>{cadLabel} · last {info.daysSince}d ago</div>
+                  <div style={{ fontWeight: 600, fontSize: 13, color: COLORS.ink }}>{p.name}</div>
+                  <div style={{ fontSize: 10, color: COLORS.textMuted2 }}>{cadLabel} · last {info.daysSince}d ago</div>
                 </div>
-                <span style={{ fontSize: 11, fontWeight: 600, color: info.daysUntilDue <= 7 ? "#e8a84c" : "#A09888", flexShrink: 0 }}>in {info.daysUntilDue}d</span>
+                <span style={{ fontSize: 11, fontWeight: 600, color: info.daysUntilDue <= 7 ? COLORS.gold : COLORS.textMuted2, flexShrink: 0 }}>in {info.daysUntilDue}d</span>
               </div>
             ); })}
           </div>
         </div>)}
 
         {reconnectAll.length === 0 && comingUpAll.length === 0 && (
-          <div style={{ textAlign: "center", padding: 32, color: "#B8B0A4", fontSize: 12, marginTop: 8 }}>No touchpoint cadences active. Set a cadence on someone's profile to start tracking.</div>
+          <div style={{ textAlign: "center", padding: 32, color: COLORS.textMuted3, fontSize: 12, marginTop: 8 }}>No touchpoint cadences active. Set a cadence on someone's profile to start tracking.</div>
         )}
       </div>)}
 
@@ -520,50 +545,50 @@ export default function App() {
 
         return (<div style={{ padding: "0 18px 90px", animation: "fi 0.25s ease" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12, marginTop: 8 }}>
-            <span style={{ fontWeight: 700, fontSize: 14, color: "#1E1B18" }}>Birthdays</span>
-            <button onClick={() => { setNb({ name: "", date: "", notes: "", cadence: "monthly", interests: [], tags: [] }); setModal("addPerson"); }} style={{ fontWeight: 600, fontSize: 11, border: "none", borderRadius: 8, padding: "6px 14px", cursor: "pointer", background: "#e86a8a", color: "white" }}>+ Add</button>
+            <span style={{ fontWeight: 700, fontSize: 14, color: COLORS.ink }}>Birthdays</span>
+            <button onClick={() => { setNb({ name: "", date: "", notes: "", cadence: "monthly", interests: [], tags: [] }); setModal("addPerson"); }} style={{ fontWeight: 600, fontSize: 11, border: "none", borderRadius: 8, padding: "6px 14px", cursor: "pointer", background: COLORS.pink, color: "white" }}>+ Add</button>
           </div>
           <div style={{ position: "relative", marginBottom: 10 }}>
-            <input placeholder="Search names..." value={bdSearch} onChange={e => setBdSearch(e.target.value)} style={{ width: "100%", padding: "8px 34px 8px 12px", borderRadius: 8, border: "1px solid #D6D0C6", background: "#EDEAE3", fontSize: 12.5, color: "#1E1B18", outline: "none" }} />
-            {bdSearch && <button onClick={() => setBdSearch("")} style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", background: "#E0DCD4", border: "none", borderRadius: "50%", width: 20, height: 20, cursor: "pointer", fontSize: 10, color: "#8A8078", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700 }}>×</button>}
+            <input placeholder="Search names..." value={bdSearch} onChange={e => setBdSearch(e.target.value)} style={{ width: "100%", padding: "8px 34px 8px 12px", borderRadius: 8, border: `1px solid ${COLORS.border}`, background: COLORS.inputBg, fontSize: 12.5, color: COLORS.ink, outline: "none" }} />
+            {bdSearch && <button onClick={() => setBdSearch("")} style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", background: COLORS.divider, border: "none", borderRadius: "50%", width: 20, height: 20, cursor: "pointer", fontSize: 10, color: COLORS.textMuted, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700 }}>×</button>}
           </div>
           <div style={{ display: "flex", gap: 4, marginBottom: 14 }}>
             {[{ v: "all", l: "All" }, { v: "week", l: "This Week" }, { v: "month", l: "Next 30 Days" }].map(f => (
-              <button key={f.v} onClick={() => setBdFilter(f.v)} style={{ padding: "5px 12px", borderRadius: 6, border: `1px solid ${bdFilter === f.v ? accent + "44" : "#E8E4DC"}`, cursor: "pointer", fontWeight: 600, fontSize: 11, background: bdFilter === f.v ? `${accent}12` : "transparent", color: bdFilter === f.v ? accent : "#8A8078" }}>{f.l}</button>
+              <button key={f.v} onClick={() => setBdFilter(f.v)} style={{ padding: "5px 12px", borderRadius: 6, border: `1px solid ${bdFilter === f.v ? accent + "44" : COLORS.borderLight}`, cursor: "pointer", fontWeight: 600, fontSize: 11, background: bdFilter === f.v ? `${accent}12` : "transparent", color: bdFilter === f.v ? accent : COLORS.textMuted }}>{f.l}</button>
             ))}
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
-            {sections.map(sec => { const z = sec.zodiac, isUnknown = !z, sColor = isUnknown ? "#A09888" : z.color; return (
+            {sections.map(sec => { const z = sec.zodiac, isUnknown = !z, sColor = isUnknown ? COLORS.textMuted2 : z.color; return (
               <div key={sec.key} style={{ display: "flex", gap: 0, marginBottom: 8 }}>
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "center", width: 42, flexShrink: 0, paddingTop: 2 }}>
                   <div onClick={() => !isUnknown && setViewingZodiac(z)} style={{ cursor: isUnknown ? "default" : "pointer", textAlign: "center", marginBottom: 4 }}>
                     <div style={{ opacity: sec.sublabel === "passed" ? 0.4 : 1 }}>{isUnknown ? <span style={{ fontSize: 16, color: sColor }}>?</span> : <ZodiacGlyph sign={z.sign} color={sColor} size={20} />}</div>
                     <div style={{ fontSize: 7.5, fontWeight: 700, color: sColor, letterSpacing: 0.3, marginTop: 2, lineHeight: 1.1, opacity: sec.sublabel === "passed" ? 0.4 : 1 }}>{isUnknown ? "UNKNOWN" : z.sign.toUpperCase()}</div>
-                    {sec.sublabel && !isUnknown && <div style={{ fontSize: 6.5, fontWeight: 600, color: sec.sublabel === "passed" ? "#B8B0A4" : z.color, marginTop: 1, letterSpacing: 0.5 }}>{sec.sublabel === "passed" ? "PASSED" : "SOON"}</div>}
+                    {sec.sublabel && !isUnknown && <div style={{ fontSize: 6.5, fontWeight: 600, color: sec.sublabel === "passed" ? COLORS.textMuted3 : z.color, marginTop: 1, letterSpacing: 0.5 }}>{sec.sublabel === "passed" ? "PASSED" : "SOON"}</div>}
                   </div>
                   <div style={{ flex: 1, width: 3, borderRadius: 2, background: sColor, opacity: sec.sublabel === "passed" ? 0.12 : 0.2, minHeight: 20 }} />
-                  {!isUnknown && <div style={{ fontSize: 7, color: "#A09888", marginTop: 3, textAlign: "center", lineHeight: 1.2, whiteSpace: "nowrap" }}>{fmtRange(z)}</div>}
+                  {!isUnknown && <div style={{ fontSize: 7, color: COLORS.textMuted2, marginTop: 3, textAlign: "center", lineHeight: 1.2, whiteSpace: "nowrap" }}>{fmtRange(z)}</div>}
                 </div>
                 <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 5, paddingLeft: 8 }}>
                   {sec.bdays.map(b => { const hasDate = !!b.date, bd = hasDate ? new Date(b.date + "T00:00:00") : null, d = hasDate ? daysUntil(b.date) : Infinity, isTd = d === 0, isPassed = sec.sublabel === "passed"; return (
-                    <div key={b.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 12px", borderRadius: 10, background: isTd ? "#e86a8a08" : "#F2EFE8", border: `1px solid ${isTd ? "#e86a8a20" : "#EDEAE3"}`, cursor: "pointer", opacity: isPassed ? 0.5 : 1 }} onClick={() => openPerson(b)}>
-                      <div style={{ width: 30, height: 30, borderRadius: 7, background: isUnknown ? "#EDEAE3" : (isTd ? "#e86a8a20" : `${sColor}12`), display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                    <div key={b.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 12px", borderRadius: 10, background: isTd ? `${COLORS.pink}08` : COLORS.bgSubtle, border: `1px solid ${isTd ? `${COLORS.pink}20` : COLORS.inputBg}`, cursor: "pointer", opacity: isPassed ? 0.5 : 1 }} onClick={() => openPerson(b)}>
+                      <div style={{ width: 30, height: 30, borderRadius: 7, background: isUnknown ? COLORS.inputBg : (isTd ? `${COLORS.pink}20` : `${sColor}12`), display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                         {isUnknown ? <span style={{ fontSize: 12, color: sColor }}>?</span> : <ZodiacGlyph sign={z.sign} color={sColor} size={14} />}
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontWeight: 600, fontSize: 13, color: "#1E1B18" }}>{b.name}</div>
-                        <div style={{ fontSize: 10, color: "#A09888" }}>{hasDate ? `${months[bd.getMonth()]} ${bd.getDate()}` : "Date unknown"}{b.notes ? " · 📝" : ""}</div>
+                        <div style={{ fontWeight: 600, fontSize: 13, color: COLORS.ink }}>{b.name}</div>
+                        <div style={{ fontSize: 10, color: COLORS.textMuted2 }}>{hasDate ? `${months[bd.getMonth()]} ${bd.getDate()}` : "Date unknown"}{b.notes ? " · 📝" : ""}</div>
                       </div>
                       <div style={{ textAlign: "right", flexShrink: 0 }}>
-                        {isTd ? <button onClick={e => { e.stopPropagation(); toggleWish(b.name) }} style={{ fontSize: 10, fontWeight: 700, border: "none", borderRadius: 6, padding: "4px 10px", cursor: "pointer", background: wishes[b.name] ? "#E8E4DC" : "#e86a8a", color: wishes[b.name] ? "#8A8078" : "white" }}>{wishes[b.name] ? "↩ Undo" : "Wish"}</button>
-                        : <span style={{ fontSize: 10.5, color: "#B8B0A4", fontWeight: 600 }}>{!hasDate ? "—" : (isPassed ? "Passed" : (d === 1 ? "Tomorrow" : `${d}d`))}</span>}
+                        {isTd ? <button onClick={e => { e.stopPropagation(); toggleWish(b.name) }} style={{ fontSize: 10, fontWeight: 700, border: "none", borderRadius: 6, padding: "4px 10px", cursor: "pointer", background: wishes[b.name] ? COLORS.borderLight : COLORS.pink, color: wishes[b.name] ? COLORS.textMuted : "white" }}>{wishes[b.name] ? "↩ Undo" : "Wish"}</button>
+                        : <span style={{ fontSize: 10.5, color: COLORS.textMuted3, fontWeight: 600 }}>{!hasDate ? "—" : (isPassed ? "Passed" : (d === 1 ? "Tomorrow" : `${d}d`))}</span>}
                       </div>
                     </div>
                   ); })}
                 </div>
               </div>
             ); })}
-            {filteredBdays.length === 0 && <div style={{ textAlign: "center", padding: 24, color: "#B8B0A4", fontSize: 12 }}>{bdSearch ? "No results" : "No birthdays yet"}</div>}
+            {filteredBdays.length === 0 && <div style={{ textAlign: "center", padding: 24, color: COLORS.textMuted3, fontSize: 12 }}>{bdSearch ? "No results" : "No birthdays yet"}</div>}
           </div>
         </div>);
       })()}
@@ -582,44 +607,44 @@ export default function App() {
         const stars = (n) => "★".repeat(n) + "☆".repeat(5 - n);
         return (<div style={{ padding: "0 18px 90px", animation: "fi 0.25s ease" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12, marginTop: 8 }}>
-            <span style={{ fontWeight: 700, fontSize: 14, color: "#1E1B18" }}>Places</span>
+            <span style={{ fontWeight: 700, fontSize: 14, color: COLORS.ink }}>Places</span>
             <div style={{ display: "flex", gap: 6 }}>
-              <button onClick={() => setEditingCategory(true)} style={{ fontWeight: 600, fontSize: 10, border: "1px solid #D6D0C6", borderRadius: 8, padding: "5px 10px", cursor: "pointer", background: "transparent", color: "#8A8078" }}>Edit tags</button>
+              <button onClick={() => setEditingCategory(true)} style={{ fontWeight: 600, fontSize: 10, border: `1px solid ${COLORS.border}`, borderRadius: 8, padding: "5px 10px", cursor: "pointer", background: "transparent", color: COLORS.textMuted }}>Edit tags</button>
               <button onClick={() => { setNewPlace({ name: "", notes: "", rating: 0, mapsUrl: "", category: placeCategories[0] || "" }); setModal("addPlace"); }} style={{ fontWeight: 600, fontSize: 11, border: "none", borderRadius: 8, padding: "6px 14px", cursor: "pointer", background: accent, color: "white" }}>+ Add</button>
             </div>
           </div>
           <div style={{ position: "relative", marginBottom: 10 }}>
-            <input placeholder="Search places..." value={placeSearch} onChange={e => setPlaceSearch(e.target.value)} style={{ width: "100%", padding: "10px 36px 10px 14px", borderRadius: 10, border: "1px solid #D6D0C6", background: "#EDEAE3", fontSize: 13, color: "#1E1B18", outline: "none" }} />
-            {placeSearch && <button onClick={() => setPlaceSearch("")} style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", background: "#E0DCD4", border: "none", borderRadius: "50%", width: 22, height: 22, cursor: "pointer", fontSize: 11, color: "#8A8078", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700 }}>×</button>}
+            <input placeholder="Search places..." value={placeSearch} onChange={e => setPlaceSearch(e.target.value)} style={{ width: "100%", padding: "10px 36px 10px 14px", borderRadius: 10, border: `1px solid ${COLORS.border}`, background: COLORS.inputBg, fontSize: 13, color: COLORS.ink, outline: "none" }} />
+            {placeSearch && <button onClick={() => setPlaceSearch("")} style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", background: COLORS.divider, border: "none", borderRadius: "50%", width: 22, height: 22, cursor: "pointer", fontSize: 11, color: COLORS.textMuted, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700 }}>×</button>}
           </div>
           {/* Category filter */}
           <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginBottom: 8 }}>
-            <button onClick={() => setPlaceCatFilter("all")} style={{ padding: "4px 10px", borderRadius: 6, border: `1px solid ${placeCatFilter === "all" ? accent + "44" : "#E8E4DC"}`, cursor: "pointer", fontWeight: 600, fontSize: 10, background: placeCatFilter === "all" ? `${accent}12` : "transparent", color: placeCatFilter === "all" ? accent : "#8A8078" }}>All</button>
-            {placeCategories.map(c => (<button key={c} onClick={() => setPlaceCatFilter(placeCatFilter === c ? "all" : c)} style={{ padding: "4px 10px", borderRadius: 6, border: `1px solid ${placeCatFilter === c ? accent + "44" : "#E8E4DC"}`, cursor: "pointer", fontWeight: 600, fontSize: 10, background: placeCatFilter === c ? `${accent}12` : "transparent", color: placeCatFilter === c ? accent : "#8A8078" }}>{c}</button>))}
+            <button onClick={() => setPlaceCatFilter("all")} style={{ padding: "4px 10px", borderRadius: 6, border: `1px solid ${placeCatFilter === "all" ? accent + "44" : COLORS.borderLight}`, cursor: "pointer", fontWeight: 600, fontSize: 10, background: placeCatFilter === "all" ? `${accent}12` : "transparent", color: placeCatFilter === "all" ? accent : COLORS.textMuted }}>All</button>
+            {placeCategories.map(c => (<button key={c} onClick={() => setPlaceCatFilter(placeCatFilter === c ? "all" : c)} style={{ padding: "4px 10px", borderRadius: 6, border: `1px solid ${placeCatFilter === c ? accent + "44" : COLORS.borderLight}`, cursor: "pointer", fontWeight: 600, fontSize: 10, background: placeCatFilter === c ? `${accent}12` : "transparent", color: placeCatFilter === c ? accent : COLORS.textMuted }}>{c}</button>))}
           </div>
           {/* Status + Sort */}
           <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 12 }}>
             <div style={{ display: "flex", gap: 4 }}>
               {[{ v: "all", l: "All" }, { v: "visited", l: "Visited" }, { v: "wantto", l: "Want to go" }].map(f => (
-                <button key={f.v} onClick={() => setPlaceStatusFilter(f.v)} style={{ padding: "4px 8px", borderRadius: 5, border: "none", cursor: "pointer", fontWeight: 600, fontSize: 9, background: placeStatusFilter === f.v ? "#E4E0D8" : "transparent", color: placeStatusFilter === f.v ? "#1E1B18" : "#A09888" }}>{f.l}</button>
+                <button key={f.v} onClick={() => setPlaceStatusFilter(f.v)} style={{ padding: "4px 8px", borderRadius: 5, border: "none", cursor: "pointer", fontWeight: 600, fontSize: 9, background: placeStatusFilter === f.v ? COLORS.bgSelected : "transparent", color: placeStatusFilter === f.v ? COLORS.ink : COLORS.textMuted2 }}>{f.l}</button>
               ))}
             </div>
             <div style={{ display: "flex", gap: 4 }}>
               {[{ v: "alpha", l: "A-Z" }, { v: "rating", l: "★" }, { v: "recent", l: "Recent" }].map(s => (
-                <button key={s.v} onClick={() => setPlaceSort(s.v)} style={{ padding: "4px 8px", borderRadius: 5, border: "none", cursor: "pointer", fontWeight: 600, fontSize: 9, background: placeSort === s.v ? "#E4E0D8" : "transparent", color: placeSort === s.v ? "#1E1B18" : "#A09888" }}>{s.l}</button>
+                <button key={s.v} onClick={() => setPlaceSort(s.v)} style={{ padding: "4px 8px", borderRadius: 5, border: "none", cursor: "pointer", fontWeight: 600, fontSize: 9, background: placeSort === s.v ? COLORS.bgSelected : "transparent", color: placeSort === s.v ? COLORS.ink : COLORS.textMuted2 }}>{s.l}</button>
               ))}
             </div>
           </div>
           {/* Place list */}
           <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
             {filtered.map(p => { const visitCount = (p.visits || []).length; const dsv = daysSinceVisit(p); const isWantTo = visitCount === 0; return (
-              <div key={p.id} onClick={() => { setViewingPlace(p); setVisitNote(""); setVisitDate(TODAY()); setVisitPeopleSearch(""); setVisitPeopleSelected([]); setEditingVisit(null); setEvPeopleSearch(""); setModal("viewPlace"); }} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderRadius: 10, background: isWantTo ? "rgba(90,122,106,0.04)" : "#F2EFE8", border: `1px solid ${isWantTo ? accent + "15" : "#EDEAE3"}`, cursor: "pointer" }}>
+              <div key={p.id} onClick={() => { setViewingPlace(p); setVisitNote(""); setVisitDate(TODAY()); setVisitPeopleSearch(""); setVisitPeopleSelected([]); setEditingVisit(null); setEvPeopleSearch(""); setModal("viewPlace"); }} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderRadius: 10, background: isWantTo ? "rgba(90,122,106,0.04)" : COLORS.bgSubtle, border: `1px solid ${isWantTo ? accent + "15" : COLORS.inputBg}`, cursor: "pointer" }}>
                 <div style={{ width: 34, height: 34, borderRadius: 9, background: isWantTo ? `${accent}18` : `${accent}12`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                   <span style={{ fontSize: 15, color: accent }}>{isWantTo ? "✦" : "◎"}</span>
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontWeight: 600, fontSize: 13, color: "#1E1B18" }}>{p.name}</div>
-                  <div style={{ fontSize: 10, color: "#A09888" }}>
+                  <div style={{ fontWeight: 600, fontSize: 13, color: COLORS.ink }}>{p.name}</div>
+                  <div style={{ fontSize: 10, color: COLORS.textMuted2 }}>
                     {p.category && <span>{p.category} · </span>}
                     {p.rating > 0 ? stars(p.rating) + " · " : ""}
                     {isWantTo ? "Want to go" : `${visitCount} visit${visitCount !== 1 ? "s" : ""}${dsv < Infinity ? ` · ${dsv}d ago` : ""}`}
@@ -628,7 +653,7 @@ export default function App() {
                 {p.mapsUrl && <span style={{ fontSize: 12, color: accent, flexShrink: 0 }}>📍</span>}
               </div>
             ); })}
-            {filtered.length === 0 && (<div style={{ textAlign: "center", padding: 32, color: "#B8B0A4", fontSize: 12 }}>
+            {filtered.length === 0 && (<div style={{ textAlign: "center", padding: 32, color: COLORS.textMuted3, fontSize: 12 }}>
               {placeSearch || placeCatFilter !== "all" || placeStatusFilter !== "all" ? "No places match your filters" : "No places added yet"}
               <div style={{ marginTop: 12 }}><button onClick={() => { setNewPlace({ name: "", notes: "", rating: 0, mapsUrl: "", category: placeCategories[0] || "" }); setModal("addPlace"); }} style={{ fontSize: 12, fontWeight: 700, border: "none", borderRadius: 8, padding: "8px 18px", cursor: "pointer", background: accent, color: "white" }}>+ Add a place</button></div>
             </div>)}
@@ -639,15 +664,15 @@ export default function App() {
       {/* ═══ MODALS ═══ */}
 
       {modal === "addPerson" && (<Modal onClose={() => setModal(null)}>
-        <div style={{ fontFamily: "'Lora'", fontSize: 16, fontWeight: 700, color: "#1E1B18", marginBottom: 16 }}>Add Person</div>
-        <input placeholder="Name..." value={nb.name} onChange={e => setNb(p => ({ ...p, name: e.target.value }))} autoFocus style={{ width: "100%", padding: "10px 14px", borderRadius: 8, border: "1px solid #D6D0C6", background: "#EDEAE3", fontSize: 13, fontWeight: 600, color: "#1E1B18", marginBottom: 10, outline: "none" }} />
-        <div style={{ overflow: "hidden", marginBottom: 2, width: "100%" }}><input type="date" value={nb.date} onChange={e => setNb(p => ({ ...p, date: e.target.value }))} style={{ display: "block", width: "calc(100% - 2px)", padding: "10px 10px 10px 14px", borderRadius: 8, border: "1px solid #D6D0C6", background: "#EDEAE3", fontSize: 13, fontWeight: 600, color: "#1E1B18", outline: "none", colorScheme: "light", boxSizing: "border-box", WebkitAppearance: "none", appearance: "none" }} /></div>
-        <div style={{ fontSize: 9, color: "#A09888", marginBottom: 10, paddingLeft: 2 }}>Birthday — optional, leave blank if unknown</div>
-        <div style={{ fontSize: 9, fontWeight: 700, color: "#A09888", marginBottom: 5, letterSpacing: 1 }}>KEEP IN TOUCH</div>
+        <div style={{ fontFamily: "'Lora'", fontSize: 16, fontWeight: 700, color: COLORS.ink, marginBottom: 16 }}>Add Person</div>
+        <input placeholder="Name..." value={nb.name} onChange={e => setNb(p => ({ ...p, name: e.target.value }))} autoFocus style={{ width: "100%", padding: "10px 14px", borderRadius: 8, border: `1px solid ${COLORS.border}`, background: COLORS.inputBg, fontSize: 13, fontWeight: 600, color: COLORS.ink, marginBottom: 10, outline: "none" }} />
+        <div style={{ overflow: "hidden", marginBottom: 2, width: "100%" }}><input type="date" value={nb.date} onChange={e => setNb(p => ({ ...p, date: e.target.value }))} style={{ display: "block", width: "calc(100% - 2px)", padding: "10px 10px 10px 14px", borderRadius: 8, border: `1px solid ${COLORS.border}`, background: COLORS.inputBg, fontSize: 13, fontWeight: 600, color: COLORS.ink, outline: "none", colorScheme: "light", boxSizing: "border-box", WebkitAppearance: "none", appearance: "none" }} /></div>
+        <div style={{ fontSize: 9, color: COLORS.textMuted2, marginBottom: 10, paddingLeft: 2 }}>Birthday — optional, leave blank if unknown</div>
+        <div style={{ fontSize: 9, fontWeight: 700, color: COLORS.textMuted2, marginBottom: 5, letterSpacing: 1 }}>KEEP IN TOUCH</div>
         <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginBottom: 12 }}>
-          {CADENCES.map(c => (<button key={c.id} onClick={() => setNb(p => ({ ...p, cadence: c.id }))} style={{ padding: "5px 10px", borderRadius: 6, border: `1px solid ${nb.cadence === c.id ? accent + "44" : "#E8E4DC"}`, cursor: "pointer", fontWeight: 600, fontSize: 10, background: nb.cadence === c.id ? `${accent}12` : "transparent", color: nb.cadence === c.id ? accent : "#8A8078" }}>{c.label}</button>))}
+          {CADENCES.map(c => (<button key={c.id} onClick={() => setNb(p => ({ ...p, cadence: c.id }))} style={{ padding: "5px 10px", borderRadius: 6, border: `1px solid ${nb.cadence === c.id ? accent + "44" : COLORS.borderLight}`, cursor: "pointer", fontWeight: 600, fontSize: 10, background: nb.cadence === c.id ? `${accent}12` : "transparent", color: nb.cadence === c.id ? accent : COLORS.textMuted }}>{c.label}</button>))}
         </div>
-        <div style={{ fontSize: 9, fontWeight: 700, color: "#A09888", marginBottom: 5, letterSpacing: 1 }}>TAGS</div>
+        <div style={{ fontSize: 9, fontWeight: 700, color: COLORS.textMuted2, marginBottom: 5, letterSpacing: 1 }}>TAGS</div>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginBottom: 6 }}>
           {nb.tags.map((tag, i) => (
             <span key={i} style={{ fontSize: 10, padding: "3px 8px", borderRadius: 6, background: `${accent}12`, color: accent, fontWeight: 600, display: "flex", alignItems: "center", gap: 4 }}>
@@ -655,10 +680,10 @@ export default function App() {
             </span>
           ))}
           {peopleTags.filter(t => !nb.tags.includes(t)).map(t => (
-            <button key={t} onClick={() => setNb(p => ({ ...p, tags: [...p.tags, t] }))} style={{ padding: "3px 8px", borderRadius: 6, border: "1px dashed #D6D0C6", cursor: "pointer", fontWeight: 600, fontSize: 10, background: "transparent", color: "#A09888" }}>+ {t}</button>
+            <button key={t} onClick={() => setNb(p => ({ ...p, tags: [...p.tags, t] }))} style={{ padding: "3px 8px", borderRadius: 6, border: `1px dashed ${COLORS.border}`, cursor: "pointer", fontWeight: 600, fontSize: 10, background: "transparent", color: COLORS.textMuted2 }}>+ {t}</button>
           ))}
         </div>
-        <div style={{ fontSize: 9, fontWeight: 700, color: "#A09888", marginBottom: 5, letterSpacing: 1 }}>INTERESTS</div>
+        <div style={{ fontSize: 9, fontWeight: 700, color: COLORS.textMuted2, marginBottom: 5, letterSpacing: 1 }}>INTERESTS</div>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginBottom: 6 }}>
           {nb.interests.map((int, i) => (
             <span key={i} style={{ fontSize: 11, padding: "3px 8px", borderRadius: 6, background: `${accent}10`, color: accent, fontWeight: 600, display: "flex", alignItems: "center", gap: 4 }}>
@@ -667,22 +692,22 @@ export default function App() {
           ))}
         </div>
         <div style={{ display: "flex", gap: 4, marginBottom: 12 }}>
-          <input placeholder="Add interest..." value={nbInterest} onChange={e => setNbInterest(e.target.value)} onKeyDown={e => { if (e.key === "Enter" && nbInterest.trim()) { setNb(p => ({ ...p, interests: [...p.interests, nbInterest.trim()] })); setNbInterest(""); } }} style={{ flex: 1, padding: "6px 10px", borderRadius: 6, border: "1px solid #D6D0C6", background: "#EDEAE3", fontSize: 11, color: "#1E1B18", outline: "none" }} />
+          <input placeholder="Add interest..." value={nbInterest} onChange={e => setNbInterest(e.target.value)} onKeyDown={e => { if (e.key === "Enter" && nbInterest.trim()) { setNb(p => ({ ...p, interests: [...p.interests, nbInterest.trim()] })); setNbInterest(""); } }} style={{ flex: 1, padding: "6px 10px", borderRadius: 6, border: `1px solid ${COLORS.border}`, background: COLORS.inputBg, fontSize: 11, color: COLORS.ink, outline: "none" }} />
           <button onClick={() => { if (nbInterest.trim()) { setNb(p => ({ ...p, interests: [...p.interests, nbInterest.trim()] })); setNbInterest(""); } }} style={{ padding: "6px 12px", borderRadius: 6, border: "none", background: accent, color: "white", fontWeight: 700, fontSize: 10, cursor: "pointer" }}>+</button>
         </div>
-        <textarea placeholder="Notes..." value={nb.notes} onChange={e => setNb(p => ({ ...p, notes: e.target.value }))} rows={3} style={{ width: "100%", padding: "10px 14px", borderRadius: 8, border: "1px solid #D6D0C6", background: "#EDEAE3", fontSize: 12.5, color: "#1E1B18", marginBottom: 6, outline: "none", lineHeight: 1.5 }} />
-        <div style={{ fontSize: 9, color: "#A09888", marginBottom: 14, paddingLeft: 2 }}>Relationships can be added after saving</div>
-        <div style={{ display: "flex", gap: 8 }}><button onClick={() => setModal(null)} style={{ flex: 1, padding: "11px 0", borderRadius: 10, border: "1px solid #D6D0C6", background: "transparent", cursor: "pointer", fontWeight: 600, fontSize: 12, color: "#8A8078" }}>Cancel</button><button onClick={savePerson} style={{ flex: 2, padding: "11px 0", borderRadius: 10, border: "none", background: accent, cursor: "pointer", fontWeight: 600, fontSize: 12, color: "white" }}>Save</button></div>
+        <textarea placeholder="Notes..." value={nb.notes} onChange={e => setNb(p => ({ ...p, notes: e.target.value }))} rows={3} style={{ width: "100%", padding: "10px 14px", borderRadius: 8, border: `1px solid ${COLORS.border}`, background: COLORS.inputBg, fontSize: 12.5, color: COLORS.ink, marginBottom: 6, outline: "none", lineHeight: 1.5 }} />
+        <div style={{ fontSize: 9, color: COLORS.textMuted2, marginBottom: 14, paddingLeft: 2 }}>Relationships can be added after saving</div>
+        <div style={{ display: "flex", gap: 8 }}><button onClick={() => setModal(null)} style={{ flex: 1, padding: "11px 0", borderRadius: 10, border: `1px solid ${COLORS.border}`, background: "transparent", cursor: "pointer", fontWeight: 600, fontSize: 12, color: COLORS.textMuted }}>Cancel</button><button onClick={savePerson} style={{ flex: 2, padding: "11px 0", borderRadius: 10, border: "none", background: accent, cursor: "pointer", fontWeight: 600, fontSize: 12, color: "white" }}>Save</button></div>
       </Modal>)}
 
       {modal === "viewPerson" && viewingPerson && (() => {
-        const z = getZodiacSign(viewingPerson.date) || { sign: "Unknown", symbol: "?", color: "#A09888" };
+        const z = getZodiacSign(viewingPerson.date) || { sign: "Unknown", symbol: "?", color: COLORS.textMuted2 };
         const bd = viewingPerson.date ? new Date(viewingPerson.date + "T00:00:00") : null;
         const hasDate = !!viewingPerson.date && bd && !isNaN(bd);
         const gifts = viewingPerson.gifts || [], events = viewingPerson.events || [], interests = viewingPerson.interests || [], rels = viewingPerson.relationships || [];
         const upd = (changes) => setViewingPerson(p => ({ ...p, ...changes }));
-        const pTab = (id, l) => <button key={id} onClick={() => setProfileTab(id)} style={{ flex: 1, padding: "7px 0", borderRadius: 7, border: profileTab === id ? `1px solid ${z.color}44` : "1px solid #E8E4DC", cursor: "pointer", fontWeight: 700, fontSize: 10, background: profileTab === id ? `${z.color}12` : "transparent", color: profileTab === id ? z.color : "#8A8078" }}>{l}</button>;
-        const sH = (t) => <div style={{ fontFamily: "'Lora', Georgia, serif", fontSize: 11, fontWeight: 400, color: "#1E1B18", marginBottom: 5, marginTop: 10, letterSpacing: 0.3 }}>{t}</div>;
+        const pTab = (id, l) => <button key={id} onClick={() => setProfileTab(id)} style={{ flex: 1, padding: "7px 0", borderRadius: 7, border: profileTab === id ? `1px solid ${z.color}44` : `1px solid ${COLORS.borderLight}`, cursor: "pointer", fontWeight: 700, fontSize: 10, background: profileTab === id ? `${z.color}12` : "transparent", color: profileTab === id ? z.color : COLORS.textMuted }}>{l}</button>;
+        const sH = (t) => <div style={{ fontFamily: "'Lora', Georgia, serif", fontSize: 11, fontWeight: 400, color: COLORS.ink, marginBottom: 5, marginTop: 10, letterSpacing: 0.3 }}>{t}</div>;
         const searchResults = linkSearch.length > 0 ? people.filter(b => b.id !== viewingPerson.id && b.name.toLowerCase().includes(linkSearch.toLowerCase()) && !rels.find(r => r.personId === b.id)) : [];
         const rvInfo = getOverdueInfo(viewingPerson, today);
         const rvUpcoming = (events || []).filter(e => e.date && e.date >= today).sort((a, b) => a.date.localeCompare(b.date))[0];
@@ -693,11 +718,11 @@ export default function App() {
           <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
             <div style={{ width: 44, height: 44, borderRadius: 12, background: `${z.color}15`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><ZodiacGlyph sign={z.sign} color={z.color} size={26} /></div>
             <div style={{ flex: 1 }}>
-              <input value={viewingPerson.name} onChange={e => upd({ name: e.target.value })} style={{ width: "100%", fontSize: 16, fontWeight: 700, color: "#1E1B18", border: "none", background: "transparent", outline: "none", padding: 0, fontFamily: "'Lora', Georgia, serif" }} />
-              <div style={{ fontSize: 11, color: "#8A8078" }}>{z.sign}{hasDate ? ` · ${months[bd.getMonth()]} ${bd.getDate()} · ${daysUntil(viewingPerson.date) === 0 ? "Today!" : `${daysUntil(viewingPerson.date)}d away`}` : ""}</div>
+              <input value={viewingPerson.name} onChange={e => upd({ name: e.target.value })} style={{ width: "100%", fontSize: 16, fontWeight: 700, color: COLORS.ink, border: "none", background: "transparent", outline: "none", padding: 0, fontFamily: "'Lora', Georgia, serif" }} />
+              <div style={{ fontSize: 11, color: COLORS.textMuted }}>{z.sign}{hasDate ? ` · ${months[bd.getMonth()]} ${bd.getDate()} · ${daysUntil(viewingPerson.date) === 0 ? "Today!" : `${daysUntil(viewingPerson.date)}d away`}` : ""}</div>
             </div>
           </div>
-          <div style={{ overflow: "hidden", marginBottom: 10, width: "100%" }}><input type="date" value={viewingPerson.date || ""} onChange={e => upd({ date: e.target.value })} style={{ display: "block", width: "calc(100% - 2px)", padding: "6px 6px 6px 10px", borderRadius: 6, border: "1px solid #D6D0C6", background: "#EDEAE3", fontSize: 11, color: "#6B6058", outline: "none", colorScheme: "light", boxSizing: "border-box", WebkitAppearance: "none", appearance: "none" }} /></div>
+          <div style={{ overflow: "hidden", marginBottom: 10, width: "100%" }}><input type="date" value={viewingPerson.date || ""} onChange={e => upd({ date: e.target.value })} style={{ display: "block", width: "calc(100% - 2px)", padding: "6px 6px 6px 10px", borderRadius: 6, border: `1px solid ${COLORS.border}`, background: COLORS.inputBg, fontSize: 11, color: COLORS.textMuted4, outline: "none", colorScheme: "light", boxSizing: "border-box", WebkitAppearance: "none", appearance: "none" }} /></div>
           <div style={{ display: "flex", gap: 4, marginBottom: 12 }}>{pTab("info", "Info")}{pTab("touch", "Touch")}{pTab("gifts", "Gifts")}{pTab("events", "Events")}{pTab("notes", "Notes")}</div>
 
           {profileTab === "info" && <div>
@@ -711,16 +736,16 @@ export default function App() {
             </div>
             <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginBottom: 12 }}>
               {peopleTags.filter(t => !(viewingPerson.tags || []).includes(t)).map(t => (
-                <button key={t} onClick={() => upd({ tags: [...(viewingPerson.tags || []), t] })} style={{ padding: "3px 8px", borderRadius: 6, border: "1px dashed #D6D0C6", cursor: "pointer", fontWeight: 600, fontSize: 10, background: "transparent", color: "#A09888" }}>+ {t}</button>
+                <button key={t} onClick={() => upd({ tags: [...(viewingPerson.tags || []), t] })} style={{ padding: "3px 8px", borderRadius: 6, border: `1px dashed ${COLORS.border}`, cursor: "pointer", fontWeight: 600, fontSize: 10, background: "transparent", color: COLORS.textMuted2 }}>+ {t}</button>
               ))}
             </div>
             {sH("RELATIONSHIPS")}
-            {rels.length > 0 && <div style={{ display: "flex", flexDirection: "column", gap: 4, marginBottom: 8 }}>{rels.map((r, i) => { const linked = people.find(b => b.id === r.personId); return (<div key={i} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 10px", borderRadius: 8, background: "#FFFFFF", border: "1px solid #DDD8D0" }}><span style={{ fontSize: 10, fontWeight: 700, color: z.color, background: `${z.color}12`, padding: "2px 6px", borderRadius: 4 }}>{r.label}</span><span style={{ flex: 1, fontSize: 12, fontWeight: 600, color: "#1E1B18", cursor: linked ? "pointer" : "default" }} onClick={() => { if (linked) { upd({ gifts, events, interests, rels, notes: editNotes }); setPeople(p => p.map(b => b.id === viewingPerson.id ? { ...viewingPerson, notes: editNotes } : b)); setViewingPerson(linked); setEditNotes(linked.notes || ""); setProfileTab("info"); setLinkSearch(""); } }}>{linked ? linked.name : "(removed)"}</span><button onClick={() => { const newRels = rels.filter((_, j) => j !== i); upd({ relationships: newRels }); if (linked) { setPeople(p => p.map(b => b.id === r.personId ? { ...b, relationships: (b.relationships || []).filter(lr => lr.personId !== viewingPerson.id) } : b)); } }} style={{ background: "none", border: "none", fontSize: 13, color: "#B8B0A4", cursor: "pointer", padding: "0 4px" }}>×</button></div>); })}</div>}
-            <div style={{ display: "flex", gap: 4, marginBottom: 4 }}><input placeholder="Search to link..." value={linkSearch} onChange={e => setLinkSearch(e.target.value)} style={{ flex: 1, padding: "6px 10px", borderRadius: 6, border: "1px solid #D6D0C6", background: "#EDEAE3", fontSize: 11, color: "#1E1B18", outline: "none" }} /><select value={linkLabel} onChange={e => setLinkLabel(e.target.value)} style={{ padding: "6px 8px", borderRadius: 6, border: "1px solid #D6D0C6", background: "#EDEAE3", fontSize: 10, color: "#1E1B18", outline: "none" }}>{REL_LABELS.map(l => <option key={l} value={l}>{l}</option>)}</select></div>
-            {searchResults.length > 0 && <div style={{ border: "1px solid #D6D0C6", borderRadius: 8, overflow: "hidden", marginBottom: 8 }}>{searchResults.slice(0, 5).map(b => (<div key={b.id} onClick={() => { upd({ relationships: [...rels, { personId: b.id, label: linkLabel }] }); setPeople(p => p.map(x => x.id === b.id ? { ...x, relationships: [...(x.relationships || []), { personId: viewingPerson.id, label: REL_REVERSE[linkLabel] || linkLabel }] } : x)); setLinkSearch(""); }} style={{ padding: "8px 10px", fontSize: 12, color: "#1E1B18", cursor: "pointer", borderBottom: "0.5px solid #EDE9E2", background: "#F0EDE6" }}>{b.name} {(() => { const bz = getZodiacSign(b.date); return bz ? <ZodiacGlyph sign={bz.sign} color={bz.color} size={12} /> : null; })()}</div>))}</div>}
+            {rels.length > 0 && <div style={{ display: "flex", flexDirection: "column", gap: 4, marginBottom: 8 }}>{rels.map((r, i) => { const linked = people.find(b => b.id === r.personId); return (<div key={i} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 10px", borderRadius: 8, background: COLORS.white, border: `1px solid ${COLORS.borderCard}` }}><span style={{ fontSize: 10, fontWeight: 700, color: z.color, background: `${z.color}12`, padding: "2px 6px", borderRadius: 4 }}>{r.label}</span><span style={{ flex: 1, fontSize: 12, fontWeight: 600, color: COLORS.ink, cursor: linked ? "pointer" : "default" }} onClick={() => { if (linked) { upd({ gifts, events, interests, rels, notes: editNotes }); setPeople(p => p.map(b => b.id === viewingPerson.id ? { ...viewingPerson, notes: editNotes } : b)); setViewingPerson(linked); setEditNotes(linked.notes || ""); setProfileTab("info"); setLinkSearch(""); } }}>{linked ? linked.name : "(removed)"}</span><button onClick={() => { const newRels = rels.filter((_, j) => j !== i); upd({ relationships: newRels }); if (linked) { setPeople(p => p.map(b => b.id === r.personId ? { ...b, relationships: (b.relationships || []).filter(lr => lr.personId !== viewingPerson.id) } : b)); } }} style={{ background: "none", border: "none", fontSize: 13, color: COLORS.textMuted3, cursor: "pointer", padding: "0 4px" }}>×</button></div>); })}</div>}
+            <div style={{ display: "flex", gap: 4, marginBottom: 4 }}><input placeholder="Search to link..." value={linkSearch} onChange={e => setLinkSearch(e.target.value)} style={{ flex: 1, padding: "6px 10px", borderRadius: 6, border: `1px solid ${COLORS.border}`, background: COLORS.inputBg, fontSize: 11, color: COLORS.ink, outline: "none" }} /><select value={linkLabel} onChange={e => setLinkLabel(e.target.value)} style={{ padding: "6px 8px", borderRadius: 6, border: `1px solid ${COLORS.border}`, background: COLORS.inputBg, fontSize: 10, color: COLORS.ink, outline: "none" }}>{REL_LABELS.map(l => <option key={l} value={l}>{l}</option>)}</select></div>
+            {searchResults.length > 0 && <div style={{ border: `1px solid ${COLORS.border}`, borderRadius: 8, overflow: "hidden", marginBottom: 8 }}>{searchResults.slice(0, 5).map(b => (<div key={b.id} onClick={() => { upd({ relationships: [...rels, { personId: b.id, label: linkLabel }] }); setPeople(p => p.map(x => x.id === b.id ? { ...x, relationships: [...(x.relationships || []), { personId: viewingPerson.id, label: REL_REVERSE[linkLabel] || linkLabel }] } : x)); setLinkSearch(""); }} style={{ padding: "8px 10px", fontSize: 12, color: COLORS.ink, cursor: "pointer", borderBottom: `0.5px solid ${COLORS.borderSubtle}`, background: COLORS.bgAlt }}>{b.name} {(() => { const bz = getZodiacSign(b.date); return bz ? <ZodiacGlyph sign={bz.sign} color={bz.color} size={12} /> : null; })()}</div>))}</div>}
             {sH("INTERESTS")}
             <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginBottom: 6 }}>{interests.map((int, i) => (<span key={i} style={{ fontSize: 11, padding: "3px 8px", borderRadius: 6, background: `${z.color}10`, color: z.color, fontWeight: 600, display: "flex", alignItems: "center", gap: 4 }}>{int}<button onClick={() => upd({ interests: interests.filter((_, j) => j !== i) })} style={{ background: "none", border: "none", fontSize: 11, color: z.color, cursor: "pointer", padding: 0, opacity: 0.5 }}>×</button></span>))}</div>
-            <div style={{ display: "flex", gap: 4 }}><input placeholder="Add interest..." value={newInterest} onChange={e => setNewInterest(e.target.value)} onKeyDown={e => { if (e.key === "Enter" && newInterest.trim()) { upd({ interests: [...interests, newInterest.trim()] }); setNewInterest(""); } }} style={{ flex: 1, padding: "6px 10px", borderRadius: 6, border: "1px solid #D6D0C6", background: "#EDEAE3", fontSize: 11, color: "#1E1B18", outline: "none" }} /><button onClick={() => { if (newInterest.trim()) { upd({ interests: [...interests, newInterest.trim()] }); setNewInterest(""); } }} style={{ padding: "6px 12px", borderRadius: 6, border: "none", background: z.color, color: "white", fontWeight: 700, fontSize: 10, cursor: "pointer" }}>+</button></div>
+            <div style={{ display: "flex", gap: 4 }}><input placeholder="Add interest..." value={newInterest} onChange={e => setNewInterest(e.target.value)} onKeyDown={e => { if (e.key === "Enter" && newInterest.trim()) { upd({ interests: [...interests, newInterest.trim()] }); setNewInterest(""); } }} style={{ flex: 1, padding: "6px 10px", borderRadius: 6, border: `1px solid ${COLORS.border}`, background: COLORS.inputBg, fontSize: 11, color: COLORS.ink, outline: "none" }} /><button onClick={() => { if (newInterest.trim()) { upd({ interests: [...interests, newInterest.trim()] }); setNewInterest(""); } }} style={{ padding: "6px 12px", borderRadius: 6, border: "none", background: z.color, color: "white", fontWeight: 700, fontSize: 10, cursor: "pointer" }}>+</button></div>
           </div>}
 
           {/* TAB: Touch */}
@@ -732,17 +757,17 @@ export default function App() {
             return <div>
               {sH("CADENCE")}
               <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginBottom: 12 }}>
-                {CADENCES.map(c => (<button key={c.id} onClick={() => upd({ cadence: c.id })} style={{ padding: "5px 10px", borderRadius: 6, border: `1px solid ${cadence === c.id ? z.color + "44" : "#E8E4DC"}`, cursor: "pointer", fontWeight: 600, fontSize: 10, background: cadence === c.id ? `${z.color}12` : "transparent", color: cadence === c.id ? z.color : "#8A8078" }}>{c.label}</button>))}
+                {CADENCES.map(c => (<button key={c.id} onClick={() => upd({ cadence: c.id })} style={{ padding: "5px 10px", borderRadius: 6, border: `1px solid ${cadence === c.id ? z.color + "44" : COLORS.borderLight}`, cursor: "pointer", fontWeight: 600, fontSize: 10, background: cadence === c.id ? `${z.color}12` : "transparent", color: cadence === c.id ? z.color : COLORS.textMuted }}>{c.label}</button>))}
               </div>
-              {info && <div style={{ fontSize: 11, color: info.daysUntilDue <= 0 ? "#e86a6a" : "#8A8078", marginBottom: 12, padding: "8px 12px", borderRadius: 8, background: info.daysUntilDue <= 0 ? "rgba(232,106,106,0.06)" : "#F2EFE8", border: `1px solid ${info.daysUntilDue <= 0 ? "rgba(232,106,106,0.15)" : "#EDEAE3"}` }}>
+              {info && <div style={{ fontSize: 11, color: info.daysUntilDue <= 0 ? COLORS.red : COLORS.textMuted, marginBottom: 12, padding: "8px 12px", borderRadius: 8, background: info.daysUntilDue <= 0 ? "rgba(232,106,106,0.06)" : COLORS.bgSubtle, border: `1px solid ${info.daysUntilDue <= 0 ? "rgba(232,106,106,0.15)" : COLORS.inputBg}` }}>
                 {info.daysUntilDue <= 0 ? `${Math.abs(info.daysUntilDue)}d overdue` : `Due in ${info.daysUntilDue}d`} · Last reached out {info.daysSince}d ago
               </div>}
               {sH("LOG TOUCHPOINT")}
               <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginBottom: 6 }}>
-                {TP_TYPES.map(t => (<button key={t} onClick={() => setTpType(t)} style={{ padding: "5px 10px", borderRadius: 6, border: `1px solid ${tpType === t ? z.color + "44" : "#E8E4DC"}`, cursor: "pointer", fontWeight: 600, fontSize: 10, background: tpType === t ? `${z.color}12` : "transparent", color: tpType === t ? z.color : "#8A8078" }}>{t}</button>))}
+                {TP_TYPES.map(t => (<button key={t} onClick={() => setTpType(t)} style={{ padding: "5px 10px", borderRadius: 6, border: `1px solid ${tpType === t ? z.color + "44" : COLORS.borderLight}`, cursor: "pointer", fontWeight: 600, fontSize: 10, background: tpType === t ? `${z.color}12` : "transparent", color: tpType === t ? z.color : COLORS.textMuted }}>{t}</button>))}
               </div>
               <div style={{ display: "flex", gap: 4, marginBottom: 12 }}>
-                <input placeholder="Note (optional)..." value={tpNote} onChange={e => setTpNote(e.target.value)} onKeyDown={e => { if (e.key === "Enter") { upd({ touchpoints: [...tps, { id: Date.now().toString(), type: tpType, date: TODAY(), note: tpNote.trim() }] }); setTpNote(""); } }} style={{ flex: 1, padding: "6px 10px", borderRadius: 6, border: "1px solid #D6D0C6", background: "#EDEAE3", fontSize: 11, color: "#1E1B18", outline: "none" }} />
+                <input placeholder="Note (optional)..." value={tpNote} onChange={e => setTpNote(e.target.value)} onKeyDown={e => { if (e.key === "Enter") { upd({ touchpoints: [...tps, { id: Date.now().toString(), type: tpType, date: TODAY(), note: tpNote.trim() }] }); setTpNote(""); } }} style={{ flex: 1, padding: "6px 10px", borderRadius: 6, border: `1px solid ${COLORS.border}`, background: COLORS.inputBg, fontSize: 11, color: COLORS.ink, outline: "none" }} />
                 <button onClick={() => { upd({ touchpoints: [...tps, { id: Date.now().toString(), type: tpType, date: TODAY(), note: tpNote.trim() }] }); setTpNote(""); }} style={{ padding: "6px 14px", borderRadius: 6, border: "none", background: z.color, color: "white", fontWeight: 700, fontSize: 10, cursor: "pointer" }}>Log</button>
               </div>
               {sH("HISTORY")}
@@ -752,39 +777,39 @@ export default function App() {
                   if (isEditing) return (
                     <div key={tp.id || i} style={{ padding: "8px 10px", borderRadius: 8, background: `${z.color}06`, border: `1px solid ${z.color}22` }}>
                       <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginBottom: 6 }}>
-                        {TP_TYPES.map(t => (<button key={t} onClick={() => setEditingTp(p => ({ ...p, type: t }))} style={{ padding: "4px 8px", borderRadius: 5, border: `1px solid ${editingTp.type === t ? z.color + "44" : "#E8E4DC"}`, cursor: "pointer", fontWeight: 600, fontSize: 9, background: editingTp.type === t ? `${z.color}12` : "transparent", color: editingTp.type === t ? z.color : "#8A8078" }}>{t}</button>))}
+                        {TP_TYPES.map(t => (<button key={t} onClick={() => setEditingTp(p => ({ ...p, type: t }))} style={{ padding: "4px 8px", borderRadius: 5, border: `1px solid ${editingTp.type === t ? z.color + "44" : COLORS.borderLight}`, cursor: "pointer", fontWeight: 600, fontSize: 9, background: editingTp.type === t ? `${z.color}12` : "transparent", color: editingTp.type === t ? z.color : COLORS.textMuted }}>{t}</button>))}
                       </div>
                       <div style={{ display: "flex", gap: 4, marginBottom: 6 }}>
-                        <input type="date" value={editingTp.date} onChange={e => setEditingTp(p => ({ ...p, date: e.target.value }))} style={{ flex: 1, padding: "5px 8px", borderRadius: 5, border: "1px solid #D6D0C6", background: "#EDEAE3", fontSize: 10, color: "#1E1B18", outline: "none", colorScheme: "light", maxWidth: "100%", minWidth: 0, boxSizing: "border-box" }} />
+                        <input type="date" value={editingTp.date} onChange={e => setEditingTp(p => ({ ...p, date: e.target.value }))} style={{ flex: 1, padding: "5px 8px", borderRadius: 5, border: `1px solid ${COLORS.border}`, background: COLORS.inputBg, fontSize: 10, color: COLORS.ink, outline: "none", colorScheme: "light", maxWidth: "100%", minWidth: 0, boxSizing: "border-box" }} />
                       </div>
-                      <input value={editingTp.note} onChange={e => setEditingTp(p => ({ ...p, note: e.target.value }))} placeholder="Note..." style={{ width: "100%", padding: "5px 8px", borderRadius: 5, border: "1px solid #D6D0C6", background: "#EDEAE3", fontSize: 10, color: "#1E1B18", outline: "none", marginBottom: 6, maxWidth: "100%", minWidth: 0, boxSizing: "border-box" }} />
+                      <input value={editingTp.note} onChange={e => setEditingTp(p => ({ ...p, note: e.target.value }))} placeholder="Note..." style={{ width: "100%", padding: "5px 8px", borderRadius: 5, border: `1px solid ${COLORS.border}`, background: COLORS.inputBg, fontSize: 10, color: COLORS.ink, outline: "none", marginBottom: 6, maxWidth: "100%", minWidth: 0, boxSizing: "border-box" }} />
                       <div style={{ display: "flex", gap: 4 }}>
-                        <button onClick={() => setEditingTp(null)} style={{ flex: 1, padding: "5px 0", borderRadius: 5, border: "1px solid #D6D0C6", background: "transparent", cursor: "pointer", fontWeight: 600, fontSize: 10, color: "#8A8078" }}>Cancel</button>
+                        <button onClick={() => setEditingTp(null)} style={{ flex: 1, padding: "5px 0", borderRadius: 5, border: `1px solid ${COLORS.border}`, background: "transparent", cursor: "pointer", fontWeight: 600, fontSize: 10, color: COLORS.textMuted }}>Cancel</button>
                         <button onClick={() => { upd({ touchpoints: tps.map(x => x.id === editingTp.id ? { ...editingTp } : x) }); setEditingTp(null); }} style={{ flex: 1, padding: "5px 0", borderRadius: 5, border: "none", background: z.color, cursor: "pointer", fontWeight: 600, fontSize: 10, color: "white" }}>Save</button>
                       </div>
                     </div>
                   );
                   return (
-                  <div key={tp.id || i} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 10px", borderRadius: 8, background: "#FFFFFF", border: "1px solid #DDD8D0" }}>
+                  <div key={tp.id || i} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 10px", borderRadius: 8, background: COLORS.white, border: `1px solid ${COLORS.borderCard}` }}>
                     <span onClick={() => setEditingTp({ ...tp })} style={{ fontSize: 10, fontWeight: 700, color: z.color, background: `${z.color}12`, padding: "2px 6px", borderRadius: 4, cursor: "pointer" }}>{tp.type}</span>
                     <div onClick={() => setEditingTp({ ...tp })} style={{ flex: 1, minWidth: 0, cursor: "pointer" }}>
-                      {tp.note && <div style={{ fontSize: 11, color: "#1E1B18" }}>{tp.note}</div>}
+                      {tp.note && <div style={{ fontSize: 11, color: COLORS.ink }}>{tp.note}</div>}
                       {tp.placeId && (() => { const pl = places.find(x => x.id === tp.placeId); return pl ? <div style={{ fontSize: 9, color: accent, fontWeight: 600 }}>📍 {pl.name}</div> : null; })()}
-                      <div style={{ fontSize: 9, color: "#A09888" }}>{tp.date}</div>
+                      <div style={{ fontSize: 9, color: COLORS.textMuted2 }}>{tp.date}</div>
                     </div>
-                    <button onClick={() => upd({ touchpoints: tps.filter(x => (x.id || x.date + x.type) !== (tp.id || tp.date + tp.type)) })} style={{ background: "none", border: "none", fontSize: 13, color: "#B8B0A4", cursor: "pointer", padding: "0 4px" }}>×</button>
+                    <button onClick={() => upd({ touchpoints: tps.filter(x => (x.id || x.date + x.type) !== (tp.id || tp.date + tp.type)) })} style={{ background: "none", border: "none", fontSize: 13, color: COLORS.textMuted3, cursor: "pointer", padding: "0 4px" }}>×</button>
                   </div>
                   );
                 })}
-                {tps.length === 0 && <div style={{ fontSize: 11, color: "#B8B0A4", textAlign: "center", padding: 8 }}>No touchpoints logged yet</div>}
+                {tps.length === 0 && <div style={{ fontSize: 11, color: COLORS.textMuted3, textAlign: "center", padding: 8 }}>No touchpoints logged yet</div>}
               </div>
             </div>;
           })()}
 
           {profileTab === "gifts" && <div>
             {sH("GIFT IDEAS")}
-            <div style={{ display: "flex", flexDirection: "column", gap: 4, marginBottom: 8 }}>{[...gifts].sort((a, b) => (a.given ? 1 : 0) - (b.given ? 1 : 0)).map((g, i) => (<div key={g.id || i} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 10px", borderRadius: 8, background: "#FFFFFF", border: "1px solid #DDD8D0", opacity: g.given ? 0.5 : 1 }}><div onClick={() => { const ng = [...gifts]; const fi = gifts.findIndex(x => (x.id || x.text) === (g.id || g.text)); ng[fi] = { ...ng[fi], given: !ng[fi].given }; upd({ gifts: ng }); }} style={{ width: 18, height: 18, borderRadius: 4, border: g.given ? `2px solid ${z.color}` : "2px solid #D6D0C6", background: g.given ? z.color : "transparent", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0 }}>{g.given && <span style={{ fontSize: 10, color: "white", fontWeight: 800 }}>✓</span>}</div><span style={{ flex: 1, fontSize: 12, color: "#1E1B18", textDecoration: g.given ? "line-through" : "none" }}>{g.text}</span><button onClick={() => upd({ gifts: gifts.filter(x => (x.id || x.text) !== (g.id || g.text)) })} style={{ background: "none", border: "none", fontSize: 13, color: "#B8B0A4", cursor: "pointer", padding: "0 4px" }}>×</button></div>))}{gifts.length === 0 && <div style={{ fontSize: 11, color: "#B8B0A4", textAlign: "center", padding: 8 }}>No gift ideas yet</div>}</div>
-            <div style={{ display: "flex", gap: 4 }}><input placeholder="Add gift idea..." value={newGift} onChange={e => setNewGift(e.target.value)} onKeyDown={e => { if (e.key === "Enter" && newGift.trim()) { upd({ gifts: [...gifts, { id: Date.now().toString(), text: newGift.trim(), given: false }] }); setNewGift(""); } }} style={{ flex: 1, padding: "6px 10px", borderRadius: 6, border: "1px solid #D6D0C6", background: "#EDEAE3", fontSize: 11, color: "#1E1B18", outline: "none" }} /><button onClick={() => { if (newGift.trim()) { upd({ gifts: [...gifts, { id: Date.now().toString(), text: newGift.trim(), given: false }] }); setNewGift(""); } }} style={{ padding: "6px 12px", borderRadius: 6, border: "none", background: z.color, color: "white", fontWeight: 700, fontSize: 10, cursor: "pointer" }}>+</button></div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 4, marginBottom: 8 }}>{[...gifts].sort((a, b) => (a.given ? 1 : 0) - (b.given ? 1 : 0)).map((g, i) => (<div key={g.id || i} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 10px", borderRadius: 8, background: COLORS.white, border: `1px solid ${COLORS.borderCard}`, opacity: g.given ? 0.5 : 1 }}><div onClick={() => { const ng = [...gifts]; const fi = gifts.findIndex(x => (x.id || x.text) === (g.id || g.text)); ng[fi] = { ...ng[fi], given: !ng[fi].given }; upd({ gifts: ng }); }} style={{ width: 18, height: 18, borderRadius: 4, border: g.given ? `2px solid ${z.color}` : `2px solid ${COLORS.border}`, background: g.given ? z.color : "transparent", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0 }}>{g.given && <span style={{ fontSize: 10, color: "white", fontWeight: 800 }}>✓</span>}</div><span style={{ flex: 1, fontSize: 12, color: COLORS.ink, textDecoration: g.given ? "line-through" : "none" }}>{g.text}</span><button onClick={() => upd({ gifts: gifts.filter(x => (x.id || x.text) !== (g.id || g.text)) })} style={{ background: "none", border: "none", fontSize: 13, color: COLORS.textMuted3, cursor: "pointer", padding: "0 4px" }}>×</button></div>))}{gifts.length === 0 && <div style={{ fontSize: 11, color: COLORS.textMuted3, textAlign: "center", padding: 8 }}>No gift ideas yet</div>}</div>
+            <div style={{ display: "flex", gap: 4 }}><input placeholder="Add gift idea..." value={newGift} onChange={e => setNewGift(e.target.value)} onKeyDown={e => { if (e.key === "Enter" && newGift.trim()) { upd({ gifts: [...gifts, { id: Date.now().toString(), text: newGift.trim(), given: false }] }); setNewGift(""); } }} style={{ flex: 1, padding: "6px 10px", borderRadius: 6, border: `1px solid ${COLORS.border}`, background: COLORS.inputBg, fontSize: 11, color: COLORS.ink, outline: "none" }} /><button onClick={() => { if (newGift.trim()) { upd({ gifts: [...gifts, { id: Date.now().toString(), text: newGift.trim(), given: false }] }); setNewGift(""); } }} style={{ padding: "6px 12px", borderRadius: 6, border: "none", background: z.color, color: "white", fontWeight: 700, fontSize: 10, cursor: "pointer" }}>+</button></div>
           </div>}
 
           {profileTab === "events" && <div>
@@ -793,110 +818,110 @@ export default function App() {
               const futureEvents = [...events].filter(ev => ev.date && new Date(ev.date + "T00:00:00") >= todayD).sort((a, b) => a.date.localeCompare(b.date));
               const pastEvents = [...events].filter(ev => !ev.date || new Date(ev.date + "T00:00:00") < todayD).sort((a, b) => b.date.localeCompare(a.date));
               const renderEvent = (ev, i) => (
-                <div key={ev.id || i} style={{ padding: "8px 10px", borderRadius: 8, background: "#FFFFFF", border: "1px solid #DDD8D0" }}>
+                <div key={ev.id || i} style={{ padding: "8px 10px", borderRadius: 8, background: COLORS.white, border: `1px solid ${COLORS.borderCard}` }}>
                   <div style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
-                    <button onClick={() => { const updated = events.map(x => x.id === ev.id ? { ...x, significant: !x.significant } : x); upd({ events: updated }); }} style={{ flexShrink: 0, width: 24, height: 24, borderRadius: 6, border: ev.significant ? "1.5px solid #e8a84c" : "1.5px solid #E0DCD4", background: ev.significant ? "#e8a84c15" : "transparent", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", marginTop: 1, padding: 0 }}>
-                      <span style={{ fontSize: 12, color: ev.significant ? "#e8a84c" : "#B8B0A4" }}>✦</span>
+                    <button onClick={() => { const updated = events.map(x => x.id === ev.id ? { ...x, significant: !x.significant } : x); upd({ events: updated }); }} style={{ flexShrink: 0, width: 24, height: 24, borderRadius: 6, border: ev.significant ? `1.5px solid ${COLORS.gold}` : `1.5px solid ${COLORS.divider}`, background: ev.significant ? `${COLORS.gold}15` : "transparent", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", marginTop: 1, padding: 0 }}>
+                      <span style={{ fontSize: 12, color: ev.significant ? COLORS.gold : COLORS.textMuted3 }}>✦</span>
                     </button>
                     <div style={{ flex: 1, cursor: "pointer" }} onClick={() => setEditingEvent({ personId: viewingPerson.id, event: { ...ev } })}>
-                      <div style={{ fontSize: 12, color: "#1E1B18" }}>{ev.text}</div>
-                      <div style={{ fontSize: 9, color: "#A09888", marginTop: 1 }}>{ev.date}{ev.significant ? " · repeats annually" : ""}</div>
-                      {ev.privateNote && <div style={{ fontSize: 9, color: "#e8a84c", fontStyle: "italic", marginTop: 2 }}>📌 {ev.privateNote}</div>}
+                      <div style={{ fontSize: 12, color: COLORS.ink }}>{ev.text}</div>
+                      <div style={{ fontSize: 9, color: COLORS.textMuted2, marginTop: 1 }}>{ev.date}{ev.significant ? " · repeats annually" : ""}</div>
+                      {ev.privateNote && <div style={{ fontSize: 9, color: COLORS.gold, fontStyle: "italic", marginTop: 2 }}>📌 {ev.privateNote}</div>}
                     </div>
-                    <button onClick={() => upd({ events: events.filter(x => (x.id || x.text) !== (ev.id || ev.text)) })} style={{ background: "none", border: "none", fontSize: 13, color: "#B8B0A4", cursor: "pointer", padding: "0 4px", flexShrink: 0 }}>×</button>
+                    <button onClick={() => upd({ events: events.filter(x => (x.id || x.text) !== (ev.id || ev.text)) })} style={{ background: "none", border: "none", fontSize: 13, color: COLORS.textMuted3, cursor: "pointer", padding: "0 4px", flexShrink: 0 }}>×</button>
                   </div>
                 </div>
               );
               return <>
                 {futureEvents.length > 0 && <>{sH("UPCOMING")}<div style={{ display: "flex", flexDirection: "column", gap: 4, marginBottom: 10 }}>{futureEvents.map(renderEvent)}</div></>}
                 {pastEvents.length > 0 && <>{sH("PAST")}<div style={{ display: "flex", flexDirection: "column", gap: 4, marginBottom: 8 }}>{pastEvents.map(renderEvent)}</div></>}
-                {events.length === 0 && <div style={{ fontSize: 11, color: "#B8B0A4", textAlign: "center", padding: 8 }}>No events recorded</div>}
+                {events.length === 0 && <div style={{ fontSize: 11, color: COLORS.textMuted3, textAlign: "center", padding: 8 }}>No events recorded</div>}
               </>;
             })()}
             {sH("ADD EVENT")}
             <div style={{ display: "flex", gap: 4, marginBottom: 4 }}>
-              <input placeholder="What's happening..." value={newEvent} onChange={e => setNewEvent(e.target.value)} style={{ flex: 1, padding: "6px 10px", borderRadius: 6, border: "1px solid #D6D0C6", background: "#EDEAE3", fontSize: 11, color: "#1E1B18", outline: "none" }} />
-              <div style={{ overflow: "hidden", width: 90, flexShrink: 0 }}><input type="date" value={newEventDate} onChange={e => setNewEventDate(e.target.value)} style={{ display: "block", width: "100%", padding: "6px 4px", borderRadius: 6, border: "1px solid #D6D0C6", background: "#EDEAE3", fontSize: 9, color: "#6B6058", outline: "none", colorScheme: "light", boxSizing: "border-box", WebkitAppearance: "none", appearance: "none" }} /></div>
+              <input placeholder="What's happening..." value={newEvent} onChange={e => setNewEvent(e.target.value)} style={{ flex: 1, padding: "6px 10px", borderRadius: 6, border: `1px solid ${COLORS.border}`, background: COLORS.inputBg, fontSize: 11, color: COLORS.ink, outline: "none" }} />
+              <div style={{ overflow: "hidden", width: 90, flexShrink: 0 }}><input type="date" value={newEventDate} onChange={e => setNewEventDate(e.target.value)} style={{ display: "block", width: "100%", padding: "6px 4px", borderRadius: 6, border: `1px solid ${COLORS.border}`, background: COLORS.inputBg, fontSize: 9, color: COLORS.textMuted4, outline: "none", colorScheme: "light", boxSizing: "border-box", WebkitAppearance: "none", appearance: "none" }} /></div>
             </div>
             <div style={{ display: "flex", gap: 4, marginBottom: 4, alignItems: "center" }}>
-              <input placeholder="Private note to self (optional)..." value={newEventPrivateNote} onChange={e => setNewEventPrivateNote(e.target.value)} style={{ flex: 1, padding: "6px 10px", borderRadius: 6, border: "1px solid #D6D0C6", background: "#EDEAE3", fontSize: 11, color: "#1E1B18", outline: "none" }} />
+              <input placeholder="Private note to self (optional)..." value={newEventPrivateNote} onChange={e => setNewEventPrivateNote(e.target.value)} style={{ flex: 1, padding: "6px 10px", borderRadius: 6, border: `1px solid ${COLORS.border}`, background: COLORS.inputBg, fontSize: 11, color: COLORS.ink, outline: "none" }} />
             </div>
             <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 4 }}>
-              <button onClick={() => setNewEventSignificant(p => !p)} style={{ padding: "4px 10px", borderRadius: 6, border: `1px solid ${newEventSignificant ? "#e8a84c44" : "#E8E4DC"}`, cursor: "pointer", fontWeight: 600, fontSize: 10, background: newEventSignificant ? "#e8a84c12" : "transparent", color: newEventSignificant ? "#e8a84c" : "#8A8078" }}>✦ {newEventSignificant ? "Significant" : "Mark significant"}</button>
+              <button onClick={() => setNewEventSignificant(p => !p)} style={{ padding: "4px 10px", borderRadius: 6, border: `1px solid ${newEventSignificant ? `${COLORS.gold}44` : COLORS.borderLight}`, cursor: "pointer", fontWeight: 600, fontSize: 10, background: newEventSignificant ? `${COLORS.gold}12` : "transparent", color: newEventSignificant ? COLORS.gold : COLORS.textMuted }}>✦ {newEventSignificant ? "Significant" : "Mark significant"}</button>
               <button onClick={() => { if (newEvent.trim()) { upd({ events: [...events, { id: Date.now().toString(), text: newEvent.trim(), date: newEventDate, significant: newEventSignificant, privateNote: newEventPrivateNote.trim() || null }] }); setNewEvent(""); setNewEventSignificant(false); setNewEventPrivateNote(""); } }} style={{ padding: "6px 14px", borderRadius: 6, border: "none", background: z.color, color: "white", fontWeight: 700, fontSize: 10, cursor: "pointer", marginLeft: "auto" }}>Add</button>
             </div>
           </div>}
 
           {profileTab === "notes" && <div>
             {sH("GENERAL NOTES")}
-            <textarea value={editNotes} onChange={e => setEditNotes(e.target.value)} rows={6} placeholder="Anything you want to remember..." style={{ width: "100%", padding: "10px 14px", borderRadius: 8, border: "1px solid #D6D0C6", background: "#EDEAE3", fontSize: 12.5, color: "#1E1B18", outline: "none", lineHeight: 1.6 }} />
+            <textarea value={editNotes} onChange={e => setEditNotes(e.target.value)} rows={6} placeholder="Anything you want to remember..." style={{ width: "100%", padding: "10px 14px", borderRadius: 8, border: `1px solid ${COLORS.border}`, background: COLORS.inputBg, fontSize: 12.5, color: COLORS.ink, outline: "none", lineHeight: 1.6 }} />
           </div>}
 
           <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
-            <button onClick={() => { setPeople(p => p.filter(x => x.id !== viewingPerson.id)); setModal(null); setViewingPerson(null); }} style={{ padding: "10px 14px", borderRadius: 10, border: "1px solid rgba(232,106,106,0.3)", background: "transparent", cursor: "pointer", fontWeight: 600, fontSize: 11, color: "#e86a6a" }}>Delete</button>
-            <button onClick={() => { setModal(null); setViewingPerson(null); setProfileTab("info"); setLinkSearch(""); }} style={{ flex: 1, padding: "10px 0", borderRadius: 10, border: "1px solid #D6D0C6", background: "transparent", cursor: "pointer", fontWeight: 600, fontSize: 11, color: "#8A8078" }}>Cancel</button>
+            <button onClick={() => { setPeople(p => p.filter(x => x.id !== viewingPerson.id)); setModal(null); setViewingPerson(null); }} style={{ padding: "10px 14px", borderRadius: 10, border: "1px solid rgba(232,106,106,0.3)", background: "transparent", cursor: "pointer", fontWeight: 600, fontSize: 11, color: COLORS.red }}>Delete</button>
+            <button onClick={() => { setModal(null); setViewingPerson(null); setProfileTab("info"); setLinkSearch(""); }} style={{ flex: 1, padding: "10px 0", borderRadius: 10, border: `1px solid ${COLORS.border}`, background: "transparent", cursor: "pointer", fontWeight: 600, fontSize: 11, color: COLORS.textMuted }}>Cancel</button>
             <button onClick={() => { setPeople(p => p.map(b => b.id === viewingPerson.id ? { ...viewingPerson, notes: editNotes } : b)); setModal(null); setViewingPerson(null); setProfileTab("info"); setLinkSearch(""); }} style={{ flex: 2, padding: "10px 0", borderRadius: 10, border: "none", background: z.color, cursor: "pointer", fontWeight: 600, fontSize: 11, color: "white" }}>Save</button>
           </div>
           </>)}
           {profileMode === "view" && (<>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
-            <span style={{ fontSize: 15, color: "#8A8078" }}>✕</span>
-            <button onClick={() => setProfileMode("edit")} style={{ border: "none", background: "transparent", fontSize: 12, fontWeight: 600, color: "#8A8078", cursor: "pointer", padding: "4px 8px" }}>✎ Edit</button>
+            <span style={{ fontSize: 15, color: COLORS.textMuted }}>✕</span>
+            <button onClick={() => setProfileMode("edit")} style={{ border: "none", background: "transparent", fontSize: 12, fontWeight: 600, color: COLORS.textMuted, cursor: "pointer", padding: "4px 8px" }}>✎ Edit</button>
           </div>
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, marginBottom: 16 }}>
             <div style={{ width: 64, height: 64, borderRadius: 16, background: `${z.color}15`, display: "flex", alignItems: "center", justifyContent: "center" }}><ZodiacGlyph sign={z.sign} color={z.color} size={36} /></div>
-            <div style={{ fontFamily: "'Lora', Georgia, serif", fontSize: 21, fontWeight: 700, color: "#1E1B18" }}>{viewingPerson.name}</div>
-            <div style={{ fontSize: 12, color: "#8A8078" }}>{hasDate ? `${z.sign} · ${months[bd.getMonth()]} ${bd.getDate()}` : "Birthday not set"}</div>
+            <div style={{ fontFamily: "'Lora', Georgia, serif", fontSize: 21, fontWeight: 700, color: COLORS.ink }}>{viewingPerson.name}</div>
+            <div style={{ fontSize: 12, color: COLORS.textMuted }}>{hasDate ? `${z.sign} · ${months[bd.getMonth()]} ${bd.getDate()}` : "Birthday not set"}</div>
             {(viewingPerson.tags || []).length > 0 && <div style={{ display: "flex", gap: 6, flexWrap: "wrap", justifyContent: "center" }}>
-              {(viewingPerson.tags || []).map(tag => (<span key={tag} style={{ fontSize: 10, fontWeight: 600, color: "#3D6B52", background: "#3D6B5214", borderRadius: 6, padding: "3px 9px" }}>{tag}</span>))}
+              {(viewingPerson.tags || []).map(tag => (<span key={tag} style={{ fontSize: 10, fontWeight: 600, color: COLORS.accent, background: `${COLORS.accent}14`, borderRadius: 6, padding: "3px 9px" }}>{tag}</span>))}
             </div>}
           </div>
           <button onClick={() => openQuickTouch(viewingPerson)} style={{ width: "100%", padding: "13px 0", borderRadius: 11, border: "none", background: accent, color: "white", fontWeight: 700, fontSize: 13, cursor: "pointer", marginBottom: 14 }}>Touch</button>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 8, marginBottom: 16 }}>
-            <div style={{ background: "white", border: "1px solid #E8E4DC", borderRadius: 10, padding: "9px 8px", textAlign: "center" }}>
-              <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 0.4, color: "#A09888", textTransform: "uppercase", marginBottom: 3 }}>Cadence</div>
-              <div style={{ fontSize: 12, fontWeight: 700, color: "#1E1B18" }}>{(CADENCES.find(c => c.id === (viewingPerson.cadence || "monthly")) || CADENCES[1]).label}</div>
+            <div style={{ background: "white", border: `1px solid ${COLORS.borderLight}`, borderRadius: 10, padding: "9px 8px", textAlign: "center" }}>
+              <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 0.4, color: COLORS.textMuted2, textTransform: "uppercase", marginBottom: 3 }}>Cadence</div>
+              <div style={{ fontSize: 12, fontWeight: 700, color: COLORS.ink }}>{(CADENCES.find(c => c.id === (viewingPerson.cadence || "monthly")) || CADENCES[1]).label}</div>
             </div>
-            <div style={{ background: "white", border: "1px solid #E8E4DC", borderRadius: 10, padding: "9px 8px", textAlign: "center" }}>
-              <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 0.4, color: "#A09888", textTransform: "uppercase", marginBottom: 3 }}>Last touch</div>
-              <div style={{ fontSize: 12, fontWeight: 700, color: rvInfo && rvInfo.daysUntilDue <= 0 ? "#e86a6a" : "#1E1B18" }}>{rvInfo ? `${rvInfo.daysSince}d ago` : "—"}</div>
+            <div style={{ background: "white", border: `1px solid ${COLORS.borderLight}`, borderRadius: 10, padding: "9px 8px", textAlign: "center" }}>
+              <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 0.4, color: COLORS.textMuted2, textTransform: "uppercase", marginBottom: 3 }}>Last touch</div>
+              <div style={{ fontSize: 12, fontWeight: 700, color: rvInfo && rvInfo.daysUntilDue <= 0 ? COLORS.red : COLORS.ink }}>{rvInfo ? `${rvInfo.daysSince}d ago` : "—"}</div>
             </div>
-            <div style={{ background: "white", border: "1px solid #E8E4DC", borderRadius: 10, padding: "9px 8px", textAlign: "center" }}>
-              <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 0.4, color: "#A09888", textTransform: "uppercase", marginBottom: 3 }}>Next up</div>
-              <div style={{ fontSize: 12, fontWeight: 700, color: "#1E1B18" }}>{rvUpcoming ? `${months[new Date(rvUpcoming.date+"T00:00:00").getMonth()]} ${new Date(rvUpcoming.date+"T00:00:00").getDate()}` : "—"}</div>
+            <div style={{ background: "white", border: `1px solid ${COLORS.borderLight}`, borderRadius: 10, padding: "9px 8px", textAlign: "center" }}>
+              <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 0.4, color: COLORS.textMuted2, textTransform: "uppercase", marginBottom: 3 }}>Next up</div>
+              <div style={{ fontSize: 12, fontWeight: 700, color: COLORS.ink }}>{rvUpcoming ? `${months[new Date(rvUpcoming.date+"T00:00:00").getMonth()]} ${new Date(rvUpcoming.date+"T00:00:00").getDate()}` : "—"}</div>
             </div>
           </div>
           <div style={{ marginBottom: 14 }}>
-            <div style={{ fontFamily: "'Lora', Georgia, serif", fontSize: 12, color: "#1E1B18", marginBottom: 6 }}>ABOUT</div>
-            <div style={{ background: "white", border: "1px solid #E8E4DC", borderRadius: 10, padding: "11px 12px", fontSize: 12, color: "#1E1B18", lineHeight: 1.5 }}>
-              {viewingPerson.notes ? viewingPerson.notes : <span style={{ color: "#A09888" }}>No notes yet</span>}
+            <div style={{ fontFamily: "'Lora', Georgia, serif", fontSize: 12, color: COLORS.ink, marginBottom: 6 }}>ABOUT</div>
+            <div style={{ background: "white", border: `1px solid ${COLORS.borderLight}`, borderRadius: 10, padding: "11px 12px", fontSize: 12, color: COLORS.ink, lineHeight: 1.5 }}>
+              {viewingPerson.notes ? viewingPerson.notes : <span style={{ color: COLORS.textMuted2 }}>No notes yet</span>}
               {interests.length > 0 && <div style={{ display: "flex", gap: 5, flexWrap: "wrap", marginTop: 8 }}>
-                {interests.map(x => (<span key={x} style={{ fontSize: 10, color: "#8A8078", background: "#EDEAE3", borderRadius: 5, padding: "3px 8px" }}>{x}</span>))}
+                {interests.map(x => (<span key={x} style={{ fontSize: 10, color: COLORS.textMuted, background: COLORS.inputBg, borderRadius: 5, padding: "3px 8px" }}>{x}</span>))}
               </div>}
             </div>
           </div>
           <div style={{ marginBottom: 14 }}>
-            <div style={{ fontFamily: "'Lora', Georgia, serif", fontSize: 12, color: "#1E1B18", marginBottom: 6 }}>UPCOMING</div>
-            {rvUpcoming ? <div style={{ background: "white", border: "1px solid #E8E4DC", borderRadius: 10, padding: "10px 12px", display: "flex", alignItems: "center", gap: 8 }}>
+            <div style={{ fontFamily: "'Lora', Georgia, serif", fontSize: 12, color: COLORS.ink, marginBottom: 6 }}>UPCOMING</div>
+            {rvUpcoming ? <div style={{ background: "white", border: `1px solid ${COLORS.borderLight}`, borderRadius: 10, padding: "10px 12px", display: "flex", alignItems: "center", gap: 8 }}>
               <span style={{ color: accent, fontSize: 12 }}>{rvUpcoming.significant ? "◆" : "•"}</span>
               <div style={{ flexGrow: 1 }}>
-                <div style={{ fontSize: 12, fontWeight: 600, color: "#1E1B18" }}>{rvUpcoming.text}</div>
-                <div style={{ fontSize: 10, color: "#A09888" }}>{months[new Date(rvUpcoming.date+"T00:00:00").getMonth()]} {new Date(rvUpcoming.date+"T00:00:00").getDate()}, {new Date(rvUpcoming.date+"T00:00:00").getFullYear()}</div>
+                <div style={{ fontSize: 12, fontWeight: 600, color: COLORS.ink }}>{rvUpcoming.text}</div>
+                <div style={{ fontSize: 10, color: COLORS.textMuted2 }}>{months[new Date(rvUpcoming.date+"T00:00:00").getMonth()]} {new Date(rvUpcoming.date+"T00:00:00").getDate()}, {new Date(rvUpcoming.date+"T00:00:00").getFullYear()}</div>
               </div>
-            </div> : <div style={{ background: "white", border: "1px dashed #D6D0C6", borderRadius: 10, padding: 12, fontSize: 11, color: "#A09888", textAlign: "center" }}>No upcoming events</div>}
+            </div> : <div style={{ background: "white", border: `1px dashed ${COLORS.border}`, borderRadius: 10, padding: 12, fontSize: 11, color: COLORS.textMuted2, textAlign: "center" }}>No upcoming events</div>}
           </div>
           <div style={{ marginBottom: 14 }}>
-            <div style={{ fontFamily: "'Lora', Georgia, serif", fontSize: 12, color: "#1E1B18", marginBottom: 6 }}>GIFT IDEAS</div>
+            <div style={{ fontFamily: "'Lora', Georgia, serif", fontSize: 12, color: COLORS.ink, marginBottom: 6 }}>GIFT IDEAS</div>
             {gifts.length > 0 ? <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-              {gifts.slice(0, 3).map((g, i) => (<div key={g.id || i} style={{ background: "white", border: "1px solid #E8E4DC", borderRadius: 8, padding: "7px 10px", fontSize: 11, color: "#1E1B18", opacity: g.given ? 0.5 : 1 }}>{g.text}</div>))}
-            </div> : <div style={{ background: "white", border: "1px dashed #D6D0C6", borderRadius: 10, padding: 12, fontSize: 11, color: "#A09888", textAlign: "center" }}>No gift ideas yet</div>}
+              {gifts.slice(0, 3).map((g, i) => (<div key={g.id || i} style={{ background: "white", border: `1px solid ${COLORS.borderLight}`, borderRadius: 8, padding: "7px 10px", fontSize: 11, color: COLORS.ink, opacity: g.given ? 0.5 : 1 }}>{g.text}</div>))}
+            </div> : <div style={{ background: "white", border: `1px dashed ${COLORS.border}`, borderRadius: 10, padding: 12, fontSize: 11, color: COLORS.textMuted2, textAlign: "center" }}>No gift ideas yet</div>}
           </div>
           <div>
-            <div style={{ fontFamily: "'Lora', Georgia, serif", fontSize: 12, color: "#1E1B18", marginBottom: 6 }}>RECENT TOUCHPOINTS</div>
-            {rvLastTp ? <div style={{ background: "white", border: "1px solid #E8E4DC", borderRadius: 10, padding: "10px 12px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span style={{ fontSize: 11, fontWeight: 600, color: "#1E1B18", background: "#EDEAE3", borderRadius: 5, padding: "2px 8px" }}>{rvLastTp.type}</span>
-              <span style={{ fontSize: 10, color: "#A09888" }}>{rvLastTp.date}</span>
-            </div> : <div style={{ background: "white", border: "1px dashed #D6D0C6", borderRadius: 10, padding: 12, fontSize: 11, color: "#A09888", textAlign: "center" }}>No touchpoints logged yet</div>}
+            <div style={{ fontFamily: "'Lora', Georgia, serif", fontSize: 12, color: COLORS.ink, marginBottom: 6 }}>RECENT TOUCHPOINTS</div>
+            {rvLastTp ? <div style={{ background: "white", border: `1px solid ${COLORS.borderLight}`, borderRadius: 10, padding: "10px 12px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <span style={{ fontSize: 11, fontWeight: 600, color: COLORS.ink, background: COLORS.inputBg, borderRadius: 5, padding: "2px 8px" }}>{rvLastTp.type}</span>
+              <span style={{ fontSize: 10, color: COLORS.textMuted2 }}>{rvLastTp.date}</span>
+            </div> : <div style={{ background: "white", border: `1px dashed ${COLORS.border}`, borderRadius: 10, padding: 12, fontSize: 11, color: COLORS.textMuted2, textAlign: "center" }}>No touchpoints logged yet</div>}
           </div>
           </>)}
         </Modal>);
@@ -904,41 +929,41 @@ export default function App() {
 
       {/* All Milestones Modal */}
       {showAllMilestones && (<Modal onClose={() => setShowAllMilestones(false)}>
-        <div style={{ fontFamily: "'Lora'", fontSize: 16, fontWeight: 700, color: "#1E1B18", marginBottom: 14 }}>All Upcoming Milestones</div>
+        <div style={{ fontFamily: "'Lora'", fontSize: 16, fontWeight: 700, color: COLORS.ink, marginBottom: 14 }}>All Upcoming Milestones</div>
         <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
           {allMilestones.map((m, i) => {
             const inRange = m.daysAway <= 90;
             return (
-            <div key={m.event.id + "-" + i} onClick={() => { setEditingEvent({ personId: m.person.id, event: { ...m.event } }); }} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderRadius: 10, background: inRange ? "#F0EDE6" : "#F5F2EB", border: `1px solid ${inRange ? "#E8E4DC" : "#F0EDE6"}`, cursor: "pointer", opacity: inRange ? 1 : 0.8 }}>
-              <div style={{ width: 30, height: 30, borderRadius: 8, background: m.daysAway === 0 ? "rgba(232,106,138,0.1)" : m.event.significant ? "rgba(232,168,76,0.1)" : "#EDEAE3", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                <span style={{ fontSize: 13, color: m.daysAway === 0 ? "#e86a8a" : m.event.significant ? "#e8a84c" : "#8A8078" }}>{m.event.significant ? "✦" : "◆"}</span>
+            <div key={m.event.id + "-" + i} onClick={() => { setEditingEvent({ personId: m.person.id, event: { ...m.event } }); }} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderRadius: 10, background: inRange ? COLORS.bgAlt : COLORS.bgSubtle2, border: `1px solid ${inRange ? COLORS.borderLight : COLORS.bgAlt}`, cursor: "pointer", opacity: inRange ? 1 : 0.8 }}>
+              <div style={{ width: 30, height: 30, borderRadius: 8, background: m.daysAway === 0 ? "rgba(232,106,138,0.1)" : m.event.significant ? "rgba(232,168,76,0.1)" : COLORS.inputBg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <span style={{ fontSize: 13, color: m.daysAway === 0 ? COLORS.pink : m.event.significant ? COLORS.gold : COLORS.textMuted }}>{m.event.significant ? "✦" : "◆"}</span>
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontWeight: 600, fontSize: 12, color: "#1E1B18" }}>{m.person.name}</div>
-                <div style={{ fontSize: 10, color: "#8A8078" }}>{m.event.text}{m.isAnniversary ? ` (${m.years}yr)` : ""}</div>
-                {m.event.privateNote && <div style={{ fontSize: 9, color: "#e8a84c", fontStyle: "italic", marginTop: 1 }}>📌 {m.event.privateNote}</div>}
+                <div style={{ fontWeight: 600, fontSize: 12, color: COLORS.ink }}>{m.person.name}</div>
+                <div style={{ fontSize: 10, color: COLORS.textMuted }}>{m.event.text}{m.isAnniversary ? ` (${m.years}yr)` : ""}</div>
+                {m.event.privateNote && <div style={{ fontSize: 9, color: COLORS.gold, fontStyle: "italic", marginTop: 1 }}>📌 {m.event.privateNote}</div>}
               </div>
               <div style={{ textAlign: "right", flexShrink: 0 }}>
-                <div style={{ fontSize: 11, fontWeight: 700, color: m.daysAway === 0 ? "#e86a8a" : m.daysAway <= 7 ? "#e8a84c" : m.daysAway <= 90 ? "#1E1B18" : "#8A8078" }}>{m.daysAway === 0 ? "Today" : m.daysAway === 1 ? "Tomorrow" : `${m.daysAway}d`}</div>
-                <div style={{ fontSize: 9, color: "#8A8078", fontWeight: 500 }}>{m.event.date}</div>
+                <div style={{ fontSize: 11, fontWeight: 700, color: m.daysAway === 0 ? COLORS.pink : m.daysAway <= 7 ? COLORS.gold : m.daysAway <= 90 ? COLORS.ink : COLORS.textMuted }}>{m.daysAway === 0 ? "Today" : m.daysAway === 1 ? "Tomorrow" : `${m.daysAway}d`}</div>
+                <div style={{ fontSize: 9, color: COLORS.textMuted, fontWeight: 500 }}>{m.event.date}</div>
               </div>
             </div>
           ); })}
-          {allMilestones.length === 0 && <div style={{ fontSize: 11, color: "#B8B0A4", textAlign: "center", padding: 16 }}>No upcoming milestones</div>}
+          {allMilestones.length === 0 && <div style={{ fontSize: 11, color: COLORS.textMuted3, textAlign: "center", padding: 16 }}>No upcoming milestones</div>}
         </div>
         <button onClick={() => setShowAllMilestones(false)} style={{ width: "100%", padding: "11px 0", borderRadius: 10, border: "none", background: accent, cursor: "pointer", fontWeight: 600, fontSize: 12, color: "white", marginTop: 14 }}>Close</button>
       </Modal>)}
 
       {/* Edit Event Modal */}
       {editingEvent && (<Modal onClose={() => setEditingEvent(null)}>
-        <div style={{ fontFamily: "'Lora'", fontSize: 16, fontWeight: 700, color: "#1E1B18", marginBottom: 4 }}>Edit Event</div>
-        <div style={{ fontSize: 10, color: "#8A8078", marginBottom: 14 }}>{(() => { const p = people.find(x => x.id === editingEvent.personId); return p ? p.name : ""; })()}</div>
-        <input value={editingEvent.event.text} onChange={e => setEditingEvent(p => ({ ...p, event: { ...p.event, text: e.target.value } }))} placeholder="Event description..." style={{ width: "100%", padding: "10px 14px", borderRadius: 8, border: "1px solid #D6D0C6", background: "#EDEAE3", fontSize: 13, fontWeight: 600, color: "#1E1B18", marginBottom: 10, outline: "none" }} />
-        <div style={{ overflow: "hidden", marginBottom: 10, width: "100%" }}><input type="date" value={editingEvent.event.date} onChange={e => setEditingEvent(p => ({ ...p, event: { ...p.event, date: e.target.value } }))} style={{ display: "block", width: "100%", padding: "10px 14px", borderRadius: 8, border: "1px solid #D6D0C6", background: "#EDEAE3", fontSize: 13, color: "#1E1B18", outline: "none", colorScheme: "light", boxSizing: "border-box", WebkitAppearance: "none", appearance: "none" }} /></div>
-        <input value={editingEvent.event.privateNote || ""} onChange={e => setEditingEvent(p => ({ ...p, event: { ...p.event, privateNote: e.target.value } }))} placeholder="Private note to self (optional)..." style={{ width: "100%", padding: "10px 14px", borderRadius: 8, border: "1px solid #D6D0C6", background: "#EDEAE3", fontSize: 12, color: "#1E1B18", marginBottom: 12, outline: "none" }} />
-        <button onClick={() => setEditingEvent(p => ({ ...p, event: { ...p.event, significant: !p.event.significant } }))} style={{ padding: "8px 14px", borderRadius: 8, border: editingEvent.event.significant ? "1.5px solid #e8a84c" : "1.5px solid #E0DCD4", cursor: "pointer", fontWeight: 600, fontSize: 11, background: editingEvent.event.significant ? "#e8a84c15" : "transparent", color: editingEvent.event.significant ? "#e8a84c" : "#8A8078", marginBottom: 16, display: "block" }}>✦ {editingEvent.event.significant ? "Significant — repeats annually" : "Mark as significant (annual reminder)"}</button>
+        <div style={{ fontFamily: "'Lora'", fontSize: 16, fontWeight: 700, color: COLORS.ink, marginBottom: 4 }}>Edit Event</div>
+        <div style={{ fontSize: 10, color: COLORS.textMuted, marginBottom: 14 }}>{(() => { const p = people.find(x => x.id === editingEvent.personId); return p ? p.name : ""; })()}</div>
+        <input value={editingEvent.event.text} onChange={e => setEditingEvent(p => ({ ...p, event: { ...p.event, text: e.target.value } }))} placeholder="Event description..." style={{ width: "100%", padding: "10px 14px", borderRadius: 8, border: `1px solid ${COLORS.border}`, background: COLORS.inputBg, fontSize: 13, fontWeight: 600, color: COLORS.ink, marginBottom: 10, outline: "none" }} />
+        <div style={{ overflow: "hidden", marginBottom: 10, width: "100%" }}><input type="date" value={editingEvent.event.date} onChange={e => setEditingEvent(p => ({ ...p, event: { ...p.event, date: e.target.value } }))} style={{ display: "block", width: "100%", padding: "10px 14px", borderRadius: 8, border: `1px solid ${COLORS.border}`, background: COLORS.inputBg, fontSize: 13, color: COLORS.ink, outline: "none", colorScheme: "light", boxSizing: "border-box", WebkitAppearance: "none", appearance: "none" }} /></div>
+        <input value={editingEvent.event.privateNote || ""} onChange={e => setEditingEvent(p => ({ ...p, event: { ...p.event, privateNote: e.target.value } }))} placeholder="Private note to self (optional)..." style={{ width: "100%", padding: "10px 14px", borderRadius: 8, border: `1px solid ${COLORS.border}`, background: COLORS.inputBg, fontSize: 12, color: COLORS.ink, marginBottom: 12, outline: "none" }} />
+        <button onClick={() => setEditingEvent(p => ({ ...p, event: { ...p.event, significant: !p.event.significant } }))} style={{ padding: "8px 14px", borderRadius: 8, border: editingEvent.event.significant ? `1.5px solid ${COLORS.gold}` : `1.5px solid ${COLORS.divider}`, cursor: "pointer", fontWeight: 600, fontSize: 11, background: editingEvent.event.significant ? `${COLORS.gold}15` : "transparent", color: editingEvent.event.significant ? COLORS.gold : COLORS.textMuted, marginBottom: 16, display: "block" }}>✦ {editingEvent.event.significant ? "Significant — repeats annually" : "Mark as significant (annual reminder)"}</button>
         <div style={{ display: "flex", gap: 8 }}>
-          <button onClick={() => setEditingEvent(null)} style={{ flex: 1, padding: "11px 0", borderRadius: 10, border: "1px solid #D6D0C6", background: "transparent", cursor: "pointer", fontWeight: 600, fontSize: 12, color: "#8A8078" }}>Cancel</button>
+          <button onClick={() => setEditingEvent(null)} style={{ flex: 1, padding: "11px 0", borderRadius: 10, border: `1px solid ${COLORS.border}`, background: "transparent", cursor: "pointer", fontWeight: 600, fontSize: 12, color: COLORS.textMuted }}>Cancel</button>
           <button onClick={() => {
             setPeople(p => p.map(person => person.id === editingEvent.personId ? { ...person, events: (person.events || []).map(ev => ev.id === editingEvent.event.id ? { ...editingEvent.event, privateNote: editingEvent.event.privateNote || null } : ev) } : person));
             if (viewingPerson && viewingPerson.id === editingEvent.personId) {
@@ -952,13 +977,13 @@ export default function App() {
       {viewingZodiac && (<Modal onClose={() => setViewingZodiac(null)}>
         <div style={{ textAlign: "center", marginBottom: 16 }}>
           <div style={{ marginBottom: 8, display: "flex", justifyContent: "center" }}><ZodiacGlyph sign={viewingZodiac.sign} color={viewingZodiac.color} size={48} /></div>
-          <div style={{ fontFamily: "'Lora'", fontSize: 20, fontWeight: 700, color: "#1E1B18" }}>{viewingZodiac.sign}</div>
-          <div style={{ fontSize: 12, color: "#8A8078", marginTop: 4 }}>{months[viewingZodiac.start[0] - 1]} {viewingZodiac.start[1]} – {months[viewingZodiac.end[0] - 1]} {viewingZodiac.end[1]}</div>
+          <div style={{ fontFamily: "'Lora'", fontSize: 20, fontWeight: 700, color: COLORS.ink }}>{viewingZodiac.sign}</div>
+          <div style={{ fontSize: 12, color: COLORS.textMuted, marginTop: 4 }}>{months[viewingZodiac.start[0] - 1]} {viewingZodiac.start[1]} – {months[viewingZodiac.end[0] - 1]} {viewingZodiac.end[1]}</div>
         </div>
-        <div style={{ background: `${viewingZodiac.color}08`, borderRadius: 10, padding: "12px 14px", marginBottom: 12, borderLeft: `3px solid ${viewingZodiac.color}` }}><div style={{ fontSize: 12, color: "#1E1B18", lineHeight: 1.6 }}>{viewingZodiac.traits}</div></div>
-        <div style={{ marginBottom: 10 }}><div style={{ fontSize: 10, fontWeight: 700, color: viewingZodiac.color, marginBottom: 4, letterSpacing: 1 }}>LIKES</div><div style={{ fontSize: 12, color: "#6B6058", lineHeight: 1.5 }}>{viewingZodiac.likes}</div></div>
-        <div style={{ marginBottom: 16 }}><div style={{ fontSize: 10, fontWeight: 700, color: viewingZodiac.color, marginBottom: 4, letterSpacing: 1 }}>DISLIKES</div><div style={{ fontSize: 12, color: "#6B6058", lineHeight: 1.5 }}>{viewingZodiac.dislikes}</div></div>
-        <div style={{ fontSize: 10, color: "#B8B0A4", textAlign: "center", marginBottom: 12 }}>{people.filter(b => { const s = getZodiacSign(b.date); return s && s.sign === viewingZodiac.sign; }).length} {people.filter(b => { const s = getZodiacSign(b.date); return s && s.sign === viewingZodiac.sign; }).length !== 1 ? "people" : "person"} in your circle</div>
+        <div style={{ background: `${viewingZodiac.color}08`, borderRadius: 10, padding: "12px 14px", marginBottom: 12, borderLeft: `3px solid ${viewingZodiac.color}` }}><div style={{ fontSize: 12, color: COLORS.ink, lineHeight: 1.6 }}>{viewingZodiac.traits}</div></div>
+        <div style={{ marginBottom: 10 }}><div style={{ fontSize: 10, fontWeight: 700, color: viewingZodiac.color, marginBottom: 4, letterSpacing: 1 }}>LIKES</div><div style={{ fontSize: 12, color: COLORS.textMuted4, lineHeight: 1.5 }}>{viewingZodiac.likes}</div></div>
+        <div style={{ marginBottom: 16 }}><div style={{ fontSize: 10, fontWeight: 700, color: viewingZodiac.color, marginBottom: 4, letterSpacing: 1 }}>DISLIKES</div><div style={{ fontSize: 12, color: COLORS.textMuted4, lineHeight: 1.5 }}>{viewingZodiac.dislikes}</div></div>
+        <div style={{ fontSize: 10, color: COLORS.textMuted3, textAlign: "center", marginBottom: 12 }}>{people.filter(b => { const s = getZodiacSign(b.date); return s && s.sign === viewingZodiac.sign; }).length} {people.filter(b => { const s = getZodiacSign(b.date); return s && s.sign === viewingZodiac.sign; }).length !== 1 ? "people" : "person"} in your circle</div>
         <button onClick={() => setViewingZodiac(null)} style={{ width: "100%", padding: "11px 0", borderRadius: 10, border: "none", background: viewingZodiac.color, cursor: "pointer", fontWeight: 600, fontSize: 12, color: "white" }}>Close</button>
       </Modal>)}
 
@@ -966,36 +991,36 @@ export default function App() {
         const info = getOverdueInfo(quickTouchPerson, today);
         const QT_TYPES = ["Text","Call","In Person","Postcard","Gift","Other"];
         return (<Modal onClose={() => setQuickTouchPerson(null)}>
-          <div style={{ fontFamily: "'Lora', Georgia, serif", fontSize: 16, fontWeight: 700, color: "#1E1B18", marginBottom: 4 }}>Log touchpoint</div>
-          <div style={{ fontSize: 13, fontWeight: 600, color: "#1E1B18", marginBottom: 2 }}>{quickTouchPerson.name}</div>
-          {info && <div style={{ fontSize: 11, color: info.daysUntilDue <= 0 ? "#e86a6a" : "#8A8078", marginBottom: 14 }}>
+          <div style={{ fontFamily: "'Lora', Georgia, serif", fontSize: 16, fontWeight: 700, color: COLORS.ink, marginBottom: 4 }}>Log touchpoint</div>
+          <div style={{ fontSize: 13, fontWeight: 600, color: COLORS.ink, marginBottom: 2 }}>{quickTouchPerson.name}</div>
+          {info && <div style={{ fontSize: 11, color: info.daysUntilDue <= 0 ? COLORS.red : COLORS.textMuted, marginBottom: 14 }}>
             {info.daysUntilDue <= 0 ? `${Math.abs(info.daysUntilDue)}d overdue` : `Due in ${info.daysUntilDue}d`} · Last reached out {info.daysSince}d ago
           </div>}
           <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginBottom: 10 }}>
-            {QT_TYPES.map(t => (<button key={t} onClick={() => setQuickTpType(t)} style={{ padding: "7px 12px", borderRadius: 6, border: `1px solid ${quickTpType === t ? accent + "44" : "#E8E4DC"}`, cursor: "pointer", fontWeight: 600, fontSize: 11, background: quickTpType === t ? `${accent}12` : "transparent", color: quickTpType === t ? accent : "#8A8078" }}>{t}</button>))}
+            {QT_TYPES.map(t => (<button key={t} onClick={() => setQuickTpType(t)} style={{ padding: "7px 12px", borderRadius: 6, border: `1px solid ${quickTpType === t ? accent + "44" : COLORS.borderLight}`, cursor: "pointer", fontWeight: 600, fontSize: 11, background: quickTpType === t ? `${accent}12` : "transparent", color: quickTpType === t ? accent : COLORS.textMuted }}>{t}</button>))}
           </div>
-          <input placeholder="Note (optional)..." value={quickTpNote} onChange={e => setQuickTpNote(e.target.value)} onKeyDown={e => { if (e.key === "Enter") logQuickTouch(); }} style={{ width: "100%", boxSizing: "border-box", padding: "8px 10px", borderRadius: 6, border: "1px solid #D6D0C6", background: "#EDEAE3", fontSize: 12, color: "#1E1B18", outline: "none", marginBottom: 14 }} />
+          <input placeholder="Note (optional)..." value={quickTpNote} onChange={e => setQuickTpNote(e.target.value)} onKeyDown={e => { if (e.key === "Enter") logQuickTouch(); }} style={{ width: "100%", boxSizing: "border-box", padding: "8px 10px", borderRadius: 6, border: `1px solid ${COLORS.border}`, background: COLORS.inputBg, fontSize: 12, color: COLORS.ink, outline: "none", marginBottom: 14 }} />
           <button onClick={logQuickTouch} style={{ width: "100%", padding: "11px 0", borderRadius: 10, border: "none", background: accent, cursor: "pointer", fontWeight: 700, fontSize: 12, color: "white", marginBottom: 8 }}>Log touchpoint</button>
-          <button onClick={() => { setQuickTouchPerson(null); openPerson(quickTouchPerson); }} style={{ width: "100%", padding: "9px 0", borderRadius: 10, border: "1px solid #D6D0C6", background: "transparent", cursor: "pointer", fontWeight: 600, fontSize: 11, color: "#8A8078" }}>View full profile →</button>
+          <button onClick={() => { setQuickTouchPerson(null); openPerson(quickTouchPerson); }} style={{ width: "100%", padding: "9px 0", borderRadius: 10, border: `1px solid ${COLORS.border}`, background: "transparent", cursor: "pointer", fontWeight: 600, fontSize: 11, color: COLORS.textMuted }}>View full profile →</button>
         </Modal>);
       })()}
 
       {/* Add Place Modal */}
       {modal === "addPlace" && (<Modal onClose={() => setModal(null)}>
-        <div style={{ fontFamily: "'Lora'", fontSize: 16, fontWeight: 700, color: "#1E1B18", marginBottom: 16 }}>Add Place</div>
-        <input placeholder="Name..." value={newPlace.name} onChange={e => setNewPlace(p => ({ ...p, name: e.target.value }))} autoFocus style={{ width: "100%", padding: "10px 14px", borderRadius: 8, border: "1px solid #D6D0C6", background: "#EDEAE3", fontSize: 13, fontWeight: 600, color: "#1E1B18", marginBottom: 10, outline: "none" }} />
-        <div style={{ fontSize: 9, fontWeight: 700, color: "#A09888", marginBottom: 5, letterSpacing: 1 }}>CATEGORY</div>
+        <div style={{ fontFamily: "'Lora'", fontSize: 16, fontWeight: 700, color: COLORS.ink, marginBottom: 16 }}>Add Place</div>
+        <input placeholder="Name..." value={newPlace.name} onChange={e => setNewPlace(p => ({ ...p, name: e.target.value }))} autoFocus style={{ width: "100%", padding: "10px 14px", borderRadius: 8, border: `1px solid ${COLORS.border}`, background: COLORS.inputBg, fontSize: 13, fontWeight: 600, color: COLORS.ink, marginBottom: 10, outline: "none" }} />
+        <div style={{ fontSize: 9, fontWeight: 700, color: COLORS.textMuted2, marginBottom: 5, letterSpacing: 1 }}>CATEGORY</div>
         <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginBottom: 12 }}>
-          {placeCategories.map(c => (<button key={c} onClick={() => setNewPlace(p => ({ ...p, category: c }))} style={{ padding: "5px 10px", borderRadius: 6, border: `1px solid ${newPlace.category === c ? accent + "44" : "#E8E4DC"}`, cursor: "pointer", fontWeight: 600, fontSize: 10, background: newPlace.category === c ? `${accent}12` : "transparent", color: newPlace.category === c ? accent : "#8A8078" }}>{c}</button>))}
+          {placeCategories.map(c => (<button key={c} onClick={() => setNewPlace(p => ({ ...p, category: c }))} style={{ padding: "5px 10px", borderRadius: 6, border: `1px solid ${newPlace.category === c ? accent + "44" : COLORS.borderLight}`, cursor: "pointer", fontWeight: 600, fontSize: 10, background: newPlace.category === c ? `${accent}12` : "transparent", color: newPlace.category === c ? accent : COLORS.textMuted }}>{c}</button>))}
         </div>
-        <div style={{ fontSize: 9, fontWeight: 700, color: "#A09888", marginBottom: 5, letterSpacing: 1 }}>RATING</div>
+        <div style={{ fontSize: 9, fontWeight: 700, color: COLORS.textMuted2, marginBottom: 5, letterSpacing: 1 }}>RATING</div>
         <div style={{ display: "flex", gap: 4, marginBottom: 12 }}>
-          {[1,2,3,4,5].map(n => (<button key={n} onClick={() => setNewPlace(p => ({ ...p, rating: p.rating === n ? 0 : n }))} style={{ fontSize: 20, background: "none", border: "none", cursor: "pointer", padding: "2px 4px", color: n <= newPlace.rating ? "#e8a84c" : "#D6D0C6" }}>★</button>))}
+          {[1,2,3,4,5].map(n => (<button key={n} onClick={() => setNewPlace(p => ({ ...p, rating: p.rating === n ? 0 : n }))} style={{ fontSize: 20, background: "none", border: "none", cursor: "pointer", padding: "2px 4px", color: n <= newPlace.rating ? COLORS.gold : COLORS.border }}>★</button>))}
         </div>
-        <input placeholder="Google Maps link (optional)..." value={newPlace.mapsUrl} onChange={e => setNewPlace(p => ({ ...p, mapsUrl: e.target.value }))} style={{ width: "100%", padding: "10px 14px", borderRadius: 8, border: "1px solid #D6D0C6", background: "#EDEAE3", fontSize: 12, color: "#1E1B18", marginBottom: 10, outline: "none" }} />
-        <textarea placeholder="Notes..." value={newPlace.notes} onChange={e => setNewPlace(p => ({ ...p, notes: e.target.value }))} rows={3} style={{ width: "100%", padding: "10px 14px", borderRadius: 8, border: "1px solid #D6D0C6", background: "#EDEAE3", fontSize: 12.5, color: "#1E1B18", marginBottom: 16, outline: "none", lineHeight: 1.5 }} />
+        <input placeholder="Google Maps link (optional)..." value={newPlace.mapsUrl} onChange={e => setNewPlace(p => ({ ...p, mapsUrl: e.target.value }))} style={{ width: "100%", padding: "10px 14px", borderRadius: 8, border: `1px solid ${COLORS.border}`, background: COLORS.inputBg, fontSize: 12, color: COLORS.ink, marginBottom: 10, outline: "none" }} />
+        <textarea placeholder="Notes..." value={newPlace.notes} onChange={e => setNewPlace(p => ({ ...p, notes: e.target.value }))} rows={3} style={{ width: "100%", padding: "10px 14px", borderRadius: 8, border: `1px solid ${COLORS.border}`, background: COLORS.inputBg, fontSize: 12.5, color: COLORS.ink, marginBottom: 16, outline: "none", lineHeight: 1.5 }} />
         <div style={{ display: "flex", gap: 8 }}>
-          <button onClick={() => setModal(null)} style={{ flex: 1, padding: "11px 0", borderRadius: 10, border: "1px solid #D6D0C6", background: "transparent", cursor: "pointer", fontWeight: 600, fontSize: 12, color: "#8A8078" }}>Cancel</button>
+          <button onClick={() => setModal(null)} style={{ flex: 1, padding: "11px 0", borderRadius: 10, border: `1px solid ${COLORS.border}`, background: "transparent", cursor: "pointer", fontWeight: 600, fontSize: 12, color: COLORS.textMuted }}>Cancel</button>
           <button onClick={() => { if (!newPlace.name.trim()) return; setPlaces(p => [...p, { ...newPlace, id: Date.now().toString(), visits: [] }]); setNewPlace({ name: "", notes: "", rating: 0, mapsUrl: "", category: "" }); setModal(null); }} style={{ flex: 2, padding: "11px 0", borderRadius: 10, border: "none", background: accent, cursor: "pointer", fontWeight: 600, fontSize: 12, color: "white" }}>Save</button>
         </div>
       </Modal>)}
@@ -1004,7 +1029,7 @@ export default function App() {
       {modal === "viewPlace" && viewingPlace && (() => {
         const visits = viewingPlace.visits || [];
         const updP = (changes) => setViewingPlace(p => ({ ...p, ...changes }));
-        const starsR = (n, setter) => <div style={{ display: "flex", gap: 2 }}>{[1,2,3,4,5].map(i => (<button key={i} onClick={() => setter(i)} style={{ fontSize: 18, background: "none", border: "none", cursor: "pointer", padding: "0 2px", color: i <= n ? "#e8a84c" : "#D6D0C6" }}>★</button>))}</div>;
+        const starsR = (n, setter) => <div style={{ display: "flex", gap: 2 }}>{[1,2,3,4,5].map(i => (<button key={i} onClick={() => setter(i)} style={{ fontSize: 18, background: "none", border: "none", cursor: "pointer", padding: "0 2px", color: i <= n ? COLORS.gold : COLORS.border }}>★</button>))}</div>;
         const addVisit = () => {
           const eventId = "evt_" + Date.now();
           const newVisit = { id: eventId, date: visitDate || TODAY(), note: visitNote.trim(), people: visitPeopleSelected.map(p => p.id) };
@@ -1047,73 +1072,73 @@ export default function App() {
           <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8 }}>
             <div style={{ width: 44, height: 44, borderRadius: 12, background: `${accent}15`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><span style={{ fontSize: 20, color: accent }}>◎</span></div>
             <div style={{ flex: 1 }}>
-              <input value={viewingPlace.name} onChange={e => updP({ name: e.target.value })} style={{ width: "100%", fontSize: 16, fontWeight: 700, color: "#1E1B18", border: "none", background: "transparent", outline: "none", padding: 0, fontFamily: "'Lora', Georgia, serif" }} />
-              <div style={{ fontSize: 10, color: "#8A8078" }}>{viewingPlace.category || "Uncategorized"} · {visits.length} visit{visits.length !== 1 ? "s" : ""}</div>
+              <input value={viewingPlace.name} onChange={e => updP({ name: e.target.value })} style={{ width: "100%", fontSize: 16, fontWeight: 700, color: COLORS.ink, border: "none", background: "transparent", outline: "none", padding: 0, fontFamily: "'Lora', Georgia, serif" }} />
+              <div style={{ fontSize: 10, color: COLORS.textMuted }}>{viewingPlace.category || "Uncategorized"} · {visits.length} visit{visits.length !== 1 ? "s" : ""}</div>
             </div>
           </div>
           {starsR(viewingPlace.rating, (n) => updP({ rating: viewingPlace.rating === n ? 0 : n }))}
-          <div style={{ fontSize: 9, fontWeight: 700, color: "#A09888", marginBottom: 5, marginTop: 10, letterSpacing: 1 }}>CATEGORY</div>
+          <div style={{ fontSize: 9, fontWeight: 700, color: COLORS.textMuted2, marginBottom: 5, marginTop: 10, letterSpacing: 1 }}>CATEGORY</div>
           <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginBottom: 10 }}>
-            {placeCategories.map(c => (<button key={c} onClick={() => updP({ category: c })} style={{ padding: "4px 10px", borderRadius: 6, border: `1px solid ${viewingPlace.category === c ? accent + "44" : "#E8E4DC"}`, cursor: "pointer", fontWeight: 600, fontSize: 10, background: viewingPlace.category === c ? `${accent}12` : "transparent", color: viewingPlace.category === c ? accent : "#8A8078" }}>{c}</button>))}
+            {placeCategories.map(c => (<button key={c} onClick={() => updP({ category: c })} style={{ padding: "4px 10px", borderRadius: 6, border: `1px solid ${viewingPlace.category === c ? accent + "44" : COLORS.borderLight}`, cursor: "pointer", fontWeight: 600, fontSize: 10, background: viewingPlace.category === c ? `${accent}12` : "transparent", color: viewingPlace.category === c ? accent : COLORS.textMuted }}>{c}</button>))}
           </div>
-          <input placeholder="Google Maps link..." value={viewingPlace.mapsUrl || ""} onChange={e => updP({ mapsUrl: e.target.value })} style={{ width: "100%", padding: "6px 10px", borderRadius: 6, border: "1px solid #D6D0C6", background: "#EDEAE3", fontSize: 11, color: "#1E1B18", marginBottom: 4, outline: "none" }} />
+          <input placeholder="Google Maps link..." value={viewingPlace.mapsUrl || ""} onChange={e => updP({ mapsUrl: e.target.value })} style={{ width: "100%", padding: "6px 10px", borderRadius: 6, border: `1px solid ${COLORS.border}`, background: COLORS.inputBg, fontSize: 11, color: COLORS.ink, marginBottom: 4, outline: "none" }} />
           {viewingPlace.mapsUrl && <a href={viewingPlace.mapsUrl} target="_blank" rel="noopener noreferrer" style={{ fontSize: 10, color: accent, fontWeight: 600, display: "inline-block", marginBottom: 8 }}>Open in Maps →</a>}
           {!viewingPlace.mapsUrl && <div style={{ marginBottom: 8 }} />}
-          <textarea value={viewingPlace.notes || ""} onChange={e => updP({ notes: e.target.value })} rows={2} placeholder="Notes..." style={{ width: "100%", padding: "8px 10px", borderRadius: 6, border: "1px solid #D6D0C6", background: "#EDEAE3", fontSize: 11, color: "#1E1B18", marginBottom: 12, outline: "none", lineHeight: 1.5 }} />
-          <div style={{ fontSize: 9, fontWeight: 700, color: "#A09888", marginBottom: 5, letterSpacing: 1 }}>LOG A VISIT</div>
+          <textarea value={viewingPlace.notes || ""} onChange={e => updP({ notes: e.target.value })} rows={2} placeholder="Notes..." style={{ width: "100%", padding: "8px 10px", borderRadius: 6, border: `1px solid ${COLORS.border}`, background: COLORS.inputBg, fontSize: 11, color: COLORS.ink, marginBottom: 12, outline: "none", lineHeight: 1.5 }} />
+          <div style={{ fontSize: 9, fontWeight: 700, color: COLORS.textMuted2, marginBottom: 5, letterSpacing: 1 }}>LOG A VISIT</div>
           <div style={{ display: "flex", gap: 4, marginBottom: 6 }}>
-            <input placeholder="What happened..." value={visitNote} onChange={e => setVisitNote(e.target.value)} style={{ flex: 1, padding: "6px 10px", borderRadius: 6, border: "1px solid #D6D0C6", background: "#EDEAE3", fontSize: 11, color: "#1E1B18", outline: "none" }} />
-            <div style={{ overflow: "hidden", width: 90, flexShrink: 0 }}><input type="date" value={visitDate} onChange={e => setVisitDate(e.target.value)} style={{ display: "block", width: "100%", padding: "6px 4px", borderRadius: 6, border: "1px solid #D6D0C6", background: "#EDEAE3", fontSize: 9, color: "#6B6058", outline: "none", colorScheme: "light", boxSizing: "border-box", WebkitAppearance: "none", appearance: "none" }} /></div>
+            <input placeholder="What happened..." value={visitNote} onChange={e => setVisitNote(e.target.value)} style={{ flex: 1, padding: "6px 10px", borderRadius: 6, border: `1px solid ${COLORS.border}`, background: COLORS.inputBg, fontSize: 11, color: COLORS.ink, outline: "none" }} />
+            <div style={{ overflow: "hidden", width: 90, flexShrink: 0 }}><input type="date" value={visitDate} onChange={e => setVisitDate(e.target.value)} style={{ display: "block", width: "100%", padding: "6px 4px", borderRadius: 6, border: `1px solid ${COLORS.border}`, background: COLORS.inputBg, fontSize: 9, color: COLORS.textMuted4, outline: "none", colorScheme: "light", boxSizing: "border-box", WebkitAppearance: "none", appearance: "none" }} /></div>
           </div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginBottom: visitPeopleSelected.length > 0 ? 6 : 0 }}>
             {visitPeopleSelected.map(p => (<span key={p.id} style={{ fontSize: 10, padding: "2px 8px", borderRadius: 6, background: `${accent}12`, color: accent, fontWeight: 600, display: "flex", alignItems: "center", gap: 3 }}>{p.name}<button onClick={() => setVisitPeopleSelected(s => s.filter(x => x.id !== p.id))} style={{ background: "none", border: "none", fontSize: 10, color: accent, cursor: "pointer", padding: 0, opacity: 0.5 }}>×</button></span>))}
           </div>
           <div style={{ display: "flex", gap: 4, marginBottom: 4 }}>
-            <input placeholder="Tag people..." value={visitPeopleSearch} onChange={e => setVisitPeopleSearch(e.target.value)} style={{ flex: 1, padding: "6px 10px", borderRadius: 6, border: "1px solid #D6D0C6", background: "#EDEAE3", fontSize: 11, color: "#1E1B18", outline: "none" }} />
+            <input placeholder="Tag people..." value={visitPeopleSearch} onChange={e => setVisitPeopleSearch(e.target.value)} style={{ flex: 1, padding: "6px 10px", borderRadius: 6, border: `1px solid ${COLORS.border}`, background: COLORS.inputBg, fontSize: 11, color: COLORS.ink, outline: "none" }} />
             <button onClick={addVisit} style={{ padding: "6px 14px", borderRadius: 6, border: "none", background: accent, color: "white", fontWeight: 700, fontSize: 10, cursor: "pointer" }}>Log</button>
           </div>
-          {vpSR.length > 0 && <div style={{ border: "1px solid #D6D0C6", borderRadius: 8, overflow: "hidden", marginBottom: 8 }}>{vpSR.map(p => (<div key={p.id} onClick={() => { setVisitPeopleSelected(s => [...s, p]); setVisitPeopleSearch(""); }} style={{ padding: "7px 10px", fontSize: 11, color: "#1E1B18", cursor: "pointer", borderBottom: "0.5px solid #EDE9E2", background: "#F0EDE6" }}>{p.name}</div>))}</div>}
-          <div style={{ fontSize: 9, fontWeight: 700, color: "#A09888", marginBottom: 5, marginTop: 8, letterSpacing: 1 }}>VISIT HISTORY</div>
+          {vpSR.length > 0 && <div style={{ border: `1px solid ${COLORS.border}`, borderRadius: 8, overflow: "hidden", marginBottom: 8 }}>{vpSR.map(p => (<div key={p.id} onClick={() => { setVisitPeopleSelected(s => [...s, p]); setVisitPeopleSearch(""); }} style={{ padding: "7px 10px", fontSize: 11, color: COLORS.ink, cursor: "pointer", borderBottom: `0.5px solid ${COLORS.borderSubtle}`, background: COLORS.bgAlt }}>{p.name}</div>))}</div>}
+          <div style={{ fontSize: 9, fontWeight: 700, color: COLORS.textMuted2, marginBottom: 5, marginTop: 8, letterSpacing: 1 }}>VISIT HISTORY</div>
           <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
             {[...visits].reverse().map((v, i) => {
               const isEd = editingVisit && editingVisit.id === v.id;
               if (isEd) return (
                 <div key={v.id || i} style={{ padding: "8px 10px", borderRadius: 8, background: `${accent}06`, border: `1px solid ${accent}22` }}>
                   <div style={{ display: "flex", gap: 4, marginBottom: 6 }}>
-                    <input value={editingVisit.note} onChange={e => setEditingVisit(p => ({ ...p, note: e.target.value }))} placeholder="Note..." style={{ flex: 1, padding: "5px 8px", borderRadius: 5, border: "1px solid #D6D0C6", background: "#EDEAE3", fontSize: 10, color: "#1E1B18", outline: "none" }} />
-                    <div style={{ overflow: "hidden", width: 85, flexShrink: 0 }}><input type="date" value={editingVisit.date} onChange={e => setEditingVisit(p => ({ ...p, date: e.target.value }))} style={{ display: "block", width: "100%", padding: "5px 4px", borderRadius: 5, border: "1px solid #D6D0C6", background: "#EDEAE3", fontSize: 9, color: "#1E1B18", outline: "none", colorScheme: "light", boxSizing: "border-box", WebkitAppearance: "none", appearance: "none" }} /></div>
+                    <input value={editingVisit.note} onChange={e => setEditingVisit(p => ({ ...p, note: e.target.value }))} placeholder="Note..." style={{ flex: 1, padding: "5px 8px", borderRadius: 5, border: `1px solid ${COLORS.border}`, background: COLORS.inputBg, fontSize: 10, color: COLORS.ink, outline: "none" }} />
+                    <div style={{ overflow: "hidden", width: 85, flexShrink: 0 }}><input type="date" value={editingVisit.date} onChange={e => setEditingVisit(p => ({ ...p, date: e.target.value }))} style={{ display: "block", width: "100%", padding: "5px 4px", borderRadius: 5, border: `1px solid ${COLORS.border}`, background: COLORS.inputBg, fontSize: 9, color: COLORS.ink, outline: "none", colorScheme: "light", boxSizing: "border-box", WebkitAppearance: "none", appearance: "none" }} /></div>
                   </div>
                   <div style={{ display: "flex", flexWrap: "wrap", gap: 3, marginBottom: 6 }}>
                     {(editingVisit.people || []).map(pid => { const person = people.find(x => x.id === pid); return person ? <span key={pid} style={{ fontSize: 9, padding: "2px 6px", borderRadius: 4, background: `${accent}12`, color: accent, fontWeight: 600, display: "flex", alignItems: "center", gap: 3 }}>{person.name}<button onClick={() => setEditingVisit(p => ({ ...p, people: (p.people || []).filter(x => x !== pid) }))} style={{ background: "none", border: "none", fontSize: 9, color: accent, cursor: "pointer", padding: 0, opacity: 0.5 }}>×</button></span> : null; })}
                   </div>
                   <div style={{ display: "flex", gap: 4, marginBottom: evSR.length > 0 ? 4 : 6 }}>
-                    <input placeholder="Tag people..." value={evPeopleSearch} onChange={e => setEvPeopleSearch(e.target.value)} style={{ flex: 1, padding: "5px 8px", borderRadius: 5, border: "1px solid #D6D0C6", background: "#EDEAE3", fontSize: 10, color: "#1E1B18", outline: "none" }} />
+                    <input placeholder="Tag people..." value={evPeopleSearch} onChange={e => setEvPeopleSearch(e.target.value)} style={{ flex: 1, padding: "5px 8px", borderRadius: 5, border: `1px solid ${COLORS.border}`, background: COLORS.inputBg, fontSize: 10, color: COLORS.ink, outline: "none" }} />
                   </div>
-                  {evSR.length > 0 && <div style={{ border: "1px solid #D6D0C6", borderRadius: 6, overflow: "hidden", marginBottom: 6 }}>{evSR.map(p => (<div key={p.id} onClick={() => { setEditingVisit(prev => ({ ...prev, people: [...(prev.people || []), p.id] })); setEvPeopleSearch(""); }} style={{ padding: "6px 8px", fontSize: 10, color: "#1E1B18", cursor: "pointer", borderBottom: "0.5px solid #EDE9E2", background: "#F0EDE6" }}>{p.name}</div>))}</div>}
+                  {evSR.length > 0 && <div style={{ border: `1px solid ${COLORS.border}`, borderRadius: 6, overflow: "hidden", marginBottom: 6 }}>{evSR.map(p => (<div key={p.id} onClick={() => { setEditingVisit(prev => ({ ...prev, people: [...(prev.people || []), p.id] })); setEvPeopleSearch(""); }} style={{ padding: "6px 8px", fontSize: 10, color: COLORS.ink, cursor: "pointer", borderBottom: `0.5px solid ${COLORS.borderSubtle}`, background: COLORS.bgAlt }}>{p.name}</div>))}</div>}
                   <div style={{ display: "flex", gap: 4 }}>
-                    <button onClick={() => { setEditingVisit(null); setEvPeopleSearch(""); }} style={{ flex: 1, padding: "5px 0", borderRadius: 5, border: "1px solid #D6D0C6", background: "transparent", cursor: "pointer", fontWeight: 600, fontSize: 10, color: "#8A8078" }}>Cancel</button>
+                    <button onClick={() => { setEditingVisit(null); setEvPeopleSearch(""); }} style={{ flex: 1, padding: "5px 0", borderRadius: 5, border: `1px solid ${COLORS.border}`, background: "transparent", cursor: "pointer", fontWeight: 600, fontSize: 10, color: COLORS.textMuted }}>Cancel</button>
                     <button onClick={saveVisitEdit} style={{ flex: 1, padding: "5px 0", borderRadius: 5, border: "none", background: accent, cursor: "pointer", fontWeight: 600, fontSize: 10, color: "white" }}>Save</button>
                   </div>
                 </div>
               );
               return (
-              <div key={v.id || i} onClick={() => { setEditingVisit({ ...v }); setEvPeopleSearch(""); }} style={{ padding: "8px 10px", borderRadius: 8, background: "#FFFFFF", border: "1px solid #DDD8D0", cursor: "pointer" }}>
+              <div key={v.id || i} onClick={() => { setEditingVisit({ ...v }); setEvPeopleSearch(""); }} style={{ padding: "8px 10px", borderRadius: 8, background: COLORS.white, border: `1px solid ${COLORS.borderCard}`, cursor: "pointer" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                   <div style={{ flex: 1 }}>
-                    {v.note && <div style={{ fontSize: 12, color: "#1E1B18", marginBottom: 2 }}>{v.note}</div>}
-                    <div style={{ fontSize: 9, color: "#A09888" }}>{v.date}</div>
+                    {v.note && <div style={{ fontSize: 12, color: COLORS.ink, marginBottom: 2 }}>{v.note}</div>}
+                    <div style={{ fontSize: 9, color: COLORS.textMuted2 }}>{v.date}</div>
                     {v.people && v.people.length > 0 && <div style={{ display: "flex", flexWrap: "wrap", gap: 3, marginTop: 4 }}>{v.people.map(pid => { const person = people.find(x => x.id === pid); return person ? <span key={pid} style={{ fontSize: 9, padding: "1px 6px", borderRadius: 4, background: `${accent}10`, color: accent, fontWeight: 600 }}>{person.name}</span> : null; })}</div>}
                   </div>
-                  <button onClick={(e) => { e.stopPropagation(); deleteVisit(v); }} style={{ background: "none", border: "none", fontSize: 13, color: "#B8B0A4", cursor: "pointer", padding: "0 4px" }}>×</button>
+                  <button onClick={(e) => { e.stopPropagation(); deleteVisit(v); }} style={{ background: "none", border: "none", fontSize: 13, color: COLORS.textMuted3, cursor: "pointer", padding: "0 4px" }}>×</button>
                 </div>
               </div>
               );
             })}
-            {visits.length === 0 && <div style={{ fontSize: 11, color: "#B8B0A4", textAlign: "center", padding: 8 }}>No visits logged yet</div>}
+            {visits.length === 0 && <div style={{ fontSize: 11, color: COLORS.textMuted3, textAlign: "center", padding: 8 }}>No visits logged yet</div>}
           </div>
           <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
-            <button onClick={() => { setPlaces(p => p.filter(x => x.id !== viewingPlace.id)); setModal(null); setViewingPlace(null); }} style={{ padding: "10px 14px", borderRadius: 10, border: "1px solid rgba(232,106,106,0.3)", background: "transparent", cursor: "pointer", fontWeight: 600, fontSize: 11, color: "#e86a6a" }}>Delete</button>
-            <button onClick={() => { setModal(null); setViewingPlace(null); }} style={{ flex: 1, padding: "10px 0", borderRadius: 10, border: "1px solid #D6D0C6", background: "transparent", cursor: "pointer", fontWeight: 600, fontSize: 11, color: "#8A8078" }}>Cancel</button>
+            <button onClick={() => { setPlaces(p => p.filter(x => x.id !== viewingPlace.id)); setModal(null); setViewingPlace(null); }} style={{ padding: "10px 14px", borderRadius: 10, border: "1px solid rgba(232,106,106,0.3)", background: "transparent", cursor: "pointer", fontWeight: 600, fontSize: 11, color: COLORS.red }}>Delete</button>
+            <button onClick={() => { setModal(null); setViewingPlace(null); }} style={{ flex: 1, padding: "10px 0", borderRadius: 10, border: `1px solid ${COLORS.border}`, background: "transparent", cursor: "pointer", fontWeight: 600, fontSize: 11, color: COLORS.textMuted }}>Cancel</button>
             <button onClick={() => { setPlaces(p => p.map(x => x.id === viewingPlace.id ? viewingPlace : x)); setModal(null); setViewingPlace(null); }} style={{ flex: 2, padding: "10px 0", borderRadius: 10, border: "none", background: accent, cursor: "pointer", fontWeight: 600, fontSize: 11, color: "white" }}>Save</button>
           </div>
         </Modal>);
@@ -1121,17 +1146,17 @@ export default function App() {
 
       {/* Edit Categories Modal */}
       {editingCategory && (<Modal onClose={() => setEditingCategory(false)}>
-        <div style={{ fontFamily: "'Lora'", fontSize: 16, fontWeight: 700, color: "#1E1B18", marginBottom: 14 }}>Edit Categories</div>
+        <div style={{ fontFamily: "'Lora'", fontSize: 16, fontWeight: 700, color: COLORS.ink, marginBottom: 14 }}>Edit Categories</div>
         <div style={{ display: "flex", flexDirection: "column", gap: 4, marginBottom: 12 }}>
           {placeCategories.map((c, i) => (
-            <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 10px", borderRadius: 8, background: "#FFFFFF", border: "1px solid #DDD8D0" }}>
-              <span style={{ flex: 1, fontSize: 13, fontWeight: 600, color: "#1E1B18" }}>{c}</span>
-              <button onClick={() => setPlaceCategories(p => p.filter((_, j) => j !== i))} style={{ background: "none", border: "none", fontSize: 13, color: "#B8B0A4", cursor: "pointer", padding: "0 4px" }}>×</button>
+            <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 10px", borderRadius: 8, background: COLORS.white, border: `1px solid ${COLORS.borderCard}` }}>
+              <span style={{ flex: 1, fontSize: 13, fontWeight: 600, color: COLORS.ink }}>{c}</span>
+              <button onClick={() => setPlaceCategories(p => p.filter((_, j) => j !== i))} style={{ background: "none", border: "none", fontSize: 13, color: COLORS.textMuted3, cursor: "pointer", padding: "0 4px" }}>×</button>
             </div>
           ))}
         </div>
         <div style={{ display: "flex", gap: 4, marginBottom: 14 }}>
-          <input placeholder="New category..." value={newCategoryName} onChange={e => setNewCategoryName(e.target.value)} onKeyDown={e => { if (e.key === "Enter" && newCategoryName.trim()) { setPlaceCategories(p => [...p, newCategoryName.trim()]); setNewCategoryName(""); } }} style={{ flex: 1, padding: "8px 10px", borderRadius: 6, border: "1px solid #D6D0C6", background: "#EDEAE3", fontSize: 12, color: "#1E1B18", outline: "none" }} />
+          <input placeholder="New category..." value={newCategoryName} onChange={e => setNewCategoryName(e.target.value)} onKeyDown={e => { if (e.key === "Enter" && newCategoryName.trim()) { setPlaceCategories(p => [...p, newCategoryName.trim()]); setNewCategoryName(""); } }} style={{ flex: 1, padding: "8px 10px", borderRadius: 6, border: `1px solid ${COLORS.border}`, background: COLORS.inputBg, fontSize: 12, color: COLORS.ink, outline: "none" }} />
           <button onClick={() => { if (newCategoryName.trim()) { setPlaceCategories(p => [...p, newCategoryName.trim()]); setNewCategoryName(""); } }} style={{ padding: "8px 14px", borderRadius: 6, border: "none", background: accent, color: "white", fontWeight: 600, fontSize: 11, cursor: "pointer" }}>+</button>
         </div>
         <button onClick={() => setEditingCategory(false)} style={{ width: "100%", padding: "11px 0", borderRadius: 10, border: "none", background: accent, cursor: "pointer", fontWeight: 600, fontSize: 12, color: "white" }}>Done</button>
@@ -1139,25 +1164,25 @@ export default function App() {
 
       {/* Edit People Tags Modal */}
       {editingPeopleTags && (<Modal onClose={() => setEditingPeopleTags(false)}>
-        <div style={{ fontFamily: "'Lora'", fontSize: 16, fontWeight: 700, color: "#1E1B18", marginBottom: 14 }}>Edit People Tags</div>
+        <div style={{ fontFamily: "'Lora'", fontSize: 16, fontWeight: 700, color: COLORS.ink, marginBottom: 14 }}>Edit People Tags</div>
         <div style={{ display: "flex", flexDirection: "column", gap: 4, marginBottom: 12 }}>
           {peopleTags.map((c, i) => (
-            <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 10px", borderRadius: 8, background: "#FFFFFF", border: "1px solid #DDD8D0" }}>
-              <span style={{ flex: 1, fontSize: 13, fontWeight: 600, color: "#1E1B18" }}>{c}</span>
-              <span style={{ fontSize: 9, color: "#A09888" }}>{people.filter(p => (p.tags || []).includes(c)).length}</span>
-              <button onClick={() => setPeopleTags(p => p.filter((_, j) => j !== i))} style={{ background: "none", border: "none", fontSize: 13, color: "#B8B0A4", cursor: "pointer", padding: "0 4px" }}>×</button>
+            <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 10px", borderRadius: 8, background: COLORS.white, border: `1px solid ${COLORS.borderCard}` }}>
+              <span style={{ flex: 1, fontSize: 13, fontWeight: 600, color: COLORS.ink }}>{c}</span>
+              <span style={{ fontSize: 9, color: COLORS.textMuted2 }}>{people.filter(p => (p.tags || []).includes(c)).length}</span>
+              <button onClick={() => setPeopleTags(p => p.filter((_, j) => j !== i))} style={{ background: "none", border: "none", fontSize: 13, color: COLORS.textMuted3, cursor: "pointer", padding: "0 4px" }}>×</button>
             </div>
           ))}
         </div>
         <div style={{ display: "flex", gap: 4, marginBottom: 14 }}>
-          <input placeholder="New tag..." value={newPeopleTagName} onChange={e => setNewPeopleTagName(e.target.value)} onKeyDown={e => { if (e.key === "Enter" && newPeopleTagName.trim()) { setPeopleTags(p => [...p, newPeopleTagName.trim()]); setNewPeopleTagName(""); } }} style={{ flex: 1, padding: "8px 10px", borderRadius: 6, border: "1px solid #D6D0C6", background: "#EDEAE3", fontSize: 12, color: "#1E1B18", outline: "none" }} />
+          <input placeholder="New tag..." value={newPeopleTagName} onChange={e => setNewPeopleTagName(e.target.value)} onKeyDown={e => { if (e.key === "Enter" && newPeopleTagName.trim()) { setPeopleTags(p => [...p, newPeopleTagName.trim()]); setNewPeopleTagName(""); } }} style={{ flex: 1, padding: "8px 10px", borderRadius: 6, border: `1px solid ${COLORS.border}`, background: COLORS.inputBg, fontSize: 12, color: COLORS.ink, outline: "none" }} />
           <button onClick={() => { if (newPeopleTagName.trim()) { setPeopleTags(p => [...p, newPeopleTagName.trim()]); setNewPeopleTagName(""); } }} style={{ padding: "8px 14px", borderRadius: 6, border: "none", background: accent, color: "white", fontWeight: 600, fontSize: 11, cursor: "pointer" }}>+</button>
         </div>
         <button onClick={() => setEditingPeopleTags(false)} style={{ width: "100%", padding: "11px 0", borderRadius: 10, border: "none", background: accent, cursor: "pointer", fontWeight: 600, fontSize: 12, color: "white" }}>Done</button>
       </Modal>)}
 
       {/* Bottom Tab Bar */}
-      <nav role="tablist" aria-label="Main navigation" style={{ position: "fixed", bottom: 0, left: "50%", transform: "translateX(-50%)", width: "100%", maxWidth: 480, background: "#F6F2EB", borderTop: "1px solid #E0DCD4", paddingBottom: "env(safe-area-inset-bottom, 8px)", zIndex: 100 }}>
+      <nav role="tablist" aria-label="Main navigation" style={{ position: "fixed", bottom: 0, left: "50%", transform: "translateX(-50%)", width: "100%", maxWidth: 480, background: COLORS.bg, borderTop: `1px solid ${COLORS.divider}`, paddingBottom: "env(safe-area-inset-bottom, 8px)", zIndex: 100 }}>
         <div style={{ display: "flex", justifyContent: "space-around", padding: "10px 16px 6px" }}>
           {[
             { id: "people", l: "People", icon: <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="6.5" r="3" stroke="currentColor" strokeWidth="1.3"/><path d="M3 16C3 12.5 5.5 10.5 9 10.5s6 2 6 5.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg> },
@@ -1165,10 +1190,10 @@ export default function App() {
             { id: "birthdays", l: "Birthdays", icon: <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M9 2l2 4.5 5 .7-3.5 3.4.8 4.9L9 13.2 4.7 15.5l.8-4.9L2 7.2l5-.7z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round" fill="none"/></svg> },
             { id: "places", l: "Places", icon: <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="8" r="2.5" stroke="currentColor" strokeWidth="1.3"/><circle cx="9" cy="8" r="6.5" stroke="currentColor" strokeWidth="1.2"/><path d="M9 1.5V3M9 13v1.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/></svg> },
           ].map(t => (
-            <button key={t.id} role="tab" aria-selected={tab === t.id} aria-label={t.l} onClick={() => setTab(t.id)} style={{ background: "none", border: "none", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 2, padding: "0 8px", color: tab === t.id ? "#1E1B18" : "#B8B0A4" }}>
+            <button key={t.id} role="tab" aria-selected={tab === t.id} aria-label={t.l} onClick={() => setTab(t.id)} style={{ background: "none", border: "none", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 2, padding: "0 8px", color: tab === t.id ? COLORS.ink : COLORS.textMuted3 }}>
               {t.icon}
               <span style={{ fontSize: 9, fontWeight: tab === t.id ? 500 : 400 }}>{t.l}</span>
-              {tab === t.id && <div style={{ width: 4, height: 4, borderRadius: "50%", background: "#1E1B18", marginTop: -1 }} />}
+              {tab === t.id && <div style={{ width: 4, height: 4, borderRadius: "50%", background: COLORS.ink, marginTop: -1 }} />}
             </button>
           ))}
         </div>
