@@ -183,6 +183,9 @@ export default function App() {
   const [tpType, setTpType] = useState("Text");
   const [tpNote, setTpNote] = useState("");
   const [viewingZodiac, setViewingZodiac] = useState(null);
+  const [quickTouchPerson, setQuickTouchPerson] = useState(null);
+  const [quickTpType, setQuickTpType] = useState("Text");
+  const [quickTpNote, setQuickTpNote] = useState("");
   const [showAllReconnect, setShowAllReconnect] = useState(false);
   const [editingTp, setEditingTp] = useState(null);
   const [editingEvent, setEditingEvent] = useState(null); // { personId, event }
@@ -239,6 +242,13 @@ export default function App() {
   const toggleWish = (name) => setWishes(p => ({ ...p, [name]: !p[name] }));
   const savePerson = () => { if (!nb.name.trim()) return; setPeople(p => [...p, { ...nb, id: Date.now().toString(), gifts: [], events: [], relationships: [], touchpoints: [], cadenceBaseline: TODAY() }]); setNb({ name: "", date: "", notes: "", cadence: "monthly", interests: [], tags: [] }); setNbInterest(""); setModal(null); };
   const openPerson = (p) => { setViewingPerson(p); setEditNotes(p.notes || ""); setProfileTab("info"); setNewGift(""); setNewEvent(""); setNewEventDate(TODAY()); setNewEventSignificant(false); setNewEventPrivateNote(""); setNewInterest(""); setLinkSearch(""); setTpType("Text"); setTpNote(""); setModal("viewPerson"); };
+  const openQuickTouch = (p) => { setQuickTouchPerson(p); setQuickTpType("Text"); setQuickTpNote(""); };
+  const logQuickTouch = () => {
+    if (!quickTouchPerson) return;
+    setPeople(prev => prev.map(b => b.id === quickTouchPerson.id ? { ...b, touchpoints: [...(b.touchpoints || []), { id: Date.now().toString(), type: quickTpType, date: TODAY(), note: quickTpNote.trim() }] } : b));
+    setQuickTouchPerson(null);
+    setQuickTpNote("");
+  };
 
   const upcoming = people.filter(p => p.date && daysUntil(p.date) > 0 && daysUntil(p.date) < Infinity).sort((a, b) => daysUntil(a.date) - daysUntil(b.date)).slice(0, 3);
 
@@ -437,6 +447,7 @@ export default function App() {
                     {preview && <div style={{ fontSize: 10, color: "#A09888", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{preview}</div>}
                   </div>
                   {z && <span style={{ opacity: 0.4 }}><ZodiacGlyph sign={z.sign} color={z.color} size={14} /></span>}
+                  <button onClick={(e) => { e.stopPropagation(); openQuickTouch(p); }} aria-label={`Log touchpoint with ${p.name}`} style={{ padding: "5px 10px", borderRadius: 7, border: "1px solid #D6D0C6", background: "#EDEAE3", color: "#5C564C", fontWeight: 600, fontSize: 10, cursor: "pointer", flexShrink: 0 }}>Touch</button>
                 </div>
               ); })}
             </div>
@@ -880,6 +891,24 @@ export default function App() {
         <div style={{ fontSize: 10, color: "#B8B0A4", textAlign: "center", marginBottom: 12 }}>{people.filter(b => { const s = getZodiacSign(b.date); return s && s.sign === viewingZodiac.sign; }).length} {people.filter(b => { const s = getZodiacSign(b.date); return s && s.sign === viewingZodiac.sign; }).length !== 1 ? "people" : "person"} in your circle</div>
         <button onClick={() => setViewingZodiac(null)} style={{ width: "100%", padding: "11px 0", borderRadius: 10, border: "none", background: viewingZodiac.color, cursor: "pointer", fontWeight: 600, fontSize: 12, color: "white" }}>Close</button>
       </Modal>)}
+
+      {quickTouchPerson && (() => {
+        const info = getOverdueInfo(quickTouchPerson, today);
+        const QT_TYPES = ["Text","Call","In Person","Postcard","Gift","Other"];
+        return (<Modal onClose={() => setQuickTouchPerson(null)}>
+          <div style={{ fontFamily: "'Lora', Georgia, serif", fontSize: 16, fontWeight: 700, color: "#1E1B18", marginBottom: 4 }}>Log touchpoint</div>
+          <div style={{ fontSize: 13, fontWeight: 600, color: "#1E1B18", marginBottom: 2 }}>{quickTouchPerson.name}</div>
+          {info && <div style={{ fontSize: 11, color: info.daysUntilDue <= 0 ? "#e86a6a" : "#8A8078", marginBottom: 14 }}>
+            {info.daysUntilDue <= 0 ? `${Math.abs(info.daysUntilDue)}d overdue` : `Due in ${info.daysUntilDue}d`} · Last reached out {info.daysSince}d ago
+          </div>}
+          <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginBottom: 10 }}>
+            {QT_TYPES.map(t => (<button key={t} onClick={() => setQuickTpType(t)} style={{ padding: "7px 12px", borderRadius: 6, border: `1px solid ${quickTpType === t ? accent + "44" : "#E8E4DC"}`, cursor: "pointer", fontWeight: 600, fontSize: 11, background: quickTpType === t ? `${accent}12` : "transparent", color: quickTpType === t ? accent : "#8A8078" }}>{t}</button>))}
+          </div>
+          <input placeholder="Note (optional)..." value={quickTpNote} onChange={e => setQuickTpNote(e.target.value)} onKeyDown={e => { if (e.key === "Enter") logQuickTouch(); }} style={{ width: "100%", boxSizing: "border-box", padding: "8px 10px", borderRadius: 6, border: "1px solid #D6D0C6", background: "#EDEAE3", fontSize: 12, color: "#1E1B18", outline: "none", marginBottom: 14 }} />
+          <button onClick={logQuickTouch} style={{ width: "100%", padding: "11px 0", borderRadius: 10, border: "none", background: accent, cursor: "pointer", fontWeight: 700, fontSize: 12, color: "white", marginBottom: 8 }}>Log touchpoint</button>
+          <button onClick={() => { setQuickTouchPerson(null); openPerson(quickTouchPerson); }} style={{ width: "100%", padding: "9px 0", borderRadius: 10, border: "1px solid #D6D0C6", background: "transparent", cursor: "pointer", fontWeight: 600, fontSize: 11, color: "#8A8078" }}>View full profile →</button>
+        </Modal>);
+      })()}
 
       {/* Add Place Modal */}
       {modal === "addPlace" && (<Modal onClose={() => setModal(null)}>
